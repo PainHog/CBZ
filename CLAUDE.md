@@ -8,6 +8,7 @@ Author and designer: **Richard Moore**. This project reuses the tools and the le
 - If a change to another game ever seems needed, stop and tell Richard; it's done in that game's own session.
 
 ## The author decides the game
+- **Experiment on this branch (2026-10-19):** Richard delegated every design decision after the identity ones to Claude, to compare Claude's version with the one he directs elsewhere. On `claude/cat-burglars-core-design-55iymx`, Claude decides and records each call in `docs/DESIGN.md` with **Claude** in the *By* column; everything else in this file still applies. Don't merge this branch into the main line without Richard's say-so.
 - **Never invent game content without Richard's approval.** That covers rules, numbers, entities, abilities, setting text and names of mechanics. Propose options (two or three, with a recommendation and why), then wait for his call. Record every decision in `docs/DESIGN.md` (Decisions log) with the date.
 - Wording clarifications and fixes for things the book already implies may be made directly. Anything that changes numbers or adds rules goes to Richard first.
 - When he gives feedback on art or layout, fix it **and** audit the whole book for the same class of mistake.
