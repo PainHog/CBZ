@@ -21,6 +21,7 @@ This is a living document. The **Pitch** is Richard's own. **Decisions** lists o
 | 2026-10-19 | **Identity (Q1), part A: instincts are the core mechanic.** Each cat has instincts (examples discussed: curiosity, knocking things off tables, sitting in boxes, chasing anything that moves). The Storyteller tempts the cats; giving in gets a strong effect but makes noise or mess; resisting costs something. Temptations in the house double as tools. | The test from the suggestions below ("a mechanic only a cat could have"). Which instincts, their effects and costs are still open (Q3, Q5). Temptation bonuses must respect a bonus cap (LESSONS: free bonus dice stacking). |
 | 2026-10-19 | **Identity (Q1), part C: hiding in plain sight.** Cats can pass as pets: being seen isn't being caught; being seen *doing something* is. Suspicion tracks how the humans read the cats (stages discussed: cute → "whose cat is that?" → "out!"). Looking innocent (washing, a slow blink, purring) is a real move. | Stage names, numbers and line-of-sight rules still open (Q6, Q7). LESSONS: define "seen" and line of sight up front. |
 | 2026-10-19 | **Identity (Q1), part of B: no casing or planning phase.** Play starts at the moment the gang gets in. The gang **chooses its way in from several entrances, not always the front door** (Richard). | Removes Heisty's planning problems (intel cap, preparations auto-solving obstacles, the hidden obstacle). Which entrances exist and how the choice plays is Q6; every ready-to-run house needs at least two (LESSONS). A target that keeps moving every round was set aside; a lighter version (the human moves it once or twice) can come back under Q6. |
+| 2026-10-19 | **Identity (Q1), Richard's direction: a street gang doing a robbery, not a heist crew.** Cats are not spiders: they approach in very different ways, and they are sometimes aggressive. The game must be different from *Heisty Spideys*, not a reskin. | **Engine (Q2): a reskin of Heisty's engine is ruled out.** Aggression means humans and pets need stats and ways to be faced down from day one (LESSONS: NPCs need stats; creatures need a way to be beaten or driven off). |
 
 ## Open questions (work through these with Richard, roughly in this order)
 1. **Identity versus Heisty Spideys.**
@@ -31,7 +32,7 @@ This is a living document. The **Pitch** is Richard's own. **Decisions** lists o
      - the fact that the gang **saw the target go in**, so they chase a known prize instead of planning a heist;
      - cat behaviour as a mechanic (curiosity, distraction, knocking things off tables).
    - **Settle this first,** because it shapes every later answer.
-   - **Settled 2026-10-19:** instincts (A) + hiding in plain sight (C) + no planning phase, with a choice of entrances. See the Decisions log.
+   - **Settled 2026-10-19:** instincts (A) + hiding in plain sight (C) + no planning phase, with a choice of entrances; a street gang doing a robbery, sometimes aggressive, not a heist crew. See the Decisions log.
 2. **Engine.**
    - **The options:** reskin the proven *Heisty Spideys* engine, adapt it, or build something new.
    - **What the Heisty engine is:** a d6 pool with Successes on 5–6, Difficulty, an Alert track running to a Limit, and Silk Points. It is fully simulated, balanced and automated in Foundry.
