@@ -24,7 +24,7 @@ export const LOOKS = {
   // right ear and right flank black, a black spot on the shoulders, a black tail tip.
   pip: { name: "Pip", coat: C.white, deep: C.whiteDeep, stripe: null, belly: C.white, eye: C.eyeBlue, tabby: false,
     patches: { left: { face: C.ginger, flank: C.ginger }, right: { ear: C.black, flank: C.black }, shoulder: C.black, tailTip: C.black },
-    body: "chonky", ears: "small", notch: null, tail: "fluffy", collar: null, young: true },
+    body: "lean", ears: "small", notch: null, tail: "fluffy", collar: null, young: true },   // drawn at 0.85 scale beside the others
 };
 
 // ---------------------------------------------------------------- helpers
@@ -242,7 +242,7 @@ export function catSit(o) {
     if (col !== coat) g += tube(`M${lx} -34 L${lx} -12`, lw, col, C.ink, 0);
     g += ell(lx, -8, lw * 0.62, 9, col, C.ink, 3) + path(`M${lx - 4} -14 l0 6 M${lx + 4} -14 l0 6`, "none", C.ink, 1.6);
   }
-  g += ell(0, -100, W * 0.4, 16, L.belly === coat ? coat : L.belly); // merge leg tops under the chest
+  g += ell(0, -104, W * 0.52, 24, L.belly === coat ? coat : L.belly); // merge leg tops under the chest
   if (L.chestStar) g += path(`M0 -132 l6 12 l13 2 l-10 8 l3 13 l-12 -7 l-12 7 l3 -13 l-10 -8 l13 -2 Z`, L.chestStar, C.ink, 0);
   // head
   g += `<g transform="rotate(${headTilt} 0 -190)">` + headFront(L, 0, -196, k) + `</g>`;

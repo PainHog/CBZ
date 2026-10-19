@@ -45,7 +45,7 @@ light. A black cat always gets a moonlit-blue rim line (ART-CHECKLIST §13).
 | Big Biscuit | brown tabby, cream muzzle and belly | amber | chonky, round ears | notch in his **left** ear |
 | Velvet | black, white star on the chest | amber | lean, tall ears | white sock on her **left** forepaw; blue rim line |
 | Marmalade Mags | ginger tabby, cream belly | green | lean, tall ears | kink at the tip of her tail |
-| Pip | white calico kitten: ginger **left** face and flank, black **right** ear and flank, black spot on the shoulders, black tail tip | blue | chonky (fluffy), small ears, fluffy tail | young |
+| Pip | white calico kitten: ginger **left** face and flank, black **right** ear and flank, black spot on the shoulders, black tail tip | blue | lean (a kitten: drawn at 0.85× the others), small ears, fluffy tail | young |
 
 Every piece showing one of them is checked against its sheet (counts and every mark, on the right side).
 
