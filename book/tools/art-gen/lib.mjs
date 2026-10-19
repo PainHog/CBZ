@@ -1,20 +1,27 @@
 // Shared drawing primitives for the Cat Burglars book art.
-// Palette-agnostic: every colour comes from C, which mirrors the PLACEHOLDER
-// tokens at the top of book/src/book.css. Art direction is undecided — when the
-// palette is chosen, change C (and book.css, and book/art/README.md) together.
+// Every colour comes from C, which mirrors the tokens at the top of
+// book/src/book.css (plus scene colours). Change C, book.css and
+// book/art/README.md together.
 // Nothing in here draws a particular character, creature or place; build those
 // in their own modules on top of these primitives (see scenes/placeholders.mjs).
 import { writeFileSync } from "node:fs";
 
 export const OUT = new URL("../../art/", import.meta.url).pathname; // book/art/
 
-/** PLACEHOLDER palette — keep in step with book/src/book.css :root tokens. */
+/** Palette — keep in step with book/src/book.css :root tokens and book/art/README.md. */
 export const C = {
-  dark: "#3a3a3c", deep: "#222224", soft: "#5c5c60",
-  paper: "#f2f1ee", paper2: "#e3e1dc", edge: "#c9c6bf", light: "#faf9f6",
-  ink: "#161618", inkSoft: "#5a5a5e",
-  accent: "#7a7f88", accentDeep: "#555a63", accentB: "#e4e6ea",
-  alarm: "#7c2a2a", alarmB: "#b5473f", good: "#3f6f52",
+  dark: "#2f3a63", deep: "#1d2342", soft: "#4d5c8f",
+  paper: "#f7f0e1", paper2: "#efe2c7", edge: "#d8c6a1", light: "#fffaf0",
+  ink: "#1b1a24", inkSoft: "#5b566a",
+  accent: "#e3a03a", accentDeep: "#a8641c", accentB: "#ffe6a6",
+  alarm: "#a83722", alarmB: "#d9573a", good: "#c25a7c",
+  // scene colours (not in book.css): interiors, coats, things
+  wall: "#e9d7b4", wallDeep: "#cdb58a", floor: "#b9875a", floorDeep: "#8e6340", wood: "#9a6a43", woodDeep: "#6e4a2e",
+  brick: "#9b4a3a", brickDeep: "#6f3127", leaf: "#5f7d4f", leafDeep: "#3f5a36", sky: "#26305a",
+  ginger: "#d9823b", gingerDeep: "#a85a22", cream: "#f2dcae", creamDeep: "#d3b47d",
+  grey: "#8d93a3", greyDeep: "#5f6577", black: "#2b2933", blackSoft: "#47444f", white: "#fbf7ee", whiteDeep: "#ddd4c3",
+  brown: "#8a6748", brownDeep: "#5f442e", pink: "#e8a3b4", pinkDeep: "#c06f86", eyeGreen: "#8fbf4f", eyeAmber: "#e8b23a", eyeBlue: "#7fb3d9",
+  cuddle: "#c25a7c", broom: "#a83722",
 };
 
 // Unique ids per piece (clipPaths, gradients) — the book build also namespaces them.

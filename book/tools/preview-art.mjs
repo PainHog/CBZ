@@ -12,8 +12,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ART = join(dirname(fileURLToPath(import.meta.url)), "..", "art");
-const PAPER = "#f2f1ee";   // PLACEHOLDER page colour (book/src/book.css --paper)
-const EDGE = "#c9c6bf";    // (book/src/book.css --paper-edge)
+const PAPER = "#f7f0e1";   // page colour (book/src/book.css --paper)
+const EDGE = "#d8c6a1";    // (book/src/book.css --paper-edge)
 const [outDir, ...names] = process.argv.slice(2);
 if (!outDir) { console.error("usage: node book/tools/preview-art.mjs <outDir> [name ...]"); process.exit(2); }
 mkdirSync(outDir, { recursive: true });

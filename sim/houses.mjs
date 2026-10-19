@@ -70,7 +70,7 @@ export const HOUSES = [
       { key: "tayo", name: "Tayo", kind: "kid", attention: 1, start: "living",
         routine: ["stay", "stay", "kidsroom", "kidsroom", "living", "kitchen"] },
     ],
-    pets: [{ key: "biscuit", name: "Biscuit", kind: "dog", rating: 2, soft: true, start: "kitchen", asleep: true,
+    pets: [{ key: "noodle", name: "Noodle", kind: "dog", rating: 2, soft: true, start: "kitchen", asleep: true,
       roam: ["kitchen", "hall", "living", "garage"] }],
     prize: {
       kind: "box", name: "big delivery box", size: "large",

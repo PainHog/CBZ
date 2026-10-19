@@ -7,30 +7,47 @@ rendered piece is looked at (`node book/tools/preview-art.mjs <outDir>`) before 
 called done. Every SVG has a `viewBox` and **no** fixed width or height; the CSS sizes it.
 No `<image>`, `<script>`, filters such as `feTurbulence`, or external links.
 
-## House style — TBD
+## House style
+Night street outside, warm lamplight inside (DESIGN.md Q10). Flat shapes with thick blue-black ink
+outlines (3–3.5 px at the art's native scale), soft contact shadows, no gradients except a lamp glow.
+Cats are drawn only by `tools/art-gen/cats.mjs`, so each gang member keeps one design.
 
-The art direction is **undecided**. Until the author picks it, art uses the neutral
-PLACEHOLDER palette below (the same tokens as `book/src/book.css` and `C` in
-`book/tools/art-gen/lib.mjs`; change all three together).
-
-## Palette — TBD (placeholder values)
+## Palette
+Same tokens as `book/src/book.css` and `C` in `book/tools/art-gen/lib.mjs` (change all three together).
 
 | Token | Hex | Use |
 |---|---|---|
-| dark | `#3a3a3c` | primary dark fill |
-| deep | `#222224` | shadows, night, dark bands |
-| soft | `#5c5c60` | highlights on dark |
-| paper | `#f2f1ee` | page, light fills |
-| paper2 | `#e3e1dc` | secondary light fill |
-| edge | `#c9c6bf` | soft lines on light |
-| light | `#faf9f6` | lightest fill |
-| ink | `#161618` | linework, text |
-| accent | `#7a7f88` | accents |
-| accentDeep | `#555a63` | accents on light |
-| accentB | `#e4e6ea` | glints, accents on dark |
-| alarm | `#7c2a2a` | danger, warning |
-| alarmB | `#b5473f` | strong danger |
-| good | `#3f6f52` | calm / safe (sparingly) |
+| dark | `#2f3a63` | dusk blue: headings, dark fills |
+| deep | `#1d2342` | indigo night: full-bleed pages, night sky |
+| soft | `#4d5c8f` | moonlit blue: highlights on dark, rim light on black cats |
+| paper | `#f7f0e1` | the page |
+| paper2 | `#efe2c7` | lamplit cream: boxes |
+| edge | `#d8c6a1` | soft tan lines on light |
+| light | `#fffaf0` | lightest fill |
+| ink | `#1b1a24` | linework, text |
+| accent | `#e3a03a` | streetlight amber: light, borders (never danger) |
+| accentDeep | `#a8641c` | deep amber: labels on light |
+| accentB | `#ffe6a6` | window glow |
+| alarm / broom | `#a83722` | **Broom** — danger only |
+| alarmB | `#d9573a` | strong Broom |
+| good / cuddle | `#c25a7c` | **Cuddle** — the other danger, softer; only for the Cuddle meter and being scooped |
+
+Scene colours (art only, in `C`): wall, floor, wood, brick, leaf, sky; coats ginger, cream, grey,
+black, white, brown (each with a deep shade); pink (noses, ears, toe beans); eye green, amber, blue.
+
+**Colour meanings are fixed across the book:** red-orange means Broom, pink means Cuddle, amber means
+light. A black cat always gets a moonlit-blue rim line (ART-CHECKLIST §13).
+
+## The premade gang (reference sheets: `ref-*.svg`)
+| Cat | Coat and marks (her/his own left/right) | Eyes | Body | Other |
+|---|---|---|---|---|
+| Two-Bin Tilly | grey tabby, cream belly | green | lean, tall ears | red collar with a round brass tag |
+| Big Biscuit | brown tabby, cream muzzle and belly | amber | chonky, round ears | notch in his **left** ear |
+| Velvet | black, white star on the chest | amber | lean, tall ears | white sock on her **left** forepaw; blue rim line |
+| Marmalade Mags | ginger tabby, cream belly | green | lean, tall ears | kink at the tip of her tail |
+| Pip | white calico kitten: ginger **left** face and flank, black **right** ear and flank, black spot on the shoulders, black tail tip | blue | chonky (fluffy), small ears, fluffy tail | young |
+
+Every piece showing one of them is checked against its sheet (counts and every mark, on the right side).
 
 ## Shapes
 
@@ -43,9 +60,12 @@ PLACEHOLDER palette below (the same tokens as `book/src/book.css` and `C` in
 
 ## Catalogue
 
+**The gang** (`tools/art-gen/scenes/gang.mjs`)
+- `ref-tilly`, `ref-biscuit`, `ref-velvet`, `ref-mags`, `ref-pip`: reference sheets (side view walking + front view sitting), 900×420
+
 **Placeholders** (`tools/art-gen/scenes/placeholders.mjs`)
 - `placeholder-cover`: cover-shaped placeholder (612×792)
 - `placeholder-wide`: wide placeholder (3:1), used by the Part One page and Chapter 1
 - `placeholder`: 4:3 placeholder, used by the back cover
 
-No real art exists yet.
+

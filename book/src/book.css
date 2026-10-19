@@ -2,10 +2,10 @@
    CAT BURGLARS — Rulebook print stylesheet
    US Letter, printed by Chromium with native CSS paged media.
 
-   ART DIRECTION IS UNDECIDED. Every colour below is a neutral PLACEHOLDER
-   palette, defined once here as tokens; nothing further down uses a literal
-   colour. When the palette is chosen, change the tokens (and book/art/README.md,
-   and the Foundry system's styles) — not the rules below.
+   Art direction (DESIGN.md Q10): night street outside, warm lamplight inside.
+   Every colour is defined once here as a token; nothing further down uses a
+   literal colour. Change the tokens together with book/art/README.md,
+   book/tools/art-gen/lib.mjs (C) and the Foundry system's styles.
    The typefaces are placeholders too (SIL OFL @fontsource packages loaded by
    book/build.mjs); swap them there and in the font tokens.
    ========================================================================== */
@@ -14,23 +14,23 @@
   --page-mt: 0.72in;   /* @page top margin — ornaments anchored to the paper edge use it */
   --page-ml: 0.68in;
 
-  /* --- PLACEHOLDER palette (neutral greys + one muted accent) --- */
-  --dark: #3a3a3c;          /* primary dark fill, headings */
-  --dark-deep: #222224;     /* full-bleed pages, table heads, rule boxes */
-  --dark-soft: #5c5c60;     /* highlights on dark */
-  --paper: #f2f1ee;         /* the page */
-  --paper-2: #e3e1dc;       /* secondary light fill (boxes, stat lines) */
-  --paper-edge: #c9c6bf;    /* soft lines on light */
-  --paper-light: #faf9f6;   /* lightest fill (example boxes, sheet fields) */
-  --ink: #161618;           /* body text, linework */
-  --ink-soft: #5a5a5e;      /* captions, quiet text */
-  --footer: #85847f;        /* running footer */
-  --accent: #7a7f88;        /* rules, list markers, borders */
-  --accent-deep: #555a63;   /* labels on light */
-  --accent-bright: #e4e6ea; /* labels on dark */
-  --alarm: #7c2a2a;         /* danger / warning headings */
-  --alarm-bright: #b5473f;
-  --good: #3f6f52;          /* calm / safe (sparingly) */
+  /* --- Palette: night street outside, warm lamplight inside (DESIGN.md Q10) --- */
+  --dark: #2f3a63;          /* dusk blue: headings, primary dark fill */
+  --dark-deep: #1d2342;     /* indigo night: full-bleed pages, table heads, rule boxes */
+  --dark-soft: #4d5c8f;     /* moonlit blue: highlights on dark */
+  --paper: #f7f0e1;         /* warm cream page */
+  --paper-2: #efe2c7;       /* lamplit cream: boxes, stat lines */
+  --paper-edge: #d8c6a1;    /* soft tan lines on light */
+  --paper-light: #fffaf0;   /* lightest fill: example boxes, sheet fields */
+  --ink: #1b1a24;           /* body text, linework (blue-black) */
+  --ink-soft: #5b566a;      /* captions, quiet text */
+  --footer: #8c8270;        /* running footer */
+  --accent: #e3a03a;        /* streetlight amber: rules, list markers, borders */
+  --accent-deep: #a8641c;   /* deep amber: labels on light */
+  --accent-bright: #ffe6a6; /* window glow: labels on dark */
+  --alarm: #a83722;         /* Broom (danger): headings, the Broom meter */
+  --alarm-bright: #d9573a;
+  --good: #c25a7c;          /* Cuddle (the other danger, softer): the Cuddle meter */
 
   --display: "Fraunces", Georgia, serif;          /* PLACEHOLDER typeface */
   --text: "Alegreya", Georgia, serif;             /* PLACEHOLDER typeface */
