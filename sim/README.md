@@ -1,8 +1,12 @@
 # Rules simulator — method
 
-Nothing is simulated yet: the rules are not written. This file describes the method
-that worked on *Heisty Spideys*, so the simulator for Cat Burglars can be built the
-same way as soon as there are rules to test. Only `rng.mjs` exists so far.
+The simulator plays **core rules v0.3** (`docs/CORE-RULES.md`). Results: `BALANCE.md`. Policies,
+abstractions and rule gaps: `NOTES.md`. This file describes the method, carried over from
+*Heisty Spideys*.
+
+    node sim/run.mjs --runs 2000                 # every house, gang of 4, adopted rules
+    node sim/run.mjs --house okafor-box --set gangSize=3
+    node sim/packages.mjs --runs 3000 --packages P1,P3,P5,P6 --out sim/BALANCE.md   # tables only
 
 **Why simulate.** On Heisty Spideys the rulebook read as tense and risky, but the
 simulator showed that, as written, a party almost could not lose: the dice pools were far

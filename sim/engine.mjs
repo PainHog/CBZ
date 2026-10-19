@@ -25,9 +25,11 @@ export function playRobbery(house, gang, p, rng, rec) {
 class Robbery {
   constructor(house, gang, p, rng, rec) {
     this.h = house; this.p = p; this.rng = rng; this.rec = rec ?? nullRecorder();
-    this.patience = Math.max(p.minPatience, house.patience + p.patienceShift);
+    const scaleP = p.gangScaling && gang.length <= 3 ? 1 : 0;
+    const scaleC = p.gangScaling ? (gang.length <= 3 ? 1 : gang.length >= 5 ? -1 : 0) : 0;
+    this.patience = Math.max(p.minPatience, house.patience + p.patienceShift + scaleP);
     this.mood = { broom: 0, cuddle: 0 };
-    this.goneAt = house.prize.goneAt + p.clockShift;
+    this.goneAt = house.prize.goneAt + p.clockShift + scaleC;
     this.lightsOut = this.goneAt + p.lightsOut;
     this.round = 0;
     this.cats = gang.map(c => ({
@@ -45,7 +47,8 @@ class Robbery {
     this.prize = {
       ...pz, spotRoom: null, spotSteps: [], stepsLeft: 0, room: this.humans.find(hu => hu.key === first.by).start,
       withHuman: first.by, down: false,
-      carriers: [], portionsLeft: pz.kind === "delicious" ? Math.max(1, Math.round(pz.portions * p.portionScale)) : 0,
+      // food portions scale with the gang: perCat × cats + plus (CORE-RULES "The prize")
+      carriers: [], portionsLeft: pz.kind === "delicious" ? Math.max(1, Math.round(((pz.perCat ?? 0) * gang.length + (pz.plus ?? pz.portions ?? 0)) * p.portionScale)) : 0,
       eaten: 0, out: false, gone: false,
     };
     this.prize.portions = this.prize.portionsLeft;
@@ -143,11 +146,15 @@ class Robbery {
 
   /** Shoo! / Scooped! (CORE-RULES). */
   trigger(kind, cat) {
+    if (!cat || cat.status !== "in") {
+      // nobody in sight: the meter stays full and the next cat seen on that side gets it (CORE-RULES "Shoo!/Scooped!")
+      this.rec.event(`${kind}Pending`);
+      return;
+    }
     this.rec.event(kind);
     this.t(`TRIGGER ${kind} on ${cat?.id}`);
     const after = afterTrigger(this.mood, this.patience, kind === "shoo" ? "broom" : "cuddle", this.p);
     this.patience = after.patience; this.mood = after.mood;
-    if (!cat || cat.status !== "in") return;
     this.dropPrize(cat);
     // Lives: once per robbery, slip free instead (CORE-RULES "Caught")
     const wantLife = cat.lives > 0 && (kind === "scoop" || this.phase() === "get");
@@ -186,9 +193,12 @@ class Robbery {
     const p = this.p;
     const seenList = opts.seen ?? this.seenBy(cat);
     const seen = seenList.length > 0;
-    const attention = opts.approach === "sneaky" && seen ? Math.max(...seenList.map(hu => hu.attention)) : 0;
+    const resists = opts.approach === "sneaky" || (opts.approach === "sweet" && p.attentionVs === "sneaky+sweet");
+    const attention = resists && seen ? Math.max(...seenList.map(hu => hu.attention)) : 0;
     const knack = hasKnack(cat, opts.tags ?? []) || !!opts.bodyDie; // Chonky's wriggle die counts like a Knack (max +1)
-    const n = poolSize({ rating: cat.r[opts.approach], knack, helpers: opts.helpers ?? 0, difficulty: opts.diff ?? 0,
+    let extra = 0;
+    if (p.cattitudeDie && opts.important && cat.cattitude >= 2) { cat.cattitude--; cat.cattitudeSpent++; extra = 1; this.rec.event("cattitudeDie"); }
+    const n = poolSize({ rating: cat.r[opts.approach] + extra, knack, helpers: opts.helpers ?? 0, difficulty: opts.diff ?? 0,
       opposition: opts.opposition ?? 0, attention }, p);
     let roll = rollPool(this.rng, n);
     let pushedWithMood = false;
@@ -221,23 +231,30 @@ class Robbery {
     return Math.min(this.room("broom"), this.room("cuddle")) > 3;
   }
 
-  /** A simple Action done where a human can see it: 1 step toward Broom, or a Sneaky roll to do it unnoticed. */
-  simpleInView(cat, why) {
+  /**
+   * An Action done where a human can see it is always a roll (CORE-RULES "The Mood"):
+   * Sneaky to do it unnoticed (their Attention removes dice), Savage to just do it.
+   * Policy: the approach with the lowest expected Mood cost, failures weighted heavily.
+   */
+  simpleInView(cat, why, tags = []) {
     const seen = this.seenBy(cat);
     if (!seen.length) return true;
     const att = Math.max(...seen.map(hu => hu.attention));
-    const n = poolSize({ rating: cat.r.sneaky, knack: false, difficulty: 0, attention: att }, this.p);
-    const pClean = chanceAtLeast(n, "clean");
-    const nearBroom = this.room("broom") <= 1;
-    if (pClean >= 0.42 || (nearBroom && pClean >= 0.3)) {
-      const res = this.roll(cat, { approach: "sneaky", why: `${why} (unnoticed)`, important: nearBroom });
-      res.apply();
-      return works(res.result) && cat.status === "in";
+    const cost = (approach, n) => {
+      const pC = chanceAtLeast(n, "clean"), pS = chanceAtLeast(n, "scrape");
+      const clean = approach === "sneaky" ? 0 : 1;
+      return pC * clean + (pS - pC) * 1 + (1 - pS) * 4;
+    };
+    const opts = [["sneaky", att], ["savage", 0]];
+    let best = null; let bc = Infinity;
+    for (const [a, rm] of opts) {
+      const n = poolSize({ rating: cat.r[a], knack: hasKnack(cat, tags), difficulty: 0 }, this.p) - rm;
+      const k = cost(a, n);
+      if (k < bc) { bc = k; best = a; }
     }
-    this.rec.event("simpleInView");
-    cat.hidden = false;
-    this.moodChange({ side: "broom", steps: 1 }, cat, why);
-    return cat.status === "in";
+    const res = this.roll(cat, { approach: best, tags, why, important: true });
+    res.apply();
+    return works(res.result) && cat.status === "in";
   }
 
   // ------------------------------------------------------------ play
@@ -345,13 +362,22 @@ class Robbery {
   /** Gang plan for the round: who distracts the watchers of the prize room, who lures. */
   makePlan() {
     const plan = { distract: new Map(), lure: null, wait: false };
-    if (this.phase() !== "get" || this.prize.carriers.length) return plan;
-    const R = this.prize.room;
+    if (this.phase() !== "get") return plan;
+    let R = this.prize.room;
+    if (this.prize.carriers.length) {
+      // cover the carriers: keep whoever watches their next room busy
+      const lead = this.cats.find(x => x.id === this.prize.carriers[0]);
+      const ex = this.bestExit(lead, this.prize.size);
+      const path = ex && this.path(lead.loc, ex.room, { carry: this.prize.size });
+      const watchedHere = this.watchers(lead.loc).length;
+      R = watchedHere || !path?.length ? lead.loc : path[0];
+    }
     const ws = this.watchers(R);
     if (!ws.length) return plan;
     const cand = this.freeInside().filter(c => !c.carrying && !c.tempted && c.r.sweet >= 2 &&
       (c.loc === R || (this.path(c.loc, R, { lean: c.body === "lean" })?.length === 1 && this.wayBetween(c.loc, R)?.open)))
       .sort((a, b) => b.r.sweet - a.r.sweet);
+    plan.room = R;
     let cuddleRoom = this.room("cuddle") - 1;
     for (const w of ws) {
       const c = cand.shift();
@@ -360,7 +386,7 @@ class Robbery {
       cuddleRoom -= cost;
       plan.distract.set(c.id, w.key);
     }
-    if (plan.distract.size < ws.length && ws.length === 1) {
+    if (plan.distract.size < ws.length && ws.length === 1 && !this.prize.carriers.length) {
       // lure the lone watcher away with noise from a neighbouring room nobody else is near
       const w = ws[0];
       for (const c of this.freeInside()) {
@@ -375,7 +401,7 @@ class Robbery {
   closestHuman(room) {
     let best = null; let bd = Infinity;
     for (const hu of this.humans) {
-      if (hu.holding || hu.asleepUntil >= this.round || hu.kind === "teen") continue;
+      if (hu.holding || hu.asleepUntil >= this.round || hu.kind === "teen" || hu.busy) continue;
       const d = this.dist(hu.room, room);
       if (d < bd) { bd = d; best = hu; }
     }
@@ -392,7 +418,7 @@ class Robbery {
     // a cat starting its turn with an angry dog / guarding house cat must deal with it or leave (CORE-RULES "Residents")
     const pet = this.hostilePet(c.loc);
     if (pet) {
-      const stay = this.phase() === "get" && (c.loc === this.prize.room || c.carrying);
+      const stay = this.phase() === "get" && (c.loc === this.prize.room || c.carrying) && this.confrontChance(c, pet) >= 0.4;
       if (stay && !c.acted) { this.confront(c, pet); if (c.status !== "in") return; }
       else if (!c.moved) { this.stepToward(c, this.goalRoom(c)) || this.fleeRandom(c); }
       if (this.hostilePet(c.loc) === pet) return; // still stuck with it
@@ -422,6 +448,7 @@ class Robbery {
     const way = this.wayBetween(c.loc, next);
     if (!way.open) {
       if (c.acted) return false;
+      if (!this.worthTrying(c, way.opts, this.freeInside())) { this.rec.event("doorTooHard"); return false; }
       if (!this.openWay(c, way)) return false;
     }
     return this.moveTo(c, next);
@@ -449,11 +476,31 @@ class Robbery {
     res.apply();
     return way.open && c.status === "in";
   }
+  attOf(approach, seen) {
+    const resists = approach === "sneaky" || (approach === "sweet" && this.p.attentionVs === "sneaky+sweet");
+    return resists && seen.length ? Math.max(...seen.map(h => h.attention)) : 0;
+  }
+  /** P(works) for a cat's best option (policy input). */
+  optChance(c, opts) {
+    const o = this.bestOption(c, opts);
+    const seen = this.seenBy(c);
+    const att = this.attOf(o[0], seen);
+    return chanceAtLeast(poolSize({ rating: c.r[o[0]], knack: hasKnack(c, o.slice(2)), difficulty: o[1], attention: att }, this.p), "scrape");
+  }
+  /** Policy: don't try a long shot unless time is short or nobody better is coming. */
+  worthTrying(c, opts, others = []) {
+    const mine = this.optChance(c, opts);
+    if (mine >= 0.45) return true;
+    const desperate = this.goneAt - this.round <= 2 || this.lightsOut - this.round <= 2;
+    if (desperate) return mine > 0.2;
+    const better = others.some(o => o !== c && this.optChance(o, opts) > mine + 0.15);
+    return !better && mine >= 0.3;
+  }
   bestOption(c, opts) {
     let best = opts[0]; let bp = -1;
     for (const o of opts) {
       const seen = this.seenBy(c);
-      const att = o[0] === "sneaky" && seen.length ? Math.max(...seen.map(h => h.attention)) : 0;
+      const att = this.attOf(o[0], seen);
       const n = poolSize({ rating: c.r[o[0]], knack: hasKnack(c, o.slice(2)), difficulty: o[1], attention: att }, this.p);
       const pr = chanceAtLeast(n, "scrape") + 0.3 * chanceAtLeast(n, "clean");
       if (pr > bp) { bp = pr; best = o; }
@@ -461,11 +508,18 @@ class Robbery {
     return best;
   }
 
-  confront(c, pet) {
-    // choose Savage (drive off), Sweet (befriend a soft one), or Sneaky (slip past this turn)
+  confrontOptions(pet) {
     const options = [["savage", pet.rating, "fight"], ["sneaky", pet.rating]];
     if (pet.soft) options.push(["sweet", pet.rating]);
-    const best = this.bestOption(c, options);
+    return options;
+  }
+  confrontChance(c, pet) {
+    const o = this.bestOption(c, this.confrontOptions(pet));
+    return chanceAtLeast(poolSize({ rating: c.r[o[0]], knack: hasKnack(c, o.slice(2)), difficulty: o[1] }, this.p), "scrape");
+  }
+  confront(c, pet) {
+    // choose Savage (drive off), Sweet (befriend a soft one), or Sneaky (slip past this turn)
+    const best = this.bestOption(c, this.confrontOptions(pet));
     const res = this.roll(c, { approach: best[0], diff: best[1], tags: best.slice(2), important: true, why: `vs ${pet.kind}` });
     c.acted = true;
     if (works(res.result)) {
@@ -481,19 +535,22 @@ class Robbery {
   }
 
   distract(c, humanKey) {
-    const R = this.prize.room;
+    const R = this.plan.room ?? this.prize.room;
     if (c.loc !== R && !c.moved) this.moveTo(c, R);
     const w = this.humans.find(hu => hu.key === humanKey);
     if (c.loc !== w.room || !this.watchers(w.room).includes(w)) return;
-    const res = this.roll(c, { approach: "sweet", tags: ["charm"], seen: [w], important: true, why: "distract" });
+    const diff = this.p.distractEscalation ? (w.distractions ?? 0) : 0;
+    const res = this.roll(c, { approach: "sweet", diff, tags: ["charm"], seen: [w], important: true, why: "distract" });
     c.acted = true;
-    if (works(res.result)) { w.distractedUntil = this.round + this.p.distractRounds; this.rec.event("distracted"); }
+    if (works(res.result)) { w.distractedUntil = this.round + this.p.distractRounds; w.distractions = (w.distractions ?? 0) + 1; this.rec.event("distracted"); }
     res.apply();
   }
   lure(c) {
     // knocking something over on purpose: noise draws the closest human (CORE-RULES "A round": noise)
-    c.acted = true; this.noise.push(c.loc); this.rec.event("lure");
-    if (this.seenBy(c).length) this.moodChange({ side: "broom", steps: 1 }, c, "lure");
+    c.acted = true; this.rec.event("lure");
+    if (this.seenBy(c).length && !this.simpleInView(c, "lure", ["knock"])) return;
+    this.noise.push(c.loc);
+    (this.messes ??= new Set()).add(c.loc);
   }
 
   /** In the prize room (or heading there) while the prize is still to get. */
@@ -512,8 +569,9 @@ class Robbery {
     if (z.withHuman) { this.rec.event("waitedForPrize"); return; }
     if (!z.down) {
       // each step on the way to the prize needs one roll that works (counter, then foil…)
-      const step = z.spotSteps[z.spotSteps.length - z.stepsLeft];
-      const best = this.bestOption(c, step.map(o => z.kind === "delicious" ? [...o, "food"] : o));
+      const step = z.spotSteps[z.spotSteps.length - z.stepsLeft].map(o => z.kind === "delicious" ? [...o, "food"] : o);
+      if (!this.worthTrying(c, step, this.catsIn(R).filter(x => !x.acted))) { this.rec.event("leftItToOthers"); return; }
+      const best = this.bestOption(c, step);
       const res = this.roll(c, { approach: best[0], diff: best[1], tags: best.slice(2), important: true, why: "reach prize" });
       c.acted = true;
       if (works(res.result)) { z.stepsLeft--; z.down = z.stepsLeft === 0; }
@@ -522,7 +580,7 @@ class Robbery {
     }
     if (z.kind === "delicious") {
       c.acted = true;
-      if (this.simpleInView(c, "eat") && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; this.rec.event("ate"); }
+      if (this.simpleInView(c, "eat", ["food"]) && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; this.rec.event("ate"); }
       return;
     }
     this.tryPickUp(c);
@@ -578,9 +636,19 @@ class Robbery {
         const opener = group.find(x => !x.acted) ?? c;
         if (!this.openWay(opener, way)) return;
       }
+      // moving the prize past a human is an Action: the leader rolls for the group (Sneaky or Savage)
+      if (this.watchers(c.loc).length || this.watchers(path[0]).length) {
+        if (this.lightsOut - this.round > 3 && this.p.boldness !== "bold") { this.rec.event("carrierWaited"); return; }
+        const ws = [...new Set([...this.watchers(c.loc), ...this.watchers(path[0])])];
+        const helpers = group.filter(x => x !== c && !x.acted).length;
+        for (const x of group) x.acted = true;
+        const opt = this.bestOption(c, [["sneaky", Math.max(...ws.map(h => h.attention))], ["savage", 0]]);
+        const res = this.roll(c, { approach: opt[0], diff: opt[1], helpers, seen: ws, important: true, why: "carry past" });
+        res.apply();
+        if (!works(res.result) || c.status !== "in") return;
+      }
       for (const x of group) { x.loc = path[0]; x.moved = true; x.hidden = false; }
       z.room = path[0];
-      if (this.seenBy(c).length) this.moodChange({ side: "broom", steps: 1 }, c, "carrying in view");
       if (c.status !== "in" || c.loc !== ex.room) return;
     }
     // go out through the entrance
@@ -598,6 +666,15 @@ class Robbery {
   bestExit(c, carry = null) {
     let best = null; let bs = -Infinity;
     for (const e of this.entrances) {
+      if (e.letOut && !carry && !c.carrying) {
+        // meow at the front door and a human there lets you out (Sweet; CORE-RULES "Getting in")
+        const path = this.path(c.loc, e.room, { lean: c.body === "lean" });
+        if (path !== null && (this.watchers(e.room).length || this.humans.some(hu => hu.room === e.room))) {
+          const pr = chanceAtLeast(poolSize({ rating: c.r.sweet, knack: hasKnack(c, ["charm"]) }, this.p), "scrape");
+          const score = pr - 0.35 * path.length - (this.room("cuddle") <= 1 ? 1 : 0.2);
+          if (score > bs) { bs = score; best = { ...e, viaLetOut: true }; }
+        }
+      }
       if (!e.open) continue;
       if (e.rounds && !e.rounds.includes(this.round)) continue;
       if (e.size === "tight" && c.body !== "lean") continue;
@@ -613,6 +690,16 @@ class Robbery {
 
   exitThrough(group, e) {
     const lead = group[0];
+    if (e.viaLetOut) {
+      const ws = this.watchers(e.room);
+      if (!ws.length) return false;
+      const res = this.roll(lead, { approach: "sweet", tags: ["charm"], seen: ws, important: true, why: "let me out" });
+      lead.acted = true;
+      res.apply();
+      if (!works(res.result) || lead.status !== "in") return false;
+      lead.status = "out"; lead.loc = "outside"; lead.hidden = false; this.rec.event("letOut");
+      return true;
+    }
     if (e.opts.length) {
       const best = this.bestOption(lead, e.opts);
       const res = this.roll(lead, { approach: best[0], diff: best[1], tags: best.slice(2), helpers: group.length - 1, important: true, why: "exit" });
@@ -681,6 +768,7 @@ class Robbery {
       const opt = this.bestOption(c, best.opts);
       const res = this.roll(c, { approach: opt[0], diff: opt[1], tags: opt.slice(2), important: true, why: `enter:${best.key}` });
       c.acted = true;
+      if (best.one) best.open = false; // the human shuts the front door behind them: one cat at most
       if (!works(res.result)) { c.loc = prev; c.status = "out"; res.apply(); return; }
       if (best.jam) best.opts = [];
       if (best.key === "front" && opt[0] === "sweet") this.rec.event("letIn");
@@ -714,17 +802,23 @@ class Robbery {
 
   // ------------------------------------------------------------ the house (CORE-RULES "A round", house)
   houseActs() {
+    const before = new Map(this.humans.map(hu => [hu.key, hu.room]));
     // pets
     for (const pt of this.pets) this.petActs(pt);
     // noise: each noise room draws the closest awake human within range
     const answered = new Set();
     const rooms = [...new Set(this.noise)];
     for (const room of rooms) {
-      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !answered.has(hu.key))
+      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !hu.busy && !answered.has(hu.key))
         .map(hu => ({ hu, d: this.dist(hu.room, room) })).filter(x => x.d <= this.p.noiseRange).sort((a, b) => a.d - b.d);
       const takers = this.p.noiseAnswer === "all" ? cands : cands.slice(0, 1);
-      for (const { hu } of takers) { if (hu.room !== room) this.rec.event("answeredNoise"); hu.room = room; answered.add(hu.key); }
+      for (const { hu } of takers) {
+        if (hu.room !== room) this.rec.event("answeredNoise");
+        hu.room = room; answered.add(hu.key);
+        if (this.p.lureMess && this.messes?.has(room)) { this.messes.delete(room); this.moodChange({ side: "broom", steps: 1 }, null, "mess found"); }
+      }
     }
+    this.messes?.clear();
     // routines
     for (const hu of this.humans) {
       if (hu.holding) { this.holderActs(hu); continue; }
@@ -732,6 +826,17 @@ class Robbery {
       const res = hu.routine[this.rng.d6() - 1];
       if (res !== "stay") hu.room = res;
       if (hu.kind === "grandparent" && this.rng.d6() <= 2) hu.asleepUntil = this.round + 1;
+    }
+    // discovery: a human who has just walked in on a disturbed prize (CORE-RULES "The prize")
+    if (this.p.discovery && !this.prize.withHuman && this.phase() === "get") {
+      const z = this.prize;
+      const disturbed = z.down && (z.spotSteps.length > 0 || z.eaten > 0) || z.carriers.length > 0 || z.eaten > 0;
+      for (const hu of this.humans) {
+        if (hu.room === z.spotRoom && before.get(hu.key) !== hu.room && disturbed && !hu.holding) {
+          this.rec.event("discovered");
+          this.moodChange({ side: "broom", steps: 1 }, null, "discovered");
+        }
+      }
     }
     // driven-off pets come back
     for (const pt of this.pets) if (pt.mode === "hiding" && this.round >= pt.until) { pt.mode = "awake"; pt.room = pt.start; }

@@ -1,7 +1,9 @@
-Now: Writing the one-page core rules: four ways to do things, the household's mood, the house map and the prize
-Next: Build a computer simulation of whole robberies and tune it until easy, standard and hard houses play as labelled
-Number: Design decisions made = 29
+Now: Testing the rules by having the computer play thousands of robberies, then checking them in a full playtest with real dice
+Next: Computer playtests that follow the rules word for word and note every unclear rule
+Number: Design decisions made = 31
 Number: Open design questions = 0
+Number: Ready-to-play houses = 5
+Number: Robberies simulated per balance check = 45000
 
 # Cat Burglars plan
 
@@ -28,9 +30,9 @@ This version is an experiment: Richard chose what makes the game its own, then a
 
 ## Building the game
 
-- [ ] Write the core rules
-- [ ] First balance simulation
-- [ ] Tune easy, standard and hard houses to their targets
+- [x] Write the core rules
+- [x] First balance simulation
+- [x] Tune easy, standard and hard houses to their targets (easy still plays a little easy)
 - [ ] First computer playtests with real dice
 - [ ] First full rulebook draft
 - [ ] Pictures for the rulebook
