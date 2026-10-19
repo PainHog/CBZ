@@ -7,6 +7,8 @@
  *
  * Approach options are [approach, Difficulty, ...knack tags].
  * A routine is six results for d6 1–6: "stay" or a room key to walk to.
+ * `map` places the rooms for the printed floor plans (book/tools/art-gen/scenes/maps.mjs):
+ * floors, each room's rectangle in grid squares, and each entrance's wall.
  */
 
 const climb = [["sneaky", 1, "climb"], ["savage", 1, "climb"]];
@@ -19,6 +21,10 @@ const bag = [["streetwise", 1, "open"], ["sneaky", 1]];                // rummag
 export const HOUSES = [
   {
     key: "number-12", name: "The Chicken at Number 12", label: "easy", patience: 4,
+    map: {
+      floors: [{ name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 2, 2], living: [0, 2, 2, 3], hall: [2, 2, 2, 3], loo: [4, 2, 2, 3] } }],
+      entrances: { front: "bottom", flap: "top", window: "top" },
+    },
     rooms: {
       hall: { name: "Hall", tempt: ["curious"] },
       living: { name: "Living room", tempt: ["boxSitter", "lapCat", "knocker"] },
@@ -46,6 +52,13 @@ export const HOUSES = [
   },
   {
     key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 4,
+    map: {
+      floors: [
+        { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], garage: [5, 0, 3, 5], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
+        { name: "Upstairs", rooms: { bathroom: [0, 0, 2, 3], landing: [2, 0, 2, 3], kidsroom: [4, 0, 3, 3] } },
+      ],
+      entrances: { front: "bottom", dogdoor: "top", bathwin: "left", garage: "right" },
+    },
     rooms: {
       hall: { name: "Hall", tempt: ["boxSitter"] },
       living: { name: "Living room", tempt: ["lapCat", "hunter", "knocker"] },
@@ -79,6 +92,14 @@ export const HOUSES = [
   },
   {
     key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 5,
+    map: {
+      floors: [
+        { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
+        { name: "Upstairs", rooms: { bedroom: [0, 0, 2, 3], landing: [2, 0, 2, 3], bathroom: [4, 0, 2, 3] } },
+        { name: "Cellar", rooms: { cellar: [0, 0, 4, 2] } },
+      ],
+      entrances: { front: "bottom", flap: "top", cellarwin: "top", bedwin: "left" },
+    },
     rooms: {
       hall: { name: "Hall", tempt: ["curious"] },
       living: { name: "Living room", tempt: ["hunter", "lapCat", "boxSitter"] },
@@ -114,6 +135,10 @@ export const HOUSES = [
   },
   {
     key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 3,
+    map: {
+      floors: [{ name: "Ground floor", rooms: { dining: [0, 0, 3, 3], kitchen: [3, 0, 3, 2], utility: [6, 0, 2, 2], loo: [0, 3, 3, 2], hall: [3, 2, 2, 3], living: [5, 2, 3, 3] } }],
+      entrances: { front: "bottom", patio: "left", utilwin: "top" },
+    },
     rooms: {
       hall: { name: "Hall", tempt: ["curious", "boxSitter"] },
       kitchen: { name: "Kitchen", tempt: ["foodie", "knocker"] },
@@ -148,6 +173,13 @@ export const HOUSES = [
   },
   {
     key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 3,
+    map: {
+      floors: [
+        { name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 3, 2], living: [0, 2, 3, 3], hall: [3, 2, 4, 3] } },
+        { name: "Upstairs", rooms: { bedroom: [0, 0, 2, 3], landing: [2, 0, 2, 3], study: [4, 0, 2, 3] } },
+      ],
+      entrances: { front: "bottom", dogdoor: "top", balcony: "left", skylight: "roof" },
+    },
     rooms: {
       hall: { name: "Hall", tempt: [] },
       kitchen: { name: "Kitchen", tempt: ["foodie", "knocker", "hunter"] },
