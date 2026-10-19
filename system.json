@@ -1,0 +1,38 @@
+{
+  "id": "cat-burglars",
+  "type": "system",
+  "title": "Cat Burglars",
+  "description": "The companion Foundry VTT game system for Cat Burglars, a tabletop roleplaying game by Richard Moore. Early skeleton: the game's rules are not written yet.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "Richard Moore",
+      "url": "https://github.com/PainHog/CatBurglars"
+    }
+  ],
+  "esmodules": [
+    "module/cat-burglars.mjs"
+  ],
+  "styles": [
+    "styles/cat-burglars.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "packs": [],
+  "socket": true,
+  "url": "https://github.com/PainHog/CatBurglars",
+  "bugs": "https://github.com/PainHog/CatBurglars/issues",
+  "manifest": "https://github.com/PainHog/CatBurglars/releases/latest/download/system.json",
+  "download": "https://github.com/PainHog/CatBurglars/releases/latest/download/system.zip",
+  "license": "LICENSE",
+  "readme": "README.md"
+}
