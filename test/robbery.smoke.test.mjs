@@ -240,3 +240,59 @@ test("a roll made while the Storyteller is offline is applied when they come bac
   assert.equal(catOf(pip.id).where, "kitchen", "the jammed flap let Pip in");
   assert.deepEqual(log.errors, []);
 });
+
+test("every automation can be switched off; Push with the Mood; giving in from the temptation card", async () => {
+  const set = (k, v) => asUser(gmU, () => game.settings.set("cat-burglars", k, v));
+  const dot = await makeCat("Lucky Dot", p1, { approaches: { sweet: 3, sneaky: 2, savage: 1, streetwise: 1 }, instinct1: "lapCat", instinct2: "curious", body: "lean", cattitude: 0 });
+  const joe = await makeCat("Gutter Joe", p2, { approaches: { savage: 3, streetwise: 2, sweet: 1, sneaky: 1 }, instinct1: "scrapper", instinct2: "hunter", body: "chonky" });
+  await set("autoMood", "confirm"); await set("autoCattitude", false); await set("autoHouseTurn", "manual"); await set("autoTemptation", "off");
+  await asUser(gmU, () => api().robbery.startRobbery("number-12", { actorIds: [dot.id, joe.id] }));
+  assert.equal(dot.system.cattitude, 0, "autoCattitude off: nobody's sheet is touched");
+  const prompts = cardMsgs("temptPrompt").length;
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  assert.equal(cardMsgs("temptPrompt").length, prompts, "autoTemptation off: no prompt");
+
+  let m = await rollAs(p1, dot, "enter:front", { approach: "sweet" }, [6, 2, 3]);
+  assert.ok(buttonLabels(m, p1).includes("Push (1 Cattitude)"), "with Cattitude off, the Push is advice only");
+  diceQueue.push(6, 1);
+  await click(m, p1, "Push (+1 Mood)");
+  assert.equal(flags(m).result, "purrfect");
+  assert.equal(flags(m).pushedWithMood, true);
+  assert.equal(dot.system.cattitude, 0, "no Purrfect Cattitude either");
+  assert.deepEqual(meters(), [0, 0, 5], "autoMood confirm: the change waits (two cats: Patience 4 + 1)");
+  const pending = state().moodLedger.find(e => e.pending);
+  assert.ok(pending);
+  await trackerAction(gmU, "confirm", { entry: pending.id });
+  assert.deepEqual(meters(), [0, 1, 5], "a Purrfect adds nothing, but a Push paid with the Mood adds 1");
+
+  await set("autoEffects", false);
+  m = await rollAs(p2, joe, "enter:window", { approach: "savage" }, [6, 1]);
+  await click(m, p2, "Accept");
+  assert.equal(catOf(joe.id).status, "outside", "effects off: the Storyteller moves him by hand");
+  assert.equal(catOf(joe.id).acted, true);
+  assert.ok(flags(m).appliedText.some(t => /Effects are off/.test(t)));
+  await trackerAction(gmU, "place", { cat: joe.id, to: "kitchen" });
+  assert.equal(catOf(joe.id).where, "kitchen");
+
+  const dialogs = log.dialogs.length;
+  await houseTurn([]);
+  assert.equal(log.dialogs.length, dialogs, "manual: no question, no dice");
+  assert.match(lastCard("houseTurn").content, /runs the house(&#x27;|')s turn by hand/);
+  assert.equal(pell().room, "hall", "nobody moved");
+
+  for (const [k, v] of [["autoMood", "auto"], ["autoCattitude", true], ["autoHouseTurn", "prompt"], ["autoTemptation", "prompt"], ["autoEffects", true]]) await set(k, v);
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  await trackerAction(gmU, "place", { cat: dot.id, to: "living" });
+  await trackerAction(gmU, "place", { key: "pell", to: "living" });
+  await trackerAction(gmU, "tempt", { cat: dot.id, instinct: "lapCat" });
+  const tc = lastCard("temptation");
+  assert.deepEqual(buttonLabels(tc, p1), ["Give in (+1 Cattitude)"], "no Cattitude: only Give in");
+  await click(tc, p1, "Give in (+1 Cattitude)");
+  assert.equal(dot.system.cattitude, 1);
+  assert.equal(pell().distractedRound, state().round, "the fuss Distracts Mr Pell");
+  assert.deepEqual(meters(), [0, 2, 5], "+1 Cuddle");
+  assert.equal(catOf(dot.id).acted, true, "giving in was her Action");
+  assert.deepEqual(log.errors, []);
+});

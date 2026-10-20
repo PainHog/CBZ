@@ -55,6 +55,18 @@ export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   };
 
+  /** Open where it was last closed (client setting). */
+  constructor(options = {}) {
+    const saved = setting(SETTINGS.trackerPosition) ?? {};
+    super({ ...options, position: { ...(options.position ?? {}), ...saved } });
+  }
+
+  async _onClose(options) {
+    const { left, top, width, height } = this.position ?? {};
+    try { await game.settings.set(SYSTEM_ID, SETTINGS.trackerPosition, { left, top, width, height }); } catch { /* not ready */ }
+    return super._onClose?.(options);
+  }
+
   static PARTS = {
     header: { template: T("header") },
     house: { template: T("house"), scrollable: [""] },
