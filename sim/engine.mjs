@@ -171,7 +171,8 @@ class Robbery {
       if (ent && this.p.shutOnShoo) ent.open = false;
       this.rec.event("shooed");
     } else {
-      const holder = this.watchers(cat.loc)[0] ?? this.humans.find(hu => hu.room === cat.loc && !hu.holding) ?? this.humans.find(hu => !hu.holding);
+      const ws = this.watchers(cat.loc).sort((a, b) => b.attention - a.attention);
+      const holder = ws[0] ?? this.humans.find(hu => hu.room === cat.loc && !hu.holding) ?? this.humans.find(hu => !hu.holding);
       if (!holder) return;
       holder.holding = cat.id; holder.room = cat.loc;
       cat.status = "held"; cat.heldBy = holder.key; cat.hidden = false;
@@ -279,7 +280,7 @@ class Robbery {
       if (s.round !== this.round || z.carriers.length) continue;
       this.placePrize(s.room, s.steps);
       const by = this.humans.find(hu => hu.key === s.by);
-      if (by && !by.holding) by.room = s.room;
+      if (by && !by.holding) { by.room = s.room; by.staysUntil = this.round; } // puts it down and stays with it this round
       this.rec.event("prizeMoved");
     }
     if (this.round >= this.goneAt && !z.carriers.length && !z.out) {
@@ -334,10 +335,17 @@ class Robbery {
     const i = c.tempted;
     if (c.carrying && i !== "boxSitter") this.dropPrize(c);
     if (i === "boxSitter" || i === "climber") { c.hidden = true; return; }
-    const seen = this.seenBy(c).length > 0;
+    const watchers = this.seenBy(c);
+    if (i === "lapCat") {
+      // a fuss from a human here: that human is Distracted until the round ends (Cuddle +1); no human: a sunny spot, quiet
+      if (watchers.length) { watchers[0].distractedUntil = Math.max(watchers[0].distractedUntil, this.round); this.moodChange({ side: "cuddle", steps: 1 }, c, "temptation:lapCat"); }
+      return;
+    }
+    if (i === "foodie") { if (watchers.length) this.moodChange({ side: "broom", steps: 1 }, c, "temptation:foodie"); return; } // munching is quiet
     this.noise.push(c.loc);
+    if (i === "knocker") (this.messes ??= new Set()).add(c.loc); // it's on the floor now: whoever comes finds a mess
     if (i === "scrapper") for (const pt of this.pets) if (pt.room === c.loc && pt.kind === "dog" && pt.mode !== "hiding") pt.mode = "angry";
-    if (seen) this.moodChange({ side: i === "lapCat" ? "cuddle" : "broom", steps: 1 }, c, `temptation:${i}`);
+    if (watchers.length) this.moodChange({ side: "broom", steps: 1 }, c, `temptation:${i}`);
   }
 
   // ------------------------------------------------------------ the cats' turns
@@ -809,8 +817,9 @@ class Robbery {
     const answered = new Set();
     const rooms = [...new Set(this.noise)];
     for (const room of rooms) {
-      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !hu.busy && !answered.has(hu.key))
-        .map(hu => ({ hu, d: this.dist(hu.room, room) })).filter(x => x.d <= this.p.noiseRange).sort((a, b) => a.d - b.d);
+      // the closest awake human within range who isn't already in that room; the Storyteller breaks ties
+      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !hu.busy && !answered.has(hu.key) && hu.room !== room)
+        .map(hu => ({ hu, d: this.dist(hu.room, room), t: this.rng.next() })).filter(x => x.d <= this.p.noiseRange).sort((a, b) => a.d - b.d || a.t - b.t);
       const takers = this.p.noiseAnswer === "all" ? cands : cands.slice(0, 1);
       for (const { hu } of takers) {
         if (hu.room !== room) this.rec.event("answeredNoise");
@@ -823,6 +832,7 @@ class Robbery {
     for (const hu of this.humans) {
       if (hu.holding) { this.holderActs(hu); continue; }
       if (answered.has(hu.key)) continue;
+      if (hu.staysUntil === this.round) continue;
       const res = hu.routine[this.rng.d6() - 1];
       if (res !== "stay") hu.room = res;
       if (hu.kind === "grandparent" && this.rng.d6() <= 2) hu.asleepUntil = this.round + 1;
