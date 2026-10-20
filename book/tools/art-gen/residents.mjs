@@ -53,8 +53,50 @@ export function dogSide(o) {
     g += ell(hx - R * 0.55, hy + R * 0.1, 10, 26, D.deep, C.ink, 3, ` transform="rotate(14 ${r1(hx - R * 0.55)} ${r1(hy)})"`);
     g += ell(hx - R * 0.3, hy + R * 0.25, 12, 30, D.patch ?? D.deep, C.ink, 3, ` transform="rotate(8 ${r1(hx - R * 0.3)} ${r1(hy)})"`);
   } else {
-    g += path(`M${r1(hx - R * 0.6)} ${r1(hy - R * 0.5)} l-8 -22 l22 10 Z`, D.deep, C.ink, 3) + path(`M${r1(hx - R * 0.3)} ${r1(hy - R * 0.7)} l4 -18 l16 16 Z`, D.coat, C.ink, 3);
+    // folded ears (a mastiff's): short rounded flaps that fold over and hang forward from the top of the head
+    g += path(`M${r1(hx - R * 0.75)} ${r1(hy - R * 0.45)} q-4 -20 14 -22 q14 6 10 26 q-12 6 -24 -4 Z`, D.deep, C.ink, 3);
+    g += path(`M${r1(hx - R * 0.45)} ${r1(hy - R * 0.62)} q8 -18 26 -10 q10 10 2 32 q-16 0 -28 -22 Z`, D.deep, C.ink, 3);
   }
+  return g + "</g>";
+}
+
+/**
+ * A dog lying down asleep, facing +x: body flat on the ground (y), the near hind leg folded with its
+ * paw tucked forward, both front legs stretched out in front, the chin resting on the front paws,
+ * eye closed, both ears (the far one shows behind the head), one tail curled along the ground.
+ * o: { dog, x, y, s, flip }
+ */
+export function dogLie(o) {
+  const D = typeof o.dog === "string" ? DOGS[o.dog] : o.dog;
+  const { x = 0, y = 0, s = 1, flip = false } = o;
+  const len = 100 * D.len, bodyH = (D.big ? 74 : 58) * 0.86, R = D.big ? 40 : 32;
+  let g = `<g transform="translate(${r1(x)} ${r1(y)}) scale(${flip ? -s : s} ${s})">`;
+  g += ell(0, 2, len + 50, 7, C.ink, C.ink, 0, ` opacity="0.16"`);
+  // tail, lying curled along the ground round the back end
+  const tw = D.tail === "thin" ? 9 : D.tail === "stub" ? 16 : 13;
+  g += D.tail === "stub" ? tube(`M${r1(-len - 4)} ${r1(-bodyH * 0.4)} l-20 4`, tw, D.coat) : tube(`M${r1(-len + 4)} ${r1(-bodyH * 0.4)} Q${r1(-len - 40)} ${r1(-bodyH * 0.2)} ${r1(-len - 26)} -8 L${r1(-len * 0.4)} -7`, tw, D.coat);
+  // far front leg (deep tone), stretched forward along the ground
+  const fx = len * 0.62;
+  g += tube(`M${r1(fx - 10)} ${r1(-bodyH * 0.35)} L${r1(fx + 44)} -9`, 13, D.deep) + ell(fx + 52, -7, 12, 6, D.deep, C.ink, 3);
+  // body
+  g += `<rect x="${r1(-len)}" y="${r1(-bodyH)}" width="${r1(len * 1.72)}" height="${r1(bodyH)}" rx="${r1(bodyH / 2)}" fill="${D.coat}" stroke="${C.ink}" stroke-width="3.4"/>`;
+  if (D.patch) g += `<ellipse cx="${r1(-len * 0.2)}" cy="${r1(-bodyH * 0.62)}" rx="${r1(len * 0.38)}" ry="${r1(bodyH * 0.28)}" fill="${D.patch}"/>`;
+  // near hind leg folded: the haunch on the body, the paw tucked forward on the ground
+  g += ell(-len * 0.58, -bodyH * 0.46, bodyH * 0.56, bodyH * 0.44, D.coat, C.ink, 3) + ell(-len * 0.22, -6, 15, 7, D.coat, C.ink, 3);
+  // near front leg, stretched forward, the paw under the chin
+  g += tube(`M${r1(fx)} ${r1(-bodyH * 0.3)} L${r1(fx + 56)} -8`, 14, D.coat) + ell(fx + 64, -6, 13, 6.5, D.coat, C.ink, 3);
+  // the far ear, behind the head
+  const hx = fx + 50, hy = -R * 0.72 - 10;
+  g += ell(hx - R * 0.5, hy - R * 0.2, 10, 20, D.deep, C.ink, 3, ` transform="rotate(-30 ${r1(hx - R * 0.5)} ${r1(hy)})"`);
+  // head resting on the paws, muzzle forward along them
+  g += ell(hx, hy, R, R * 0.82, D.coat, C.ink, 3.4);
+  const mz = 30 * D.muzzle;
+  g += `<rect x="${r1(hx + R * 0.35)}" y="${r1(hy - R * 0.1)}" width="${r1(mz + 10)}" height="${r1(R * 0.66)}" rx="10" fill="${D.coat}" stroke="${C.ink}" stroke-width="3"/>`;
+  g += ell(hx + R * 0.35 + mz + 7, hy + 2, 7, 5.5, C.ink); // nose
+  g += path(`M${r1(hx + R * 0.05)} ${r1(hy - R * 0.22)} q7 6 14 0`, "none", C.ink, 2.6); // closed eye
+  // the near ear, hanging down over the side of the head
+  if (D.ears === "floppy") g += ell(hx - R * 0.42, hy + R * 0.2, 11, 26, D.patch ?? D.deep, C.ink, 3, ` transform="rotate(16 ${r1(hx - R * 0.42)} ${r1(hy)})"`);
+  else g += path(`M${r1(hx - R * 0.5)} ${r1(hy - R * 0.55)} l-6 -18 l20 8 Z`, D.deep, C.ink, 3);
   return g + "</g>";
 }
 
@@ -74,7 +116,7 @@ export function parrotStand(o) {
   // parrot inside, standing on the perch (grey with a red tail): body, head, beak, eye, two feet on the perch
   g += ell(cx, cy + k(64), k(16), k(24), C.grey, C.ink, 2.6) + circ(cx + k(4), cy + k(40), k(12), C.grey, C.ink, 2.6);
   g += path(`M${r1(cx + k(14))} ${r1(cy + k(38))} q${k(10)} ${k(4)} ${k(2)} ${k(12)} Z`, C.ink, C.ink, 1.6) + circ(cx + k(8), cy + k(36), k(2.4), C.ink);
-  g += path(`M${r1(cx - k(6))} ${r1(cy + k(84))} l${k(-4)} ${k(16)} l${k(10)} 0 Z`, C.alarmB, C.ink, 2);
+  g += path(`M${r1(cx - k(6))} ${r1(cy + k(84))} l${k(-4)} ${k(16)} l${k(10)} 0 Z`, C.brick, C.ink, 2);
   g += path(`M${r1(cx - k(26))} ${r1(cy + k(88))}H${r1(cx + k(26))}`, "none", C.woodDeep, 4); // perch, fixed to the bars
   g += path(`M${r1(cx - k(4))} ${r1(cy + k(86))}v${k(4)} M${r1(cx + k(6))} ${r1(cy + k(86))}v${k(4)}`, "none", C.ink, 2.6);
   g += `<path d="${bars}" stroke="${C.accentDeep}" stroke-width="${k(2.4)}"/>`;

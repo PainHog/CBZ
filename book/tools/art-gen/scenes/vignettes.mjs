@@ -37,8 +37,9 @@ import { nightSky, moon, bricks, litWindow, streetLamp, wheelieBin, humanBack } 
 export function ch_welcome() {
   setPrefix("v-wel");
   const G = 276;
-  let b = nightSky(900, 300, 9) + moon(820, 46, 20);
-  // the house front on the right, the open door lit from inside
+  let b = nightSky(900, 300, 9) + moon(318, 52, 20);
+  // the house front on the right under its slate roof, the open door lit from inside
+  b += `<path d="M458 44L486 8H912V44Z" fill="${C.dark}" stroke="${C.ink}" stroke-width="3"/>` + path(`M476 22H912 M466 34H912`, "none", C.deep, 2);
   b += bricks(470, 40, 430, G - 40, { seed: 4 });
   b += `<rect x="640" y="${G - 170}" width="88" height="170" fill="${C.accentB}" stroke="${C.ink}" stroke-width="3"/>`;
   b += `<path d="M640 ${G - 170}L612 ${G - 160}V${G + 2}L640 ${G}Z" fill="${C.wood}" stroke="${C.ink}" stroke-width="3"/>`; // door swung open, hinged on the left
@@ -219,4 +220,84 @@ export function ch_the_block() {
   b += catCurl({ look: "pip", x: 420, y: ridge, s: 0.22, id: "b4" });
   b += catSide({ look: "mags", x: 520, y: ridge, s: 0.24, step: 0.2, tailUp: 0.7, id: "b5" });
   return svg("0 0 900 300", "The Block: the gang sits along a roof ridge by a chimney, looking out over the street's roofs and lit windows under the moon", b);
+}
+
+import { armchair } from "../kit.mjs";
+
+/** Chapter 11: the Storyteller's view — one wall cut through, two rooms at once: next door, someone checks the clock; in the kitchen, the gang goes for the chicken. */
+export function ch_storyteller() {
+  setPrefix("v-story");
+  let b = room(900, 300, FLOOR, { seed: 11 });
+  // left: the front room
+  b += lamp(46, FLOOR, 236);
+  const ac = armchair(86, FLOOR, 150, { col: C.dark });
+  b += ac.svg;
+  b += wallClock(232, 46, 24);
+  b += legs({ x: 332, floorY: FLOOR + 6, top: -4, trousers: C.brownDeep, shoe: C.woodDeep, w: 32, walking: 0 });
+  // the wall between, cut through (a section, hatched like a plan)
+  const W0 = 420, W1 = 466;
+  b += `<rect x="${W0}" y="-4" width="${W1 - W0}" height="308" fill="${C.brick}" stroke="${C.ink}" stroke-width="3"/>`;
+  let d = ""; for (let y = -40; y < 320; y += 16) d += `M${W0} ${y + 46}L${W1} ${y}`;
+  b += `<clipPath id="v-story-cut"><rect x="${W0}" y="-4" width="${W1 - W0}" height="308"/></clipPath><path clip-path="url(#v-story-cut)" d="${d}" stroke="${C.brickDeep}" stroke-width="3"/>`;
+  // right: the kitchen
+  const c = counter(560, FLOOR, 250, 150);
+  b += c.svg + chicken(752, c.top, 0.62);
+  b += catSide({ look: "tilly", x: 628, y: c.top, s: 0.3, crouch: 0.5, head: -0.2, tailUp: 0.5, step: 0.3, id: "st" });
+  b += catSit({ look: "biscuit", x: 512, y: FLOOR, s: 0.32, id: "sb", headTilt: 12 });
+  b += bin(832, FLOOR);
+  return svg("0 0 900 300", "The Storyteller's view, through a wall cut away: in the front room someone stands checking the clock; in the kitchen next door Tilly creeps along the counter to the chicken while Big Biscuit keeps watch", b);
+}
+
+/** Chapter 12: making a house — seen from above: a pencil floor plan on the table, a pencil, three dice, a mug, and a ginger paw batting a die. */
+export function ch_making_a_house() {
+  setPrefix("v-make");
+  const ink = C.inkSoft;
+  let b = `<rect x="0" y="0" width="900" height="300" fill="${C.wood}"/>`;
+  let d = ""; for (let y = 58; y < 300; y += 60) d += `M0 ${y}H900`;
+  b += path(d, "none", C.woodDeep, 2.4);
+  b += path(`M60 20q40 10 90 0 M620 140q50 12 110 0 M300 262q60 10 120 -2 M780 222q30 8 70 0`, "none", C.woodDeep, 1.6, ` opacity="0.6"`); // grain
+  // the sheet of paper, lying flat, with its shadow
+  b += `<g transform="rotate(-3 360 150)">`;
+  b += `<rect x="156" y="28" width="420" height="256" fill="${C.ink}" opacity="0.18"/><rect x="150" y="22" width="420" height="256" fill="${C.light}" stroke="${C.ink}" stroke-width="2.4"/>`;
+  // the plan, in pencil: outer walls with gaps for the ways in, inner walls with door gaps
+  const plan = [
+    "M190 50H300 M332 50H520V96 M520 116V214H286 M254 214H190V50", // outer walls: window gap (top), cat-flap gap (right), front-door gap (bottom)
+    "M340 50V110 M340 140V214",                                  // front room | hall and kitchen
+    "M340 132H408 M436 132H520",                                 // hall | kitchen
+    "M440 132V160 M440 186V214",                                 // hall | loo
+  ].join(" ");
+  b += path(plan, "none", ink, 4);
+  b += path(`M300 46V54 M332 46V54 M300 50H332`, "none", ink, 1.6); // the window, drawn as a thin line
+  b += path(`M270 240V222 M262 230L270 220L278 230`, "none", ink, 2.4) + path(`M546 106H528 M536 98L526 106L536 114`, "none", ink, 2.4); // arrows: ways in
+  b += path(`M520 106Q470 108 470 90Q470 76 486 76`, "none", ink, 2, ` stroke-dasharray="5 6"`); // the gang's route
+  b += path(`M478 62L498 82M498 62L478 82`, "none", C.ink, 4); // the X
+  const label = (x, y, t) => `<text x="${x}" y="${y}" text-anchor="middle" font-family="sans-serif" font-style="italic" font-weight="700" font-size="14" fill="${ink}">${t}</text>`;
+  b += label(265, 136, "FRONT ROOM") + label(430, 108, "KITCHEN") + label(390, 180, "HALL") + label(480, 206, "LOO");
+  // the pencil, lying wholly on the paper
+  b += `<g transform="rotate(-10 452 250)">`;
+  b += `<rect x="360" y="252" width="176" height="12" rx="4" fill="${C.ink}" opacity="0.18"/>`;
+  b += `<rect x="370" y="244" width="140" height="12" fill="${C.accent}" stroke="${C.ink}" stroke-width="2.2"/>` + path(`M370 248H510 M370 252H510`, "none", C.accentDeep, 1.2);
+  b += `<rect x="360" y="244" width="10" height="12" fill="${C.grey}" stroke="${C.ink}" stroke-width="2"/><rect x="348" y="244" width="12" height="12" rx="3" fill="${C.pink}" stroke="${C.ink}" stroke-width="2"/>`;
+  b += path(`M510 244L534 250L510 256Z`, C.cream, C.ink, 2) + path(`M526 248L534 250L526 252Z`, C.ink, C.ink, 1);
+  b += `</g></g>`;
+  // three dice, lying on the table, top faces up
+  const dieTop = (x, y, a, face, sz = 46) => {
+    const p = sz * 0.26, at = { tl: [-p, -p], tr: [p, -p], ml: [-p, 0], mr: [p, 0], bl: [-p, p], br: [p, p], c: [0, 0] };
+    const pips = { 1: ["c"], 2: ["tl", "br"], 3: ["tl", "c", "br"], 4: ["tl", "tr", "bl", "br"], 5: ["tl", "tr", "c", "bl", "br"], 6: ["tl", "tr", "ml", "mr", "bl", "br"] }[face];
+    return `<g transform="translate(${x} ${y}) rotate(${a})"><rect x="${-sz / 2 + 4}" y="${-sz / 2 + 5}" width="${sz}" height="${sz}" rx="8" fill="${C.ink}" opacity="0.22"/>` +
+      `<rect x="${-sz / 2}" y="${-sz / 2}" width="${sz}" height="${sz}" rx="8" fill="${C.light}" stroke="${C.ink}" stroke-width="3"/>` +
+      pips.map(k => `<circle cx="${at[k][0]}" cy="${at[k][1]}" r="${sz * 0.08}" fill="${C.ink}"/>`).join("") + `</g>`;
+  };
+  b += dieTop(650, 70, 12, 6) + dieTop(742, 150, -8, 4) + dieTop(636, 202, 25, 2);
+  // a mug of tea, from above: the rim, the tea, the handle
+  b += `<circle cx="826" cy="64" r="36" fill="${C.ink}" opacity="0.2"/>`;
+  b += `<rect x="852" y="50" width="34" height="18" rx="8" fill="${C.eyeBlue}" stroke="${C.ink}" stroke-width="3"/>`;
+  b += `<circle cx="822" cy="60" r="34" fill="${C.eyeBlue}" stroke="${C.ink}" stroke-width="3"/><circle cx="822" cy="60" r="25" fill="${C.brown}" stroke="${C.ink}" stroke-width="2"/>`;
+  // Mags's ginger paw reaching in from the bottom edge, batting the nearest die
+  const leg = `M712 312Q700 268 676 240`;
+  b += path(leg, "none", C.ink, 36) + path(leg, "none", C.ginger, 29);
+  b += path(`M690 300l18 -8 M684 280l18 -10 M680 262l16 -10`, "none", C.gingerDeep, 4);
+  b += `<ellipse cx="670" cy="232" rx="22" ry="18" fill="${C.ginger}" stroke="${C.ink}" stroke-width="3" transform="rotate(-40 670 232)"/>`;
+  b += path(`M660 226l-8 -6 M668 220l-5 -8 M676 218l-1 -9`, "none", C.ink, 2.2);
+  return svg("0 0 900 300", "Making a house, seen from above: a pencil floor plan on a sheet of paper with a pencil lying on it, three dice and a mug of tea on the table, and a ginger paw batting one of the dice", b);
 }
