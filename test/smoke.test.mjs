@@ -30,8 +30,9 @@ test("pure modules reference no Foundry globals", () => {
   const files = ["module/config.mjs", "module/contracts.mjs",
     ...readdirSync(join(ROOT, "module/logic")).filter(f => f.endsWith(".mjs")).map(f => `module/logic/${f}`)];
   for (const f of files) {
-    // strip comments, then look for Foundry globals
-    const code = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+    // strip comments and string literals (house text says "window (up the bins)"), then look for Foundry globals
+    const code = readFileSync(join(ROOT, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/([^:])\/\/.*$/gm, "$1")
+      .replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g, "\"\"");
     assert.doesNotMatch(code, /\b(game|ui|foundry|Hooks|CONFIG|canvas|document|window)\s*[.[(]/, `${f} must stay Foundry-free`);
   }
 });
