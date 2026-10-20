@@ -74,7 +74,8 @@ test("the entry module boots on the fake Foundry", async () => {
   assert.deepEqual(log.errors, []);
   assert.equal(CONFIG.CATB.id, manifest.id);
   assert.equal(game.catBurglars.id, manifest.id);
-  assert.equal(game.settings.get(manifest.id, "systemMigrationVersion"), "");
+  await new Promise(r => setImmediate(r));
+  assert.equal(game.settings.get(manifest.id, "systemMigrationVersion"), manifest.version, "the GM stamps the version on ready");
 });
 
 test("validate passes", () => {

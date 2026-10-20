@@ -2,8 +2,8 @@
   "id": "cat-burglars",
   "type": "system",
   "title": "Cat Burglars",
-  "description": "The companion Foundry VTT game system for Cat Burglars, a tabletop roleplaying game by Richard Moore. Early skeleton: the game's rules are not written yet.",
-  "version": "0.1.0",
+  "description": "The Foundry VTT game system for Cat Burglars, a tabletop roleplaying game by Richard Moore: a gang of street cats robs a house. Automation-first: cat sheets, a roll dialog that knows who is watching, roll cards with Push, the two-meter Mood with Shoo! and Scooped!, and a Robbery Tracker that runs the house's turn (pets, noise, routines, Searching, the Prize Clock) and the outcome. Includes the five ready-to-run houses, their residents and the ready-made gang.",
+  "version": "0.5.0",
   "compatibility": {
     "minimum": "13",
     "verified": "14"
@@ -11,7 +11,7 @@
   "authors": [
     {
       "name": "Richard Moore",
-      "url": "https://github.com/PainHog/CatBurglars"
+      "url": "https://github.com/PainHog/CBZ"
     }
   ],
   "esmodules": [
@@ -27,12 +27,20 @@
       "path": "lang/en.json"
     }
   ],
+  "documentTypes": {
+    "Actor": {
+      "cat": {},
+      "human": {},
+      "pet": {}
+    }
+  },
   "packs": [],
   "socket": true,
-  "url": "https://github.com/PainHog/CatBurglars",
-  "bugs": "https://github.com/PainHog/CatBurglars/issues",
-  "manifest": "https://github.com/PainHog/CatBurglars/releases/latest/download/system.json",
-  "download": "https://github.com/PainHog/CatBurglars/releases/latest/download/system.zip",
+  "primaryTokenAttribute": "cattitude",
+  "url": "https://github.com/PainHog/CBZ",
+  "bugs": "https://github.com/PainHog/CBZ/issues",
+  "manifest": "https://github.com/PainHog/CBZ/releases/latest/download/system.json",
+  "download": "https://github.com/PainHog/CBZ/releases/latest/download/system.zip",
   "license": "LICENSE",
   "readme": "README.md"
 }

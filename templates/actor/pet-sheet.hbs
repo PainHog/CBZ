@@ -1,0 +1,34 @@
+<section class="catb-sheet-body {{cssClass}}">
+  <header class="catb-sheet-head">
+    <img class="catb-portrait" src="{{actor.img}}" alt="{{actor.name}}" data-edit="img">
+    <div class="catb-name">
+      <input type="text" name="name" value="{{actor.name}}" {{#unless editable}}disabled{{/unless}}>
+      <p class="catb-sub">A pet (Chapter 10). Pets don't fill the Mood: they make noise and get in the way.</p>
+    </div>
+  </header>
+  <div class="catb-grid">
+    <div class="form-group">
+      <label>Kind</label>
+      <select name="system.kind" {{#unless editable}}disabled{{/unless}}>{{#each kinds}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select>
+    </div>
+    <div class="form-group">
+      <label>Rating (dice it takes away)</label>
+      <select name="system.rating" {{#unless editable}}disabled{{/unless}}>{{#each ratings}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select>
+    </div>
+    <label class="checkbox"><input type="checkbox" name="system.soft" {{#if system.soft}}checked{{/if}} {{#unless editable}}disabled{{/unless}}> Soft (Sweet can befriend it)</label>
+    <label class="checkbox"><input type="checkbox" name="system.asleep" {{#if system.asleep}}checked{{/if}} {{#unless editable}}disabled{{/unless}}> Starts asleep</label>
+  </div>
+  {{#if showRoutine}}
+  <fieldset>
+    <legend>Routine (d6): "stay", a room, or "sniff"</legend>
+    {{#each routine}}<label class="catb-routine-slot">{{this.face}} <input type="text" name="system.routine.{{this.key}}" value="{{this.value}}" {{#unless ../editable}}disabled{{/unless}}></label>{{/each}}
+  </fieldset>
+  {{/if}}
+  <div class="catb-grid">
+    <div class="form-group"><label>Rooms it wanders (vacuum)</label><input type="text" name="system.roam" value="{{system.roam}}" {{#unless editable}}disabled{{/unless}}></div>
+    <div class="form-group"><label>House</label><input type="text" name="system.house" value="{{system.house}}" {{#unless editable}}disabled{{/unless}}></div>
+    <div class="form-group"><label>Resident key</label><input type="text" name="system.key" value="{{system.key}}" {{#unless editable}}disabled{{/unless}}></div>
+    <div class="form-group"><label>Starts in</label><input type="text" name="system.start" value="{{system.start}}" {{#unless editable}}disabled{{/unless}}></div>
+  </div>
+  <div class="form-group stacked"><label>Notes</label><textarea name="system.notes" rows="4" {{#unless editable}}disabled{{/unless}}>{{system.notes}}</textarea></div>
+</section>

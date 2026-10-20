@@ -1,24 +1,119 @@
 /* ==========================================================================
-   CAT BURGLARS — System Theme (skeleton)
-   EVERY selector must be scoped to one of the system's own roots (e.g. the
-   .cat-burglars class on our applications and sheets): in v14, system styles
-   sit in a cascade layer that outranks all of core, so an unscoped `.panel` or
-   `.field` would restyle Foundry's own windows.
+   CAT BURGLARS — System Theme
+   EVERY selector is scoped to one of the system's own roots (the .cat-burglars
+   class on our applications, sheets, dialogs and chat cards): in v14, system
+   styles sit in a cascade layer that outranks all of core, so an unscoped
+   `.panel` or `.field` would restyle Foundry's own windows.
 
-   ART DIRECTION IS UNDECIDED: the palette below is a neutral PLACEHOLDER that
-   mirrors the rulebook's tokens (book/src/book.css). Change both together.
+   Palette from the art direction (docs/DESIGN.md Q10): deep indigo night,
+   sodium-amber streetlight, cream window glow, and the two Mood colours —
+   Broom red-orange, Cuddle pink. Mirrors book/src/book.css; change both together.
    ========================================================================== */
 
 .cat-burglars {
-  --catb-dark: #3a3a3c;
-  --catb-dark-deep: #222224;
-  --catb-dark-soft: #5c5c60;
-  --catb-paper: #f2f1ee;
-  --catb-paper-2: #e3e1dc;
-  --catb-paper-edge: #c9c6bf;
-  --catb-ink: #161618;
-  --catb-ink-soft: #5a5a5e;
-  --catb-accent: #7a7f88;
-  --catb-alarm: #7c2a2a;
+  --catb-night: #232347;
+  --catb-night-soft: #3a3a68;
+  --catb-amber: #e8a33d;
+  --catb-cream: #fbf3df;
+  --catb-paper: #f6efe0;
+  --catb-paper-edge: #d9ccb0;
+  --catb-ink: #1d1a24;
+  --catb-ink-soft: #5b5566;
+  --catb-broom: #d0552c;
+  --catb-cuddle: #e58fb0;
   --catb-good: #3f6f52;
+  --catb-warn: #8a2f1c;
 }
+
+/* ---- chat cards ---- */
+.cat-burglars.catb-card { color: var(--catb-ink); background: var(--catb-paper); border: 1px solid var(--catb-paper-edge); border-radius: 6px; padding: 6px 8px; }
+.cat-burglars.catb-card .catb-card-head h3 { margin: 0; font-size: 1.05em; color: var(--catb-night); border: none; }
+.cat-burglars.catb-card .catb-sub { margin: 0 0 4px; color: var(--catb-ink-soft); font-size: 0.9em; }
+.cat-burglars.catb-card .catb-lines { margin: 4px 0; padding-left: 1.1em; }
+.cat-burglars.catb-card .catb-lines li { margin: 1px 0; }
+.cat-burglars.catb-card .catb-meters { margin: 4px 0; font-weight: 600; }
+.cat-burglars .catb-broom { color: var(--catb-broom); }
+.cat-burglars .catb-cuddle { color: var(--catb-cuddle); }
+.cat-burglars.catb-card .catb-note { color: var(--catb-ink-soft); font-size: 0.9em; }
+.cat-burglars.catb-card .catb-buttons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.cat-burglars.catb-card .catb-buttons button { flex: 1 1 auto; line-height: 1.6; font-size: 0.9em; }
+.cat-burglars.catb-card .catb-buttons button.catb-gm { border-style: dashed; }
+.cat-burglars.catb-mood { border-color: var(--catb-broom); }
+.cat-burglars .catb-dice { display: flex; gap: 4px; margin: 6px 0; }
+.cat-burglars .catb-die { display: inline-block; width: 1.8em; height: 1.8em; line-height: 1.8em; text-align: center; border-radius: 4px; background: var(--catb-cream); border: 1px solid var(--catb-paper-edge); font-weight: 700; }
+.cat-burglars .catb-die.six { background: var(--catb-amber); color: var(--catb-ink); }
+.cat-burglars .catb-die.read { outline: 2px solid var(--catb-night); }
+.cat-burglars .catb-die.rerolled { border-style: dashed; }
+.cat-burglars.catb-roll.catb-flop .catb-result strong { color: var(--catb-warn); }
+.cat-burglars.catb-roll.catb-purrfect .catb-result strong { color: var(--catb-good); }
+.cat-burglars .catb-badge { display: inline-block; padding: 0 5px; border-radius: 8px; background: var(--catb-cream); border: 1px solid var(--catb-paper-edge); font-size: 0.85em; }
+.cat-burglars .catb-seen-badge { background: var(--catb-amber); }
+.cat-burglars .catb-applied { margin: 4px 0; padding-left: 1.1em; color: var(--catb-night); }
+
+/* ---- dialogs ---- */
+.cat-burglars.catb-roll-dialog .catb-preview { width: 100%; margin: 4px 0 8px; font-size: 0.9em; }
+.cat-burglars.catb-roll-dialog .catb-preview th, .cat-burglars.catb-roll-dialog .catb-preview td { text-align: left; padding: 1px 4px; }
+.cat-burglars.catb-roll-dialog .catb-helpers label { display: block; }
+.cat-burglars .catb-warn { color: var(--catb-warn); }
+
+/* ---- sheets ---- */
+.cat-burglars.catb-sheet .catb-sheet-body { padding: 8px; }
+.cat-burglars.catb-sheet .catb-sheet-head { display: flex; gap: 10px; align-items: center; }
+.cat-burglars.catb-sheet .catb-portrait { width: 72px; height: 72px; object-fit: cover; border: 2px solid var(--catb-night); border-radius: 6px; }
+.cat-burglars.catb-sheet .catb-name input { font-size: 1.4em; font-weight: 700; }
+.cat-burglars.catb-sheet .catb-approaches { width: 100%; }
+.cat-burglars.catb-sheet .catb-approaches th { text-align: left; }
+.cat-burglars.catb-sheet .catb-approaches input { width: 3.5em; }
+.cat-burglars.catb-sheet .catb-role { font-weight: 400; color: var(--catb-ink-soft); }
+.cat-burglars.catb-sheet .catb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; }
+.cat-burglars.catb-sheet .catb-in-robbery { border: 1px solid var(--catb-amber); border-radius: 6px; padding: 6px; margin: 8px 0; }
+.cat-burglars.catb-sheet .catb-routine-slot input { width: 7em; }
+
+/* ---- the Robbery Tracker ---- */
+.cat-burglars.catb-tracker .window-content { background: var(--catb-paper); color: var(--catb-ink); }
+.cat-burglars.catb-tracker .catb-tracker-head { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding-bottom: 6px; border-bottom: 2px solid var(--catb-night); }
+.cat-burglars.catb-tracker .catb-tracker-head h2 { margin: 0; border: none; color: var(--catb-night); }
+.cat-burglars.catb-tracker .catb-rounds { display: flex; flex-wrap: wrap; gap: 2px; list-style: none; margin: 2px 0; padding: 0; }
+.cat-burglars.catb-tracker .catb-rounds li { width: 1.7em; text-align: center; border: 1px solid var(--catb-paper-edge); border-radius: 3px; font-size: 0.85em; }
+.cat-burglars.catb-tracker .catb-rounds li.now { background: var(--catb-amber); font-weight: 700; }
+.cat-burglars.catb-tracker .catb-rounds li.clock { border-color: var(--catb-night); }
+.cat-burglars.catb-tracker .catb-rounds li.gone { border-width: 2px; border-color: var(--catb-broom); }
+.cat-burglars.catb-tracker .catb-rounds li.lights { background: var(--catb-night); color: var(--catb-cream); }
+.cat-burglars.catb-tracker .catb-meter { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+.cat-burglars.catb-tracker .catb-meter-name { min-width: 7.5em; font-weight: 700; }
+.cat-burglars.catb-tracker .catb-boxes { display: flex; gap: 2px; }
+.cat-burglars.catb-tracker .catb-box { width: 14px; height: 14px; border: 1px solid var(--catb-ink-soft); border-radius: 2px; background: var(--catb-cream); }
+.cat-burglars.catb-tracker .catb-box.broom.filled { background: var(--catb-broom); }
+.cat-burglars.catb-tracker .catb-box.cuddle.filled { background: var(--catb-cuddle); }
+.cat-burglars.catb-tracker .catb-meter.full .catb-meter-name { text-decoration: underline; }
+.cat-burglars.catb-tracker .catb-meter button { flex: 0 0 auto; width: auto; line-height: 1.2; padding: 0 6px; }
+.cat-burglars.catb-tracker .catb-controls { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+.cat-burglars.catb-tracker .catb-controls button { flex: 0 1 auto; width: auto; }
+.cat-burglars.catb-tracker .catb-temptation, .cat-burglars.catb-tracker .catb-end-due, .cat-burglars.catb-tracker .catb-outcome { grid-column: 1 / -1; margin: 2px 0; font-weight: 600; }
+.cat-burglars.catb-tracker .catb-end-due { color: var(--catb-warn); }
+.cat-burglars.catb-tracker .catb-house h3 { margin: 8px 0 4px; color: var(--catb-night); }
+.cat-burglars.catb-tracker .catb-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.cat-burglars.catb-tracker .catb-room { background: var(--catb-cream); border: 1px solid var(--catb-paper-edge); border-radius: 6px; padding: 6px; }
+.cat-burglars.catb-tracker .catb-room.watched { border-color: var(--catb-amber); }
+.cat-burglars.catb-tracker .catb-room.has-prize { box-shadow: 0 0 0 2px var(--catb-amber) inset; }
+.cat-burglars.catb-tracker .catb-room h4 { margin: 0; border: none; }
+.cat-burglars.catb-tracker .catb-tempt, .cat-burglars.catb-tracker .catb-routine, .cat-burglars.catb-tracker .catb-note { margin: 0; font-size: 0.85em; color: var(--catb-ink-soft); }
+.cat-burglars.catb-tracker .catb-noise { margin: 0; font-size: 0.85em; color: var(--catb-broom); }
+.cat-burglars.catb-tracker .catb-prize { margin: 2px 0; font-weight: 600; }
+.cat-burglars.catb-tracker .catb-entrance { margin: 0; font-size: 0.85em; }
+.cat-burglars.catb-tracker .catb-entrance.shut, .cat-burglars.catb-tracker li.shut { color: var(--catb-warn); }
+.cat-burglars.catb-tracker .catb-human, .cat-burglars.catb-tracker .catb-pet, .cat-burglars.catb-tracker .catb-cat { border-top: 1px dotted var(--catb-paper-edge); padding-top: 3px; margin-top: 3px; }
+.cat-burglars.catb-tracker .catb-human p, .cat-burglars.catb-tracker .catb-pet p, .cat-burglars.catb-tracker .catb-cat p { margin: 0; }
+.cat-burglars.catb-tracker .catb-badges { font-size: 0.85em; color: var(--catb-night-soft); }
+.cat-burglars.catb-tracker .catb-options { display: flex; flex-wrap: wrap; gap: 3px; margin: 3px 0; }
+.cat-burglars.catb-tracker .catb-options button { flex: 0 1 auto; width: auto; font-size: 0.85em; line-height: 1.5; }
+.cat-burglars.catb-tracker .catb-opt-roll { border-color: var(--catb-night); }
+.cat-burglars.catb-tracker .catb-blocked { font-size: 0.8em; color: var(--catb-ink-soft); }
+.cat-burglars.catb-tracker .catb-place select { width: auto; font-size: 0.85em; }
+.cat-burglars.catb-tracker .catb-gm-tools button { width: auto; font-size: 0.8em; }
+.cat-burglars.catb-tracker .catb-outside { background: var(--catb-night); color: var(--catb-cream); border-radius: 6px; padding: 6px; margin-top: 6px; }
+.cat-burglars.catb-tracker .catb-outside h3 { color: var(--catb-amber); margin-top: 0; }
+.cat-burglars.catb-tracker .catb-outside .catb-badges, .cat-burglars.catb-tracker .catb-outside .catb-note { color: var(--catb-paper-edge); }
+.cat-burglars.catb-tracker .catb-tracker-foot { margin-top: 8px; border-top: 2px solid var(--catb-night); }
+.cat-burglars.catb-tracker .catb-log ol { list-style: none; padding: 0; margin: 0; max-height: 14em; overflow-y: auto; font-size: 0.9em; }
+.cat-burglars.catb-tracker .catb-round { display: inline-block; min-width: 2.2em; color: var(--catb-ink-soft); }
