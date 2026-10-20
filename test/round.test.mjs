@@ -8,7 +8,7 @@ import {
   beginRound, endRound, tempt, temptationOptions, answerTemptation, moodNow, addMood, undoMood, manualMood, setMood,
   confirmMood, finishRobbery, endCheck, placeCat, placeResident, setOpen, markNoise, clone, roomTemptations
 } from "../module/logic/round.mjs";
-import { applyRoll } from "../module/logic/actions.mjs";
+import { applyRoll, doAction } from "../module/logic/actions.mjs";
 import { stepEntry } from "../module/logic/mood.mjs";
 import { robbery, dice, arrange, cat, human, pet, texts } from "./fixtures.mjs";
 
@@ -59,7 +59,7 @@ test("the Prize Clock puts the prize down at the start of its round; the human s
   assert.equal(s.prize.down, false);
   assert.equal(human(s, "pell").room, "kitchen");
   assert.equal(human(s, "pell").staysRound, 2);
-  assert.match(texts(events), /puts the rotisserie chicken in the kitchen and stays there this round \(2 steps/);
+  assert.match(texts(events), /puts the rotisserie chicken in the kitchen and stays there this round, answering no noise \(2 steps/);
 });
 
 test("the prize is gone at the start of its Clock's last round — unless the gang is carrying it", () => {
@@ -243,23 +243,22 @@ test("Scooped!: Cuddle fills, the watcher picks the cat up (Held) and the carrie
   assert.equal(cat(r.state, "tilly").carrying, false);
 });
 
-test("a meter that fills with no cat in sight stays full: the next cat seen on that side gets it", () => {
-  let s = arrange(beginRound(robbery("number-12")).state, { cats: { biscuit: "hall" }, humans: { pell: "hall" } });
+test("a meter that fills with no cat in sight stays full until a human with free hands can see one — who acts at once (v0.8)", () => {
+  let s = arrange(beginRound(robbery("number-12")).state, { cats: { biscuit: "hall" }, humans: { pell: "loo" } });
   s = setMood(s, { broom: 3 }).state;
   const ev = [];
   addMood(s, stepEntry({ side: "broom", steps: 1, cause: "mess" }), ev);
   assert.equal(moodNow(s).full.broom, true);
   assert.match(texts(ev), /stays full/);
   assert.equal(cat(s, "biscuit").status, "free");
-  // a Sneaky Clean "they never noticed": no step, no trigger
-  let r = seenRoll(s, "biscuit", "sneaky", "clean", "e4");
+  // an unseen Push paid with the Mood: still nobody watching
+  let r = applyRoll(s, { eventId: "e6", catId: "biscuit", optionId: "free", approach: "savage", result: "clean", seen: false, seenBy: [], pushedWithMood: true });
   assert.equal(cat(r.state, "biscuit").status, "free");
-  r = seenRoll(s, "biscuit", "savage", "clean", "e5");
-  assert.equal(cat(r.state, "biscuit").status, "outside", "the next cat seen on that side gets it");
-  // an unseen Push paid with the Mood fills it but nobody's watching
-  s = arrange(s, { humans: { pell: "loo" } });
-  r = applyRoll(s, { eventId: "e6", catId: "biscuit", optionId: "free", approach: "savage", result: "clean", seen: false, seenBy: [], pushedWithMood: true });
-  assert.equal(cat(r.state, "biscuit").status, "free");
+  // Big Biscuit walks into the loo, where Mr Pell is: he can see a cat, and acts at once
+  r = doAction(s, "biscuit", "move:loo");
+  assert.equal(cat(r.state, "biscuit").status, "outside");
+  assert.match(texts(r.events), /Broom was waiting full: Mr Pell can see Big Biscuit and acts at once/);
+  assert.equal(moodNow(r.state).broom, 0);
 });
 
 test("autoMood confirm: entries wait for the Storyteller; manual: nothing is written", () => {

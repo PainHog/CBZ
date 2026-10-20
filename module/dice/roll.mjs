@@ -101,7 +101,7 @@ async function rollDialog(actor, ctx, approach) {
     difficulties: [{ value: "auto", label: `From what you're doing (${diffText})`, selected: true },
       ...[0, 1, 2].map(d => ({ value: String(d), label: CATB.difficulties[d], selected: false }))],
     knacks: [{ value: "auto", label: knackAutoText(ctx), selected: true }, { value: "yes", label: "Yes: an instinct suits it", selected: false }, { value: "no", label: "No", selected: false }],
-    helpers: ctx.helpers.map(h => ({ ...h, locked: ctx.autoHelpers })),
+    helpers: ctx.helpers.map(h => ({ ...h, locked: h.locked ?? ctx.autoHelpers })),
     canCattitude: cattitude > 0 || !autoCattitude, cattitude,
     bodyDie: ctx.bodyDie, opposition: ctx.opposition,
     seenChoices: [{ value: "auto", label: autoSeen ? (ctx.seenBy.length ? `As the house is: seen by ${ctx.seenNames.join(", ")}` : "As the house is: nobody sees") : "Not seen (fill in by hand)", selected: true },
@@ -132,7 +132,8 @@ export function readRollForm(form, ctx) {
   const el = name => form?.elements?.[name] ?? form?.elements?.namedItem?.(name) ?? null;
   const val = (name, d) => { const e = el(name); return e ? e.value : d; };
   const on = name => !!el(name)?.checked;
-  const helpers = ctx.autoHelpers ? ctx.helpers.map(h => h.id) : ctx.helpers.filter(h => on(`help-${h.id}`)).map(h => h.id);
+  // a haul's other carriers are locked in (v0.8); anyone else helps if ticked
+  const helpers = ctx.helpers.filter(h => (h.locked ?? ctx.autoHelpers) || on(`help-${h.id}`)).map(h => h.id);
   return {
     approach: val("approach", ctx.options[0]?.approach),
     difficulty: val("difficulty", "auto"),

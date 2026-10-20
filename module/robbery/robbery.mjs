@@ -188,17 +188,19 @@ export async function clearRobbery() {
 /* ------------------------------------------ the Storyteller's overrides -- */
 
 const gmMutate = fn => { requireGM(); return mutate(fn).then(async res => { await postMoodCards(res?.events ?? [], res?.state); return res; }); };
+// v0.8: a change by hand also lets a waiting meter go off (a human with free hands who can see a cat acts at once)
+const moodMode = () => ({ mood: automation().mood });
 export const overrides = {
-  moodAdjust: (side, steps) => gmMutate(s => Round.manualMood(s, side, steps)),
+  moodAdjust: (side, steps) => gmMutate(s => Round.manualMood(s, side, steps, moodMode())),
   moodUndo: () => gmMutate(s => Round.undoMood(s)),
-  moodConfirm: (entryId, accept = true) => gmMutate(s => Round.confirmMood(s, entryId, { accept })),
-  placeCat: (catId, where, opts) => gmMutate(s => Round.placeCat(s, catId, where, opts)),
-  placeResident: (key, room) => gmMutate(s => Round.placeResident(s, key, room)),
+  moodConfirm: (entryId, accept = true) => gmMutate(s => Round.confirmMood(s, entryId, { accept, ...moodMode() })),
+  placeCat: (catId, where, opts) => gmMutate(s => Round.placeCat(s, catId, where, { ...moodMode(), ...(opts ?? {}) })),
+  placeResident: (key, room) => gmMutate(s => Round.placeResident(s, key, room, moodMode())),
   setOpen: args => gmMutate(s => Round.setOpen(s, args)),
   markNoise: (room, opts) => gmMutate(s => Round.markNoise(s, room, opts)),
-  patch: (key, patch) => gmMutate(s => Round.patchResident(s, key, patch)),
-  /** v0.7: the Storyteller picks the cat a meter filled with no roll falls on. */
-  pickTarget: catId => gmMutate(s => Round.resolvePendingTrigger(s, catId)),
+  patch: (key, patch) => gmMutate(s => Round.patchResident(s, key, patch, moodMode())),
+  /** The Storyteller picks the cat a full meter falls on (a meter filled with no roll, or one that was waiting). */
+  pickTarget: catId => gmMutate(s => Round.resolvePendingTrigger(s, catId, moodMode())),
   /** The Storyteller does a cat's option by hand, even when it's normally refused. */
   force: (catId, optionId, args = {}) => gmMutate(s => doAction(s, catId, optionId, { ...args, force: true }, { mood: automation().mood }))
 };
