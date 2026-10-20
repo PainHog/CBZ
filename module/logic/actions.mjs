@@ -172,7 +172,7 @@ export function catOptions(state, catId) {
       roll: { options: [["sweet", h.distractions ?? 0, "charm"]], diffLabel: h.distractions ? `Distracted ${h.distractions}× before` : null },
       disabled: c.carrying ? "a cat with its mouth full can't be Sweet" : null });
   }
-  if (!c.hidden && s.rooms[room]?.hide !== false && !c.carrying) act({ id: "hide", kind: "hide", label: "Hide" }, { simple: true, tags: ["hide"], roll: ws.length ? { options: [["sneaky", 0, "hide"]] } : null });
+  if (!c.hidden && s.rooms[room]?.hide !== false && !c.carrying) act({ id: "hide", kind: "hide", label: "Hide", roll: ws.length ? { options: [["sneaky", 0, "hide"]] } : null }, { simple: true }); // Ch 5: a Sneaky roll if somebody sees
   act({ id: "noise", kind: "noise", label: "Make a noise on purpose (a lure: leaves a mess)" }, { simple: true, tags: ["knock"] });
   act({ id: "free", kind: "free", label: "Something else (a free roll)", roll: { options: anyApproach(0) } });
   out.helpTargets = helpTargetsFor(s, c);
