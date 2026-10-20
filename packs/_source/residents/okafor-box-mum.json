@@ -1,0 +1,34 @@
+{
+  "key": "okafor-box-mum",
+  "name": "Mrs Okafor",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "grownup",
+    "attention": 1,
+    "traits": {
+      "kid": false,
+      "dozes": false,
+      "busy": false,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "stay",
+      "r4": "kitchen",
+      "r5": "living",
+      "r6": "living"
+    },
+    "house": "okafor-box",
+    "key": "mum",
+    "start": "hall",
+    "notes": "Lives at The Okafors' Big Box."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "okafor-box",
+      "resident": "mum"
+    }
+  }
+}

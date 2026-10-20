@@ -1,0 +1,31 @@
+{
+  "key": "two-bin-tilly",
+  "name": "Two-Bin Tilly",
+  "type": "cat",
+  "img": "icons/svg/cat.svg",
+  "actorLink": true,
+  "system": {
+    "approaches": {
+      "sneaky": 2,
+      "sweet": 1,
+      "savage": 1,
+      "streetwise": 3
+    },
+    "instinct1": "curious",
+    "instinct2": "climber",
+    "body": "lean",
+    "cattitude": 2,
+    "lives": 9,
+    "rep": 0,
+    "coat": "Grey tabby",
+    "mark": "A red collar with a brass tag",
+    "eyes": "Green",
+    "quirk": "Never forgets a face",
+    "notes": "“Every lid on this street has a trick. I know all of them.” Two-Bin Tilly is the Brains. (The Ready-Made Gang, Chapter 3.)"
+  },
+  "flags": {
+    "cat-burglars": {
+      "gang": "two-bin-tilly"
+    }
+  }
+}

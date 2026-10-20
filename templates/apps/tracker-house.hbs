@@ -1,0 +1,71 @@
+<section class="catb-house">
+  {{#if hasRobbery}}
+  <div class="catb-outside">
+    <h3>Outside</h3>
+    {{#each outside}}
+    <div class="catb-cat">
+      <p class="catb-cat-name"><a data-action="openSheet" data-cat="{{this.id}}">{{this.name}}</a> <span class="catb-badges">{{this.badges}}</span></p>
+      {{#if this.helping}}<p class="catb-note">{{this.helping}}</p>{{/if}}
+      <div class="catb-options">
+        {{#each this.usable}}<button type="button" class="{{this.cls}}" data-action="act" data-cat="{{../id}}" data-option="{{this.id}}">{{this.label}}</button>{{/each}}
+        {{#each this.helpTargets}}<button type="button" class="catb-opt" data-action="help" data-cat="{{../id}}" data-target="{{this.id}}" data-queued="{{this.queued}}">{{this.label}}</button>{{/each}}
+      </div>
+      {{#if this.hasBlocked}}<details class="catb-blocked"><summary>Not now</summary><ul>{{#each this.blocked}}<li>{{this.label}}: {{this.reason}}</li>{{/each}}</ul></details>{{/if}}
+      {{#if this.isGM}}<label class="catb-place">Put: <select data-change="place" data-cat="{{this.id}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+    </div>
+    {{/each}}
+  </div>
+  {{#each floors}}
+  <div class="catb-floor">
+    {{#if this.name}}<h3>{{this.name}}</h3>{{/if}}
+    <div class="catb-rooms">
+      {{#each this.rooms}}
+      <article class="catb-room{{#if this.watched}} watched{{/if}}{{#if this.prize}} has-prize{{/if}}">
+        <header>
+          <h4>{{this.name}}{{#if this.isDen}} <span class="catb-badge">Den</span>{{/if}}</h4>
+          {{#if this.tempt}}<p class="catb-tempt">Tempts: {{this.tempt}}</p>{{/if}}
+          {{#if this.noHide}}<p class="catb-note">No hiding spots.</p>{{/if}}
+          {{#if this.noise}}<p class="catb-noise">Noise here this round</p>{{/if}}
+          {{#if this.mess}}<p class="catb-noise">A mess, waiting to be found</p>{{/if}}
+        </header>
+        {{#if this.prize}}<p class="catb-prize">{{this.prize}}</p>{{/if}}
+        {{#if this.spot}}<p class="catb-note">The Prize Clock put the prize here.</p>{{/if}}
+        {{#each this.entrances}}<p class="catb-entrance{{#unless this.open}} shut{{/unless}}">{{this.text}}</p>{{/each}}
+        {{#each this.humans}}
+        <div class="catb-human">
+          <p><strong>{{this.name}}</strong> (Attention {{this.attention}}) <span class="catb-badges">{{this.badges}}</span></p>
+          {{#if this.routine}}<p class="catb-routine">d6: {{this.routine}}</p>{{/if}}
+          {{#if ../../../isGM}}<label class="catb-place">Move: <select data-change="place" data-key="{{this.key}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+        </div>
+        {{/each}}
+        {{#each this.pets}}
+        <div class="catb-pet">
+          <p><strong>{{this.name}}</strong> — {{this.info}} <span class="catb-badges">{{this.mode}}</span></p>
+          {{#if this.routine}}<p class="catb-routine">d6: {{this.routine}}</p>{{/if}}
+          {{#if ../../../isGM}}<label class="catb-place">Move: <select data-change="place" data-key="{{this.key}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+        </div>
+        {{/each}}
+        {{#each this.cats}}
+        <div class="catb-cat">
+          <p class="catb-cat-name"><a data-action="openSheet" data-cat="{{this.id}}">{{this.name}}</a> <span class="catb-badges">{{this.badges}}</span></p>
+          {{#if this.blockedBy}}<p class="catb-warn">{{this.blockedBy}}</p>{{/if}}
+          {{#if this.notes}}<p class="catb-note">{{this.notes}}</p>{{/if}}
+          {{#if this.helping}}<p class="catb-note">{{this.helping}}</p>{{/if}}
+          <div class="catb-options">
+            {{#each this.usable}}<button type="button" class="{{this.cls}}" data-action="act" data-cat="{{../id}}" data-option="{{this.id}}">{{this.label}}</button>{{/each}}
+            {{#each this.helpTargets}}<button type="button" class="catb-opt" data-action="help" data-cat="{{../id}}" data-target="{{this.id}}" data-queued="{{this.queued}}">{{this.label}}</button>{{/each}}
+            {{#if this.mine}}<button type="button" class="catb-opt" data-action="acted" data-cat="{{this.id}}">I'm done this round</button>{{/if}}
+            {{#if this.isGM}}<button type="button" class="catb-opt catb-gm" data-action="giveBack" data-cat="{{this.id}}">Give back Move and Action</button>{{/if}}
+          </div>
+          {{#if this.hasBlocked}}<details class="catb-blocked"><summary>Not now</summary><ul>{{#each this.blocked}}<li>{{this.label}}: {{this.reason}}</li>{{/each}}</ul></details>{{/if}}
+          {{#if this.isGM}}<label class="catb-place">Put: <select data-change="place" data-cat="{{this.id}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+        </div>
+        {{/each}}
+        {{#if ../../isGM}}<p class="catb-gm-tools"><button type="button" data-action="noise" data-room="{{this.key}}">Noise here</button><button type="button" data-action="noise" data-room="{{this.key}}" data-mess="true">A mess here</button></p>{{/if}}
+      </article>
+      {{/each}}
+    </div>
+  </div>
+  {{/each}}
+  {{/if}}
+</section>

@@ -1,0 +1,31 @@
+{
+  "key": "okafor-box-noodle",
+  "name": "Noodle",
+  "type": "pet",
+  "img": "icons/svg/pawprint.svg",
+  "system": {
+    "kind": "dog",
+    "rating": 2,
+    "soft": true,
+    "asleep": true,
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "hall",
+      "r4": "garage",
+      "r5": "living",
+      "r6": "sniff"
+    },
+    "roam": "kitchen, hall, living, garage",
+    "house": "okafor-box",
+    "key": "noodle",
+    "start": "kitchen",
+    "notes": "Lives at The Okafors' Big Box."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "okafor-box",
+      "resident": "noodle"
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "id": "cat-burglars",
+  "type": "system",
+  "title": "Cat Burglars",
+  "description": "The Foundry VTT game system for Cat Burglars, a tabletop roleplaying game by Richard Moore: a gang of street cats robs a house. Automation-first: cat sheets, a roll dialog that knows who is watching, roll cards with Push, the two-meter Mood with Shoo! and Scooped!, and a Robbery Tracker that runs the house's turn (pets, noise, routines, Searching, the Prize Clock) and the outcome. Includes the five ready-to-run houses, their residents and the ready-made gang.",
+  "version": "0.8.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "Richard Moore",
+      "url": "https://github.com/PainHog/CBZ"
+    }
+  ],
+  "esmodules": [
+    "module/cat-burglars.mjs"
+  ],
+  "styles": [
+    "styles/cat-burglars.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "documentTypes": {
+    "Actor": {
+      "cat": {},
+      "human": {},
+      "pet": {}
+    }
+  },
+  "packs": [
+    {
+      "name": "houses",
+      "label": "Houses",
+      "path": "packs/houses",
+      "type": "JournalEntry",
+      "system": "cat-burglars",
+      "ownership": { "PLAYER": "OBSERVER", "ASSISTANT": "OWNER" }
+    },
+    {
+      "name": "gang",
+      "label": "The Ready-Made Gang",
+      "path": "packs/gang",
+      "type": "Actor",
+      "system": "cat-burglars",
+      "ownership": { "PLAYER": "OBSERVER", "ASSISTANT": "OWNER" }
+    },
+    {
+      "name": "residents",
+      "label": "Residents",
+      "path": "packs/residents",
+      "type": "Actor",
+      "system": "cat-burglars",
+      "ownership": { "PLAYER": "NONE", "ASSISTANT": "OWNER" }
+    }
+  ],
+  "packFolders": [
+    {
+      "name": "Cat Burglars",
+      "sorting": "m",
+      "packs": ["houses", "gang", "residents"]
+    }
+  ],
+  "socket": true,
+  "primaryTokenAttribute": "cattitude",
+  "url": "https://github.com/PainHog/CBZ",
+  "bugs": "https://github.com/PainHog/CBZ/issues",
+  "manifest": "https://github.com/PainHog/CBZ/releases/latest/download/system.json",
+  "download": "https://github.com/PainHog/CBZ/releases/latest/download/system.zip",
+  "license": "LICENSE",
+  "readme": "README.md"
+}

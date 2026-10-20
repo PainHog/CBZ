@@ -1,0 +1,31 @@
+{
+  "key": "pip",
+  "name": "Pip",
+  "type": "cat",
+  "img": "icons/svg/cat.svg",
+  "actorLink": true,
+  "system": {
+    "approaches": {
+      "sneaky": 1,
+      "sweet": 3,
+      "savage": 2,
+      "streetwise": 1
+    },
+    "instinct1": "hunter",
+    "instinct2": "curious",
+    "body": "lean",
+    "cattitude": 2,
+    "lives": 9,
+    "rep": 0,
+    "coat": "Fluffy white calico, a ginger patch over her left eye, a black right ear, black spots and tail tip",
+    "mark": "",
+    "eyes": "Big and blue",
+    "quirk": "Talks to pigeons",
+    "notes": "“Is that a string? Is that a STRING?” Pip is the gang's kitten. (The Ready-Made Gang, Chapter 3.)"
+  },
+  "flags": {
+    "cat-burglars": {
+      "gang": "pip"
+    }
+  }
+}

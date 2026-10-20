@@ -1,0 +1,31 @@
+{
+  "key": "velvet",
+  "name": "Velvet",
+  "type": "cat",
+  "img": "icons/svg/cat.svg",
+  "actorLink": true,
+  "system": {
+    "approaches": {
+      "sneaky": 2,
+      "sweet": 3,
+      "savage": 1,
+      "streetwise": 1
+    },
+    "instinct1": "lapCat",
+    "instinct2": "knocker",
+    "body": "lean",
+    "cattitude": 2,
+    "lives": 9,
+    "rep": 0,
+    "coat": "Sleek black",
+    "mark": "A white star on her chest and one white sock",
+    "eyes": "Amber",
+    "quirk": "Was somebody's pet, once",
+    "notes": "“Hello. Yes. It's me. I know.” Velvet is the Charmer. (The Ready-Made Gang, Chapter 3.)"
+  },
+  "flags": {
+    "cat-burglars": {
+      "gang": "velvet"
+    }
+  }
+}

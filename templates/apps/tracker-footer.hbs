@@ -1,0 +1,17 @@
+<footer class="catb-tracker-foot">
+  {{#if hasRobbery}}
+  {{#if isGM}}
+  <details class="catb-ways">
+    <summary>Ways and entrances (open or shut them by hand)</summary>
+    <ul>
+      {{#each ways}}<li class="{{#unless this.open}}shut{{/unless}}">{{this.text}} <button type="button" data-action="toggleWay" data-way="{{this.id}}" data-open="{{this.open}}">{{#if this.open}}Shut{{else}}Open{{/if}}</button></li>{{/each}}
+      {{#each entrances}}<li class="{{#unless this.open}}shut{{/unless}}">{{this.text}} <button type="button" data-action="toggleEntrance" data-entrance="{{this.key}}" data-open="{{this.open}}">{{#if this.open}}Shut{{else}}Open{{/if}}</button></li>{{/each}}
+    </ul>
+  </details>
+  {{/if}}
+  <div class="catb-log">
+    <h3>What happened</h3>
+    <ol>{{#each log}}<li><span class="catb-round">R{{this.round}}</span> {{this.text}}</li>{{/each}}</ol>
+  </div>
+  {{/if}}
+</footer>

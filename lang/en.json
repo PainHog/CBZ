@@ -1,0 +1,45 @@
+{
+  "CATB.SystemTitle": "Cat Burglars",
+  "TYPES.Actor.cat": "Cat",
+  "TYPES.Actor.human": "Human",
+  "TYPES.Actor.pet": "Pet",
+
+  "CATB.Settings.autoMood.Name": "Automatic Mood",
+  "CATB.Settings.autoMood.Hint": "Seen rolls, temptations, messes and finding the prize move the Broom and Cuddle meters, and a full meter fires Shoo! or Scooped!. Confirm: each change waits for the Storyteller's click in the Robbery Tracker. By hand: nothing is written; the Storyteller uses the meters' +1/−1.",
+  "CATB.Settings.autoMood.auto": "Automatic",
+  "CATB.Settings.autoMood.confirm": "Confirm each change",
+  "CATB.Settings.autoMood.manual": "By hand",
+
+  "CATB.Settings.autoSeen.Name": "Fill in who sees a roll",
+  "CATB.Settings.autoSeen.Hint": "The roll dialog fills in Seen, the watching human's Attention and kids from the robbery. Off: the roller ticks them by hand.",
+
+  "CATB.Settings.autoEffects.Name": "Rolls change the house",
+  "CATB.Settings.autoEffects.Hint": "A roll's result does what it says: a step done, a door open, a cat in or out, a dog driven off, a human Distracted. Off: the roll still counts for the Mood and noise; the Storyteller moves things by hand.",
+
+  "CATB.Settings.autoHouseTurn.Name": "The house's turn",
+  "CATB.Settings.autoHouseTurn.Hint": "End round runs the house's turn (pets, noise, routines, holders, Finding it) with the dice rolled in the open. Ask first, run at once, or by hand (End round only ends the round).",
+  "CATB.Settings.autoHouseTurn.prompt": "Ask first",
+  "CATB.Settings.autoHouseTurn.auto": "Run at once",
+  "CATB.Settings.autoHouseTurn.manual": "By hand",
+
+  "CATB.Settings.autoRoutines.Name": "Roll routines",
+  "CATB.Settings.autoRoutines.Hint": "The house's turn rolls every human's and pet's d6 routine and moves them (Searching humans hunt). Off: the Storyteller moves them by hand.",
+
+  "CATB.Settings.autoTemptation.Name": "Temptation",
+  "CATB.Settings.autoTemptation.Hint": "At Begin round, whisper the Storyteller who can be tempted with one-click buttons; or tempt a random eligible cat at once; or no prompt (the tracker still lists them).",
+  "CATB.Settings.autoTemptation.prompt": "Prompt the Storyteller",
+  "CATB.Settings.autoTemptation.auto": "Tempt at random",
+  "CATB.Settings.autoTemptation.off": "No prompt",
+
+  "CATB.Settings.autoCattitude.Name": "Spend and earn Cattitude",
+  "CATB.Settings.autoCattitude.Hint": "Cattitude dice, Pushes, resisting, giving in and Purrfects change the cat's Cattitude, and a robbery resets it. Off: the cards say what to change; nobody's sheet is touched.",
+
+  "CATB.Settings.autoPrizeClock.Name": "Run the Prize Clock",
+  "CATB.Settings.autoPrizeClock.Hint": "Begin round puts the prize down, moves it and takes it away as the house's Prize Clock says. Off: the Storyteller does it by hand.",
+
+  "CATB.Settings.autoOutcome.Name": "End the robbery by itself",
+  "CATB.Settings.autoOutcome.Hint": "At Lights Out, or when no free cat is left inside, the robbery ends and posts Clean Getaway, Messy or Busted (with the campaign's Rep and Lives buttons). Off: the Storyteller ends it from the tracker; no outcome card.",
+
+  "CATB.Settings.trackerForPlayers.Name": "Players can open the tracker",
+  "CATB.Settings.trackerForPlayers.Hint": "Players see the Robbery Tracker (the house, the meters, the clock) with buttons for their own cats. Off: only the Storyteller opens it."
+}

@@ -1,0 +1,34 @@
+{
+  "key": "okafor-box-tayo",
+  "name": "Tayo",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "kid",
+    "attention": 1,
+    "traits": {
+      "kid": true,
+      "dozes": false,
+      "busy": false,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "kidsroom",
+      "r4": "kidsroom",
+      "r5": "living",
+      "r6": "kitchen"
+    },
+    "house": "okafor-box",
+    "key": "tayo",
+    "start": "living",
+    "notes": "Lives at The Okafors' Big Box."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "okafor-box",
+      "resident": "tayo"
+    }
+  }
+}

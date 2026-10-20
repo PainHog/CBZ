@@ -1,0 +1,34 @@
+{
+  "key": "wendell-mouse-wendell",
+  "name": "Grandpa Wendell",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "grandparent",
+    "attention": 0,
+    "traits": {
+      "kid": false,
+      "dozes": true,
+      "busy": false,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "hall",
+      "r4": "hall",
+      "r5": "living",
+      "r6": "kitchen"
+    },
+    "house": "wendell-mouse",
+    "key": "wendell",
+    "start": "hall",
+    "notes": "Lives at Grandpa Wendell's Catnip Mouse."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "wendell-mouse",
+      "resident": "wendell"
+    }
+  }
+}

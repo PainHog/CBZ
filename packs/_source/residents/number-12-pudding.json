@@ -1,0 +1,31 @@
+{
+  "key": "number-12-pudding",
+  "name": "Pudding",
+  "type": "pet",
+  "img": "icons/svg/pawprint.svg",
+  "system": {
+    "kind": "dog",
+    "rating": 2,
+    "soft": true,
+    "asleep": false,
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "living",
+      "r4": "kitchen",
+      "r5": "hall",
+      "r6": "sniff"
+    },
+    "roam": "kitchen, hall, living, utility",
+    "house": "number-12",
+    "key": "pudding",
+    "start": "kitchen",
+    "notes": "Lives at The Chicken at Number 12."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "number-12",
+      "resident": "pudding"
+    }
+  }
+}

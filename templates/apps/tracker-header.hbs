@@ -1,0 +1,59 @@
+<header class="catb-tracker-head">
+  {{#if hasRobbery}}
+  <div class="catb-title">
+    <h2>{{title}}</h2>
+    <p class="catb-sub">{{label}} · {{gangSize}} cats · Round {{round}} — {{stage}}</p>
+  </div>
+  <div class="catb-clock">
+    <p><strong>Prize Clock:</strong> {{clockText}}. {{lightsText}}.</p>
+    <ol class="catb-rounds">{{#each rounds}}<li class="{{this.cls}}">{{this.n}}</li>{{/each}}</ol>
+    <p class="catb-prize">{{prize}}</p>
+  </div>
+  <div class="catb-meters">
+    <div class="catb-meter catb-meter-broom{{#if broomFull}} full{{/if}}">
+      <span class="catb-meter-name">Broom {{broom.value}}/{{patience}}</span>
+      <span class="catb-boxes">{{#each broom.boxes}}<span class="catb-box {{this.cls}}"></span>{{/each}}</span>
+      {{#if isGM}}<button type="button" data-action="mood" data-side="broom" data-steps="1">+1</button><button type="button" data-action="mood" data-side="broom" data-steps="-1">−1</button>{{/if}}
+    </div>
+    <div class="catb-meter catb-meter-cuddle{{#if cuddleFull}} full{{/if}}">
+      <span class="catb-meter-name">Cuddle {{cuddle.value}}/{{patience}}</span>
+      <span class="catb-boxes">{{#each cuddle.boxes}}<span class="catb-box {{this.cls}}"></span>{{/each}}</span>
+      {{#if isGM}}<button type="button" data-action="mood" data-side="cuddle" data-steps="1">+1</button><button type="button" data-action="mood" data-side="cuddle" data-steps="-1">−1</button>{{/if}}
+    </div>
+    <p class="catb-patience">Patience {{patience}}{{#if broomFull}} · Broom is full: as soon as a human with free hands can see a cat, Shoo!{{/if}}{{#if cuddleFull}} · Cuddle is full: as soon as a human with free hands can see a cat, Scooped!{{/if}}</p>
+  </div>
+  {{#if pending.length}}
+  <ul class="catb-pending">
+    {{#each pending}}<li>{{this.cause}} <button type="button" data-action="confirm" data-entry="{{this.id}}">Apply</button><button type="button" data-action="confirm" data-entry="{{this.id}}" data-accept="false">Drop</button></li>{{/each}}
+  </ul>
+  {{/if}}
+  {{#if isGM}}
+  <nav class="catb-controls">
+    {{#if running}}
+    <button type="button" data-action="beginRound" {{#if inCats}}disabled{{/if}}>Begin round {{#if inCats}}(running){{/if}}</button>
+    <button type="button" data-action="endRound" {{#unless inCats}}disabled{{/unless}}>End round</button>
+    {{#if canTempt}}{{#each temptOpts}}<button type="button" data-action="tempt" data-cat="{{this.catId}}" data-instinct="{{this.instinct}}">{{this.text}}</button>{{/each}}<button type="button" data-action="temptRandom">Tempt at random</button>{{/if}}
+    <button type="button" data-action="undo">Undo last Mood change</button>
+    <button type="button" data-action="endRobbery">End the robbery</button>
+    {{else}}
+    <button type="button" data-action="start">Start a new robbery</button>
+    <button type="button" data-action="clear">Clear</button>
+    {{/if}}
+  </nav>
+  {{/if}}
+  {{#if pick}}<p class="catb-end-due">{{pick.text}} {{#each pick.cats}}<button type="button" data-action="pickTarget" data-cat="{{this.id}}">{{this.name}}</button>{{/each}}</p>{{/if}}
+  {{#if temptation}}<p class="catb-temptation">{{temptation}}</p>{{/if}}
+  {{#if endDue}}<p class="catb-end-due">{{endDue}}{{#if isGM}} <button type="button" data-action="endRobbery">End it now</button>{{/if}}</p>{{/if}}
+  {{#if outcome}}<p class="catb-outcome">{{outcome}}</p>{{/if}}
+  {{else}}
+  <div class="catb-title">
+    <h2>No robbery yet</h2>
+    {{#if isGM}}
+    <p>Pick a house and the gang, then begin round 1. The cats start outside.</p>
+    <button type="button" data-action="start">Start a robbery</button>
+    {{else}}
+    <p>The Storyteller hasn't started a robbery.</p>
+    {{/if}}
+  </div>
+  {{/if}}
+</header>

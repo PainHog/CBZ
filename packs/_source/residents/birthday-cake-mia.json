@@ -1,0 +1,34 @@
+{
+  "key": "birthday-cake-mia",
+  "name": "Mia",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "kid",
+    "attention": 1,
+    "traits": {
+      "kid": true,
+      "dozes": false,
+      "busy": false,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "dining",
+      "r4": "hall",
+      "r5": "kitchen",
+      "r6": "living"
+    },
+    "house": "birthday-cake",
+    "key": "mia",
+    "start": "living",
+    "notes": "Lives at The Birthday Cake."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "birthday-cake",
+      "resident": "mia"
+    }
+  }
+}
