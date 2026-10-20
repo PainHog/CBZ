@@ -1,5 +1,5 @@
-Now: Teaching the online version the last rule changes, and a last check of the newest rules
-Next: A report for Richard on how this version turned out
+Now: Teaching the online version the last rule changes, then a report for Richard
+Next: Richard reads the report, compares it with his own version, and tries the game at a real table
 Number: Design decisions made = 38
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5

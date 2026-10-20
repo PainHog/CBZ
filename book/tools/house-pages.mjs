@@ -46,9 +46,9 @@ function sheet(h, label) {
 
 /** What a step on the way to the prize is, from its options (the house data names none). */
 function stepName(st) {
-  if (st.some(o => o.includes("climb"))) return "climb up to it";
-  if (st[0][0] === "streetwise" && st.some(o => o[0] === "sneaky")) return "get it out of the bag";
-  if (st[0][0] === "streetwise") return "get the wrapping off";
+  if (st.some(o => o.includes("climb"))) return "climb up to it (a Climber’s Knack)";
+  if (st[0][0] === "streetwise" && st.some(o => o[0] === "sneaky")) return "get it out of the bag (a Curious cat’s Knack)";
+  if (st[0][0] === "streetwise") return "get the wrapping off (a Curious cat’s Knack)";
   return "get at it";
 }
 
@@ -59,7 +59,7 @@ function clock(h) {
     const who = h.humans.find(x => x.key === sc.by)?.name ?? sc.by;
     return `<tr><td>Start of ${ordinal(sc.round)}</td><td>${esc(who)} puts it in the ${roomName(h, sc.room).toLowerCase()} and stays there this round. ${steps[0].toUpperCase() + steps.slice(1)}.</td></tr>`;
   });
-  rows.push(`<tr><td>Start of ${ordinal(z.goneAt)}</td><td>Gone — if the gang hasn’t got it.</td></tr>`);
+  rows.push(`<tr><td>Start of ${ordinal(z.goneAt)}</td><td>Gone — unless the gang has got it out or a cat is holding it.</td></tr>`);
   rows.push(`<tr><td>End of ${ordinal(z.goneAt + 2)}</td><td>Lights Out: any cat still inside is adopted.</td></tr>`);
   return `<table class="tbl"><thead><tr><th>When</th><th>The prize</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
 }
