@@ -194,8 +194,10 @@ export function resolveNoise(s, ev) {
     const cands = inRange.filter(x => !clockHeld(s, x.h)).sort((a, b) => a.d - b.d || a.i - b.i);
     const pick = cands[0];
     for (const x of inRange.filter(y => clockHeld(s, y.h) && (!pick || y.d <= pick.d))) {
+      const z = s.prize;
+      const withIt = z && !z.out && !z.gone && !z.withHuman && z.room === x.h.room;
       ev.push({ type: "holdIgnoresNoise", room, human: x.h.key,
-        text: `${x.h.name} stays with the ${s.prize?.name ?? "prize"} (the Prize Clock's hold): the noise in the ${roomName(s, room).toLowerCase()} doesn't draw them this round.` });
+        text: `${x.h.name} stays ${withIt ? `with the ${z.name}` : "put"} (the Prize Clock's hold): the noise in the ${roomName(s, room).toLowerCase()} doesn't draw them this round.` });
     }
     if (!pick) { ev.push({ type: "noiseUnanswered", room, text: `Nobody comes to see the noise in the ${roomName(s, room).toLowerCase()}.` }); continue; }
     const tie = cands.filter(x => x.d === pick.d).length > 1;
