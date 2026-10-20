@@ -78,6 +78,11 @@ body {
 
 /* ------------------------------------------------------------ art ------- */
 figure.art { margin: 0; }
+figure.map { column-span: all; margin: 0.08in 0 0.14in; break-inside: avoid; }
+figure.map svg { max-height: 6.4in; }
+figure.map figcaption { font: italic 9pt var(--text); color: var(--ink-soft); text-align: center; margin-top: 0.04in; }
+.house-sheet { column-span: all; }
+.meter-broom { color: var(--alarm); } .meter-cuddle { color: var(--good); }
 figure.art svg { display: block; width: 100%; height: auto; }
 .art-missing {
   display: grid; place-items: center; min-height: 0.9in;
@@ -159,7 +164,7 @@ figure.art svg { display: block; width: 100%; height: auto; }
 .toc-list a::after { content: ""; order: 2; flex: 1 1 auto; border-bottom: 1.2px dotted var(--paper-edge); transform: translateY(-3px); }
 .toc-list .toc-page { order: 3; font: 700 10.5pt var(--sans); letter-spacing: 0; color: var(--dark); font-variant-numeric: lining-nums; }
 .toc-part { margin: 0.3in 0 0.1in; }
-.toc-part a { font: 800 11pt var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--alarm); }
+.toc-part a { font: 800 11pt var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--dark); }
 .toc-part .toc-label { color: var(--accent-deep); }
 .toc-chapter, .toc-sheet { margin: 0.068in 0; font-size: 10.8pt; }
 .toc-chapter .toc-label { flex: 0 0 0.95in; font: 600 8.5pt var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--accent-deep); }
@@ -223,7 +228,7 @@ h4 {
   font: 800 9.4pt/1.2 var(--sans);
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: var(--alarm);
+  color: var(--dark);
   break-after: avoid;
 }
 p { margin: 0 0 0.075in; }
@@ -265,8 +270,8 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
 .box.rule strong { color: var(--accent-bright); }
 .box.example { background: var(--paper-light); border: 1.5px dashed var(--accent); }   /* worked example */
 .box.example h4 { color: var(--accent-deep); }
-.box.gm { border-top: 5px solid var(--alarm); background: color-mix(in srgb, var(--alarm) 9%, var(--paper)); }   /* advice for whoever runs the game (title TBD) */
-.box.gm h4 { color: var(--alarm); }
+.box.gm { border-top: 5px solid var(--dark); background: color-mix(in srgb, var(--dark) 7%, var(--paper)); }   /* advice for whoever runs the game (the Storyteller) */
+.box.gm h4 { color: var(--dark); }
 .box.designer { border-left: 5px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--paper)); }
 .box.designer h4 { color: var(--accent-deep); }
 .box.list { border-left: 5px solid var(--dark); }   /* checklists, tips */
@@ -341,7 +346,7 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
   border-radius: 4px;
   border-left: 4px solid var(--accent);
 }
-.statline strong { color: var(--alarm); }
+.statline strong { color: var(--accent-deep); }
 .sep { color: var(--accent); padding: 0 0.04in; }
 .quote { font: italic 500 10.5pt/1.35 var(--display); color: var(--ink-soft); }
 
@@ -353,16 +358,16 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
   margin: 0.1in 0 0.16in;
   padding: 0 0.14in 0.08in;
   background: var(--paper-light);
-  border: 1.5px solid var(--alarm);
+  border: 1.5px solid var(--dark);
   border-radius: 6px;
-  box-shadow: 0 2px 0 color-mix(in srgb, var(--alarm) 35%, transparent);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--dark) 35%, transparent);
   overflow: hidden;
   font-size: 9.8pt;
 }
 .statblock h3 {
   margin: 0 -0.14in 0.07in;
   padding: 0.06in 0.14in;
-  background: var(--alarm);
+  background: var(--dark);
   color: var(--paper);
   font-size: 13pt;
 }
@@ -371,14 +376,14 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
 .statblock dl { margin: 0 0 0.05in; }
 .statblock dl.stats { display: flex; flex-wrap: wrap; gap: 0.04in 0.24in; font: 9pt var(--sans); }
 .statblock dl.stats > div { display: flex; align-items: baseline; gap: 0.07in; }
-.statblock dl.stats dt { font-weight: 800; color: var(--alarm); text-transform: uppercase; letter-spacing: .05em; font-size: 7.8pt; }
+.statblock dl.stats dt { font-weight: 800; color: var(--accent-deep); text-transform: uppercase; letter-spacing: .05em; font-size: 7.8pt; }
 .statblock dl.stats dt::after { content: ""; }
 .statblock dl.stats dd { margin: 0; font-weight: 600; }
 .statblock .pools {
   font: 800 9.6pt var(--sans); color: var(--dark-deep);
   padding: 0.04in 0.08in; background: var(--paper-2); border-radius: 4px; display: inline-block;
 }
-.statblock dl.traits dt { float: left; clear: left; margin-right: 0.05in; font: 800 9pt var(--sans); color: var(--alarm); }
+.statblock dl.traits dt { float: left; clear: left; margin-right: 0.05in; font: 800 9pt var(--sans); color: var(--accent-deep); }
 .statblock dl.traits dt::after { content: ":"; }
 .statblock dl.traits dd { margin: 0 0 0.04in; }
 
@@ -423,7 +428,7 @@ figure.diagram { break-inside: avoid; margin: 0.04in 0 0.12in; }
   display: flex; align-items: baseline; gap: 0.06in; flex-wrap: wrap;
   margin: 0 0 0.17in;
 }
-.sheet .field strong { color: var(--alarm); font-weight: 800; white-space: nowrap; }
+.sheet .field strong { color: var(--dark); font-weight: 800; white-space: nowrap; }
 .sheet .blank {
   flex: 1 1 1.2in;
   min-width: 0.8in;
@@ -491,7 +496,7 @@ figure.tailpiece svg { height: 100%; width: auto; max-width: 100%; }
 .credits-sub { margin: 0.06in 0 0; font: italic 500 12pt var(--display); color: var(--ink-soft); }
 .credits-edition { margin: 0.12in 0 0.4in; font: 800 9pt var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--accent-deep); }
 .credits-list { margin: 0; width: 5in; font-family: var(--sans); }
-.credits-list dt { margin-top: 0.16in; font: 800 8.5pt var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--alarm); }
+.credits-list dt { margin-top: 0.16in; font: 800 8.5pt var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-deep); }
 .credits-list dd { margin: 0.03in 0 0; font: 500 11pt/1.35 var(--text); color: var(--ink); }
 .credits-legal { width: 5.4in; font: 8.6pt/1.45 var(--sans); color: var(--ink-soft); }
 .credits-legal p { margin: 0 0 0.08in; }

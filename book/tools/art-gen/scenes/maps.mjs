@@ -49,9 +49,21 @@ function houseMap(h) {
     ox += w * U + PAD + GAP;
     return p;
   });
-  const W = Math.max(ox - GAP + PAD, 960);
-  const wrap = (t, max) => { const out = []; let cur = ""; for (const w of t.split(" ")) { if ((cur + " " + w).trim().length > max) { out.push(cur.trim()); cur = "   " + w; } else cur += " " + w; } if (cur.trim()) out.push(cur.trimEnd()); return out; };
-  const maxChars = Math.floor((W - 2 * PAD) / 8.4);
+  const planW = ox - GAP + PAD;
+  const side = planW <= 700;              // a one-floor house: the legend goes beside the plan
+  const W = side ? planW + 440 : Math.max(planW, 960);
+  const wrap = (t, max) => {
+    const out = []; let cur = [];
+    for (const w of t.split(" ")) {
+      const len = cur.join(" ").length + (out.length ? 3 : 0);
+      if (cur.length && len + 1 + w.length > max) { out.push((out.length ? "   " : "") + cur.join(" ")); cur = []; }
+      cur.push(w);
+    }
+    if (cur.length) out.push((out.length ? "   " : "") + cur.join(" "));
+    return out;
+  };
+  const LX = side ? planW + 10 : PAD;
+  const maxChars = Math.floor((W - LX - PAD) / 8.4);
   const legendLines = h.entrances.reduce((a, e) => a + 2, 0) + 4;
   const H = Math.max(...panels.map(p => p.h)) + PAD * 2 + 52 + 30 + legendLines * 26;
   const R = (k) => { const fi = floorOf[k]; const p = panels[fi]; const r = p.f.rooms[k]; return { p, x: p.x + r[0] * U, y: p.y + r[1] * U, w: r[2] * U, h: r[3] * U, r }; };
@@ -113,8 +125,8 @@ function houseMap(h) {
   // room names, den
   for (const [k, room] of Object.entries(h.rooms)) {
     const r = R(k);
-    b += `<text x="${r.x + r.w / 2}" y="${r.y + r.h / 2 + 6}" text-anchor="middle" font-family="Fraunces, serif" font-weight="700" font-size="${r.w < 2.1 * U ? 17 : 21}" fill="${C.ink}">${room.name}</text>`;
-    if (k === h.den) b += `<text x="${r.x + r.w / 2}" y="${r.y + r.h / 2 + 30}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="14" letter-spacing="2" fill="${C.cuddle}">THE DEN</text>`;
+    b += `<text x="${r.x + r.w / 2}" y="${r.y + r.h * 0.6 + 6}" text-anchor="middle" font-family="Fraunces, serif" font-weight="700" font-size="${r.w < 2.1 * U ? 17 : 21}" fill="${C.ink}">${room.name}</text>`;
+    if (k === h.den) b += `<text x="${r.x + r.w / 2}" y="${r.y + r.h * 0.6 + 30}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="14" letter-spacing="2" fill="${C.cuddle}">THE DEN</text>`;
   }
   // prize: where it's put down, and later moves
   h.prize.script.forEach((sc, i) => {
@@ -144,14 +156,15 @@ function houseMap(h) {
     marks.push(`${i + 1}. ${e.name} — ${SIZE_WORD[e.size]}; ${optText(e.opts)}${extras ? "; " + extras : ""}${when}`);
   });
   // legend
-  let ly = Math.max(...panels.map(p => p.y + p.h)) + 56;
-  b += `<text x="${PAD}" y="${ly}" font-family="sans-serif" font-weight="800" font-size="16" letter-spacing="2" fill="${C.accentDeep}">WAYS IN</text>`;
-  for (const m of marks) for (const ln of wrap(m, maxChars)) { ly += 24; b += `<text x="${PAD}" y="${ly}" font-family="sans-serif" font-size="16" fill="${C.ink}" xml:space="preserve">${ln.replace(/&/g, "&amp;")}</text>`; }
+  let ly = side ? panels[0].y + 6 : Math.max(...panels.map(p => p.y + p.h)) + 56;
+  b += `<text x="${LX}" y="${ly}" font-family="sans-serif" font-weight="800" font-size="16" letter-spacing="2" fill="${C.accentDeep}">WAYS IN</text>`;
+  for (const m of marks) for (const ln of wrap(m, maxChars)) { ly += 24; b += `<text x="${LX}" y="${ly}" font-family="sans-serif" font-size="16" fill="${C.ink}" xml:space="preserve">${ln.replace(/&/g, "&amp;")}</text>`; }
   ly += 10;
   for (const ln of wrap(`Doors drawn with a swing are closed (${optText([["streetwise", 1], ["savage", 2]])} to open, unless the house says otherwise). One square is about two cat lengths.`, Math.floor(maxChars * 1.12))) {
-    ly += 20; b += `<text x="${PAD}" y="${ly}" font-family="sans-serif" font-size="14" fill="${C.inkSoft}">${ln}</text>`;
+ ly += 20; b += `<text x="${LX}" y="${ly}" font-family="sans-serif" font-size="14" fill="${C.inkSoft}">${ln.trim()}</text>`;
   }
-  return svg(`0 0 ${W} ${Math.max(H, ly + 24)}`, `Floor plan: ${h.name}`, b);
+  const HH = side ? Math.max(panels[0].y + panels[0].h + PAD, ly + 24) : Math.max(H, ly + 24);
+  return svg(`0 0 ${W} ${HH}`, `Floor plan: ${h.name}`, b).replace(`<rect width="${W}" height="${H}"`, `<rect width="${W}" height="${HH}"`);
 }
 
 export const map_number_12 = () => houseMap(HOUSES.find(h => h.key === "number-12"));
