@@ -278,3 +278,53 @@ export function humanBack(o) {
   g += circ(x, gy - 242 * s, 23 * s, hair, C.ink, 3);
   return g;
 }
+
+/** A die lying flat-faced toward us on a surface: a rounded square with pips (1–6). */
+export function die(x, base, size, face, col = C.light) {
+  const y = base - size;
+  let s = shadowAt(x + size / 2, base, size * 0.6);
+  s += `<rect x="${r1(x)}" y="${r1(y)}" width="${size}" height="${size}" rx="${r1(size * 0.18)}" fill="${col}" stroke="${C.ink}" stroke-width="3"/>`;
+  const p = size * 0.26, c = [x + size / 2, y + size / 2];
+  const at = { tl: [c[0] - p, c[1] - p], tr: [c[0] + p, c[1] - p], ml: [c[0] - p, c[1]], mr: [c[0] + p, c[1]], bl: [c[0] - p, c[1] + p], br: [c[0] + p, c[1] + p], c };
+  const pips = { 1: ["c"], 2: ["tl", "br"], 3: ["tl", "c", "br"], 4: ["tl", "tr", "bl", "br"], 5: ["tl", "tr", "c", "bl", "br"], 6: ["tl", "tr", "ml", "mr", "bl", "br"] }[face];
+  for (const k of pips) s += circ(at[k][0], at[k][1], size * 0.08, C.ink);
+  return s;
+}
+
+/** A drinking glass standing on a surface (half full). */
+export function glass(x, base, h = 46) {
+  return shadowAt(x, base, 14) + path(`M${x - 13} ${base - h}L${x - 10} ${base}H${x + 10}L${x + 13} ${base - h}Z`, C.light, C.ink, 2.6) +
+    path(`M${x - 11.5} ${base - h * 0.5}L${x - 10} ${base}H${x + 10}L${x + 11.5} ${base - h * 0.5}Z`, C.eyeBlue, C.ink, 0, ` opacity="0.6"`);
+}
+
+/** A broom standing upright on its bristles against the wall, its handle held by a clip screwed to the wall. */
+export function broom(x, floorY, h = 210) {
+  let s = shadowAt(x, floorY, 34);
+  s += `<rect x="${x - 4}" y="${floorY - h}" width="8" height="${h - 50}" fill="${C.woodDeep}" stroke="${C.ink}" stroke-width="2"/>`;
+  s += `<rect x="${x - 12}" y="${floorY - h + 16}" width="24" height="10" rx="3" fill="${C.grey}" stroke="${C.ink}" stroke-width="2.2"/>` + circ(x - 8, floorY - h + 21, 1.8, C.ink) + circ(x + 8, floorY - h + 21, 1.8, C.ink); // wall clip
+  s += path(`M${x - 18} ${floorY - 56}H${x + 18}L${x + 34} ${floorY}H${x - 34}Z`, C.accent, C.ink, 3);
+  let d = ""; for (let i = -28; i <= 28; i += 8) d += `M${x + i * 0.5} ${floorY - 50}L${x + i} ${floorY - 2}`;
+  return s + path(d, "none", C.accentDeep, 1.6) + `<rect x="${x - 20}" y="${floorY - 62}" width="40" height="10" rx="3" fill="${C.alarm}" stroke="${C.ink}" stroke-width="2.4"/>`;
+}
+
+/** A cushion lying on the floor, pink (Cuddle). */
+export const cushion = (x, floorY, w = 90) => shadowAt(x, floorY, w * 0.5) +
+  path(`M${x - w / 2} ${floorY - 4}Q${x - w / 2 - 6} ${floorY - 34} ${x - w / 2 + 6} ${floorY - 40}Q${x} ${floorY - 46} ${x + w / 2 - 6} ${floorY - 40}Q${x + w / 2 + 6} ${floorY - 34} ${x + w / 2} ${floorY - 4}Q${x} ${floorY + 2} ${x - w / 2} ${floorY - 4}Z`, C.pink, C.ink, 3) +
+  circ(x, floorY - 22, 4, C.cuddle, C.ink, 1.8);
+
+/** A height chart painted on the wall (police line-up joke), with marks every 30 units. */
+export function heightChart(w, floorY, top) {
+  let s = `<rect x="0" y="${top}" width="${w}" height="${floorY - top}" fill="${C.light}"/>`;
+  let d = "";
+  for (let y = floorY - 30; y > top; y -= 30) d += `M0 ${y}H${w}`;
+  s += path(d, "none", C.edge, 2);
+  return s;
+}
+
+/** A wooden fence top rail (a run of planks), standing on the ground. */
+export function fence(x, groundY, w, h) {
+  let s = "";
+  for (let px = x; px < x + w; px += 34) s += `<rect x="${px}" y="${groundY - h}" width="30" height="${h}" fill="${C.wood}" stroke="${C.ink}" stroke-width="2.6"/>`;
+  s += `<rect x="${x - 6}" y="${groundY - h - 10}" width="${w + 12}" height="12" fill="${C.woodDeep}" stroke="${C.ink}" stroke-width="2.6"/>`;
+  return s;
+}

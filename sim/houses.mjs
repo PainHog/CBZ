@@ -113,7 +113,7 @@ export const HOUSES = [
       ["hall", "landing", "normal"], ["landing", "bedroom", "big"], ["landing", "bathroom", "big"]],
     entrances: [
       { key: "front", name: "Front door (behind Grandpa)", room: "hall", size: "big", rounds: [1], one: true, letOut: true, opts: [["sneaky", 2], ["sweet", 0, "charm"]] },
-      { key: "flap", name: "Duchess's microchip cat flap (jam it open)", room: "kitchen", size: "normal", opts: [["streetwise", 1, "open"]], jam: true, noisy: true },
+      { key: "flap", name: "Pom-Pom's microchip cat flap (jam it open)", room: "kitchen", size: "normal", opts: [["streetwise", 1, "open"]], jam: true, noisy: true },
       { key: "cellarwin", name: "Cracked cellar window", room: "cellar", size: "tight", opts: [] },
       { key: "bedwin", name: "Bedroom window (up the drainpipe)", room: "bedroom", size: "normal", climb: true, opts: hardClimb },
     ],
@@ -125,7 +125,7 @@ export const HOUSES = [
         routine: ["stay", "stay", "stay", "living", "hall", "kitchen"] },
     ],
     pets: [
-      { key: "duchess", name: "Duchess", kind: "housecat", rating: 2, soft: true, start: "living" },
+      { key: "pompom", name: "Pom-Pom", kind: "housecat", rating: 2, soft: true, start: "living" },
       { key: "roomba", name: "The robot vacuum", kind: "vacuum", start: "living", roam: ["living", "hall", "kitchen"] },
     ],
     prize: {
