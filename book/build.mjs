@@ -34,7 +34,7 @@ const DIST = join(BOOK, "dist");
 const BOOK_TITLE = "Cat Burglars";             // curly apostrophe, as in the chapters
 const BOOK_DESCRIPTION = "A tabletop roleplaying game of street cats, sticky paws and getting away with it";
 const AUTHOR = "Richard Moore";
-const VERSION = "0.5";
+const VERSION = "0.6";
 const FILE_STEM = "Cat_Burglars";        // → Cat_Burglars_v0.1.pdf
 const HTML_NAME = "cat-burglars.html";   // the self-contained print HTML (digital build only)
 // An ornament anchored in the top-left corner of the Table of Contents page
@@ -98,11 +98,11 @@ const files = readdirSync(join(SRC, "chapters")).filter(f => f.endsWith(".html")
 if (!files.length) throw new Error("no chapters in book/src/chapters");
 let body = files.map(f => `\n<!-- ${f} -->\n` + readFileSync(join(SRC, "chapters", f), "utf8")).join("\n");
 
-// Wide tables (4+ columns) span both text columns.
+// Wide tables (4+ columns) span both text columns, unless marked "narrow".
 body = body.replace(/<table class="tbl([^"]*)">([\s\S]*?)<\/table>/g, (m, cls, inner) => {
   const head = inner.match(/<tr>([\s\S]*?)<\/tr>/);
   const cols = head ? (head[1].match(/<t[hd]\b/g) ?? []).length : 0;
-  return cols >= 4 && !/\bwide\b/.test(cls) ? `<table class="tbl${cls} wide">${inner}</table>` : m;
+  return cols >= 4 && !/\b(wide|narrow)\b/.test(cls) ? `<table class="tbl${cls} wide">${inner}</table>` : m; // "narrow": a 4-column table that fits a column
 });
 
 // Keep headings with what follows. Chromium's multi-column fragmentation does

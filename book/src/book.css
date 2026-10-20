@@ -290,6 +290,8 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
   overflow: hidden;
 }
 .tbl.wide { column-span: all; }
+/* a short table inside a column stays whole (a stranded row or two reads as a mistake) */
+.tbl:not(.wide):not(.flow) { break-inside: avoid; }
 .tbl thead { display: table-header-group; }
 .tbl th {
   background: var(--dark-deep); color: var(--paper);
@@ -323,6 +325,11 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
   shape-outside: circle(50%);
 }
 .entry .badge { width: 1.05in; }
+/* the ready-made gang fits its two pages: slightly smaller portraits and gaps */
+#ch-03 .entry { margin: 0.04in 0 0.08in; padding-top: 0.04in; break-inside: avoid; }
+#ch-03 .entry .portrait { width: 0.9in; }
+#ch-03 .entry p { margin: 0 0 0.035in; }
+#ch-03 .entry .statline { padding: 0.03in 0.07in; margin: 0.03in 0; }
 .entry .ability, .entry .signature {
   clear: both;
   break-inside: avoid;

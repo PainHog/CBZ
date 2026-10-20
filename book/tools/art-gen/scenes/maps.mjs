@@ -109,8 +109,9 @@ function houseMap(h) {
   const stairIcon = (x, y, l1, l2) => {
     let s = `<rect x="${x - 24}" y="${y - 18}" width="48" height="36" fill="${C.paper2}" stroke="${C.ink}" stroke-width="2"/>`;
     for (let i = 1; i < 5; i++) s += `<path d="M${x - 24 + i * 9.6} ${y - 18}V${y + 18}" stroke="${C.ink}" stroke-width="1.5"/>`;
-    s += `<text x="${x}" y="${y + 34}" text-anchor="middle" font-family="sans-serif" font-size="13" fill="${C.ink}">${l1}</text>`;
-    return s + `<text x="${x}" y="${y + 50}" text-anchor="middle" font-family="sans-serif" font-size="13" fill="${C.ink}">${l2}</text>`;
+    // labels end at the room's right wall (x + 40), so a long one never runs past the room or the frame
+    s += `<text x="${x + 40}" y="${y + 34}" text-anchor="end" font-family="sans-serif" font-size="13" fill="${C.ink}">${l1}</text>`;
+    return s + `<text x="${x + 40}" y="${y + 50}" text-anchor="end" font-family="sans-serif" font-size="13" fill="${C.ink}">${l2}</text>`;
   };
   for (const [a, bb] of stairs) {
     const way = h.ways.find(w => (w[0] === a && w[1] === bb) || (w[0] === bb && w[1] === a));
@@ -152,7 +153,7 @@ function houseMap(h) {
     b += `<circle cx="${mx}" cy="${my}" r="15" fill="${C.accent}" stroke="${C.ink}" stroke-width="2.4"/>`;
     b += `<text x="${mx}" y="${my + 6}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="17" fill="${C.ink}">${i + 1}</text>`;
     const when = e.rounds ? ` (round${e.rounds.length > 1 ? "s" : ""} ${e.rounds.join("–")} only${e.one ? ", one cat" : ""})` : "";
-    const extras = [e.climb ? "a climb" : null, e.noisy ? "makes noise" : null, e.jam ? "stays open once jammed" : null].filter(Boolean).join(", ");
+    const extras = [e.climb ? "a climb: Small things only" : null, e.noisy ? "makes noise" : null, e.jam ? "stays open once jammed" : null].filter(Boolean).join(", ");
     marks.push(`${i + 1}. ${e.name} — ${SIZE_WORD[e.size]}; ${optText(e.opts)}${extras ? "; " + extras : ""}${when}`);
   });
   // legend
