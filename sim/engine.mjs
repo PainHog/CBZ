@@ -25,15 +25,16 @@ export function playRobbery(house, gang, p, rng, rec) {
 class Robbery {
   constructor(house, gang, p, rng, rec) {
     this.h = house; this.p = p; this.rng = rng; this.rec = rec ?? nullRecorder();
-    const scaleP = p.gangScaling && gang.length <= 3 ? 1 : 0;
-    const scaleC = p.gangScaling ? (gang.length <= 3 ? 1 : gang.length >= 5 ? -1 : 0) : 0;
+    // gang-size scaling (CORE-RULES "Ending"): [Patience, Clock] for 3 cats and for 5 cats
+    const sc = !p.gangScaling ? [0, 0] : gang.length <= 3 ? p.scale3 : gang.length >= 5 ? p.scale5 : [0, 0];
+    const scaleP = sc[0], scaleC = sc[1];
     this.patience = Math.max(p.minPatience, house.patience + p.patienceShift + scaleP);
     this.mood = { broom: 0, cuddle: 0 };
     this.goneAt = house.prize.goneAt + p.clockShift + scaleC;
     this.lightsOut = this.goneAt + p.lightsOut;
     this.round = 0;
     this.cats = gang.map(c => ({
-      ...c, r: { ...c.r }, instincts: [...c.instincts], cattitude: p.cattitudeStart, lives: p.livesPerRobbery,
+      ...c, r: { ...c.r }, instincts: [...c.instincts], cattitude: p.cattitudeStart + (p.gangScaling && gang.length <= 3 ? p.scale3Cat : 0), lives: p.livesPerRobbery,
       loc: "outside", status: "out", hidden: false, carrying: false, temptUsed: new Set(),
       cattitudeHad: p.cattitudeStart, cattitudeSpent: 0, everCaught: false,
     }));
@@ -119,18 +120,21 @@ class Robbery {
   phase() { return this.prizeGot() || this.prize.gone ? "out" : "get"; }
   placePrize(room, steps) {
     const z = this.prize;
-    z.spotRoom = room; z.spotSteps = steps; z.room = room; z.stepsLeft = steps.length; z.down = steps.length === 0; z.withHuman = null;
+    z.spotRoom = room; z.spotSteps = steps; z.room = room; z.stepsLeft = steps.length; z.down = steps.length === 0; z.withHuman = null; z.disturbed = false;
   }
 
-  dropPrize(cat) {
+  dropPrize(cat, { here = false } = {}) {
     if (!cat.carrying) return;
     const z = this.prize;
     for (const id of z.carriers) { const c = this.cats.find(x => x.id === id); if (c) c.carrying = false; }
     z.carriers = [];
+    if (here && this.p.carrierRules) { z.room = cat.loc; z.down = true; z.stepsLeft = 0; this.markDisturbed(); }
     // the human puts it back where it was (CORE-RULES "Shoo!/Scooped!": the cat drops what it carries)
-    this.placePrize(z.spotRoom, z.spotSteps);
+    else this.placePrize(z.spotRoom, z.spotSteps);
     this.rec.event("prizeDropped");
   }
+  /** v0.6 "Finding it": the prize isn't as the Clock left it. */
+  markDisturbed() { this.prize.disturbed = true; }
 
   // ------------------------------------------------------------ the Mood
   /** delta: { side, steps } (steps may be negative for a trade). */
@@ -283,9 +287,11 @@ class Robbery {
         const by = this.humans.find(hu => hu.key === s.by);
         if (this.p.ownerFetch && by && !by.holding && z.spotRoom) {
           by.room = z.spotRoom; by.staysUntil = this.round;
-          if (this.p.searching) by.searching = true;
-          this.rec.event("ownerFoundItGone");
-          this.moodChange({ side: "broom", steps: 1 }, null, "owner finds it gone");
+          if (!(this.p.carrierRules && by.searching)) {
+            if (this.p.searching) by.searching = true;
+            this.rec.event("ownerFoundItGone");
+            this.moodChange({ side: "broom", steps: 1 }, null, "owner finds it gone");
+          }
         }
         continue;
       }
@@ -308,6 +314,7 @@ class Robbery {
         if (c.tempted) continue;
         const here = [...(this.h.rooms[c.loc]?.tempt ?? [])];
         if (this.pets.some(pt => pt.kind === "vacuum" && pt.room === c.loc)) here.push("hunter");
+        if (this.p.carrierRules && this.pets.some(pt => pt.room === c.loc && (pt.kind === "dog" || pt.kind === "housecat") && pt.mode !== "asleep" && pt.mode !== "hiding")) here.push("scrapper");
         for (const i of c.instincts) {
           const key = `${c.loc}:${i}`;
           if (here.includes(i) && !c.temptUsed.has(key)) eligible.push({ c, i, key, cost: this.temptCost(c, i) });
@@ -344,19 +351,19 @@ class Robbery {
   /** Giving in: the instinct thing is this cat's Action (DESIGN.md "Instincts"). */
   doTemptation(c) {
     const i = c.tempted;
-    if (c.carrying && i !== "boxSitter") this.dropPrize(c);
+    if (c.carrying && (i !== "boxSitter" || this.p.carrierRules)) this.dropPrize(c, { here: true });
     if (i === "boxSitter" || i === "climber") { c.hidden = true; return; }
     const watchers = this.seenBy(c);
     if (i === "lapCat") {
       // a fuss from a human here: that human is Distracted until the round ends (Cuddle +1); no human: a sunny spot, quiet
-      if (watchers.length) { watchers[0].distractedUntil = Math.max(watchers[0].distractedUntil, this.round); this.moodChange({ side: "cuddle", steps: 1 }, c, "temptation:lapCat"); }
+      if (watchers.length) { watchers[0].distractedUntil = Math.max(watchers[0].distractedUntil, this.round); this.moodChange({ side: "cuddle", steps: watchers[0].kind === "kid" && this.p.carrierRules ? 2 : 1 }, c, "temptation:lapCat"); }
       return;
     }
     if (i === "foodie") { if (watchers.length) this.moodChange({ side: "broom", steps: 1 }, c, "temptation:foodie"); return; } // munching is quiet
     this.noise.push(c.loc);
     if (i === "hunter") return; // chasing a fly in view looks innocent: noise only
     if (i === "knocker") (this.messes ??= new Set()).add(c.loc); // it's on the floor now: whoever comes finds a mess
-    if (i === "scrapper") for (const pt of this.pets) if (pt.room === c.loc && pt.kind === "dog" && pt.mode !== "hiding") pt.mode = "angry";
+    if (i === "scrapper") for (const pt of this.pets) if (pt.room === c.loc && pt.kind === "dog" && pt.mode === "asleep") pt.mode = "awake";
     if (watchers.length) this.moodChange({ side: "broom", steps: 1 }, c, `temptation:${i}`);
   }
 
@@ -371,6 +378,8 @@ class Robbery {
       else if (c.status === "in") this.insideTurn(c);
       else if (c.status === "out") this.outsideTurn(c);
     }
+    // policy (v0.6): a cat with its Action left and nobody watching hides (free when unseen)
+    if (this.cr("spotted")) for (const c of this.freeInside()) if (!c.acted && !c.carrying && !this.seenBy(c).length) c.hidden = true;
   }
   priority(c) {
     if (this.plan.distract.has(c.id)) return 3;
@@ -487,13 +496,15 @@ class Robbery {
     const way = this.wayBetween(c.loc, room);
     if (!way || !way.open) return false;
     if (way.size === "tight" && c.body !== "lean") return false;
-    c.loc = room; c.moved = true; c.hidden = false;
+    c.cameFrom = c.loc; c.loc = room; c.moved = true; c.hidden = false;
     return true;
   }
-  fleeRandom(c) {
+  fleeRandom(c, back = null) {
     const opts = this.waysFrom(c.loc).filter(x => x.way.open && (x.way.size !== "tight" || c.body === "lean"));
     if (!opts.length) return false;
-    c.loc = this.rng.pick(opts).to; c.moved = true; c.hidden = false;
+    const to = opts.find(x => x.to === back)?.to ?? this.rng.pick(opts).to;
+    if (c.carrying) this.dropPrize(c, { here: true });
+    c.cameFrom = c.loc; c.loc = to; c.moved = true; c.hidden = false;
     return true;
   }
   openWay(c, way) {
@@ -552,12 +563,12 @@ class Robbery {
     const res = this.roll(c, { approach: best[0], diff: best[1], tags: best.slice(2), important: true, why: `vs ${pet.kind}` });
     c.acted = true;
     if (works(res.result)) {
-      if (best[0] === "savage") { pet.mode = "hiding"; pet.until = this.round + 3; this.rec.event("petDrivenOff"); }
+      if (best[0] === "savage") { pet.mode = "hiding"; pet.until = this.round + (this.p.carrierRules ? 2 : 3); this.rec.event("petDrivenOff"); }
       else if (best[0] === "sweet") { pet.mode = "friendly"; this.rec.event("petBefriended"); }
       else { pet.slippedBy = `${c.id}:${this.round}`; this.rec.event("petSlipped"); }
     } else {
-      if (pet.kind === "dog") { pet.mode = "angry"; }
-      if (!c.moved) this.fleeRandom(c);
+      if (pet.kind === "dog" && !this.p.carrierRules) { pet.mode = "angry"; }
+      if (!c.moved || this.p.carrierRules) this.fleeRandom(c, c.cameFrom);
       this.rec.event("chased");
     }
     res.apply();
@@ -608,13 +619,13 @@ class Robbery {
       const best = this.bestOption(c, step);
       const res = this.roll(c, { approach: best[0], diff: best[1], tags: best.slice(2), important: true, why: "reach prize" });
       c.acted = true;
-      if (works(res.result)) { z.stepsLeft--; z.down = z.stepsLeft === 0; }
+      if (works(res.result)) { z.stepsLeft--; z.down = z.stepsLeft === 0; this.markDisturbed(); }
       res.apply();
       return;
     }
     if (z.kind === "delicious") {
       c.acted = true;
-      if (this.simpleInView(c, "eat", ["food"]) && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; this.rec.event("ate"); }
+      if (this.simpleInView(c, "eat", ["food"]) && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; this.markDisturbed(); this.rec.event("ate"); }
       return;
     }
     this.tryPickUp(c);
@@ -651,7 +662,8 @@ class Robbery {
     for (const x of need) x.acted = true;
     if (!this.simpleInView(c, "take prize")) return;
     z.carriers = need.map(x => x.id);
-    for (const x of need) x.carrying = true;
+    for (const x of need) { x.carrying = true; x.hidden = false; }
+    this.markDisturbed();
     this.rec.event("tookPrize");
   }
 
@@ -671,22 +683,36 @@ class Robbery {
         if (!this.openWay(opener, way)) return;
       }
       // moving the prize past a human is an Action: the leader rolls for the group (Sneaky or Savage)
-      if (this.watchers(c.loc).length || this.watchers(path[0]).length) {
-        if (this.lightsOut - this.round > 3 && this.p.boldness !== "bold") { this.rec.event("carrierWaited"); return; }
-        const ws = [...new Set([...this.watchers(c.loc), ...this.watchers(path[0])])];
-        const helpers = group.filter(x => x !== c && !x.acted).length;
-        for (const x of group) x.acted = true;
-        const opt = this.bestOption(c, [["sneaky", Math.max(...ws.map(h => h.attention))], ["savage", 0]]);
-        const res = this.roll(c, { approach: opt[0], diff: opt[1], helpers, seen: ws, important: true, why: "carry past" });
-        res.apply();
-        if (!works(res.result) || c.status !== "in") return;
+      // v0.6 hauling: a Medium or Large prize always takes that roll (Large: Tricky), seen or not
+      const ws = [...new Set([...this.watchers(c.loc), ...this.watchers(path[0])])];
+      if (ws.length || this.mustHaul()) {
+        if (ws.length && !ws.some(h => h.searching && this.cr("spotted")) && this.lightsOut - this.round > 3 && this.p.boldness !== "bold") { this.rec.event("carrierWaited"); return; }
+        if (!this.haul(group, ws)) return;
       }
       for (const x of group) { x.loc = path[0]; x.moved = true; x.hidden = false; }
       z.room = path[0];
       if (c.status !== "in" || c.loc !== ex.room) return;
     }
-    // go out through the entrance
-    if (!group.some(x => x.moved) || ex.opts.length === 0) this.exitThrough(group, ex);
+    // go out through the entrance: the Move, or the Action when it needs no roll (CORE-RULES "In and out")
+    const movedNow = group.some(x => x.moved);
+    if (this.p.carrierRules && movedNow && (group.some(x => x.acted) || ex.opts.length || this.mustHaul() || this.seenBy(c).length)) return;
+    if (!movedNow || ex.opts.length === 0) this.exitThrough(group, ex);
+  }
+
+  mustHaul() { return this.cr("haul") && this.prize.size !== "small"; }
+  /** One piece of the v0.6 fix round (sim/params.mjs carrierRules; crOff switches pieces off for study). */
+  cr(k) { return this.p.carrierRules && !(this.p.crOff ?? "").split(",").includes(k); }
+  /** The carriers' roll to move the prize (v0.6 "Carrying"): every carrier's Action; the others help. */
+  haul(group, ws) {
+    const c = group[0];
+    const helpers = group.length - 1;
+    for (const x of group) x.acted = true;
+    const diff = 0; // v0.6: no Difficulty; a Large prize is hard enough to lift (three cats)
+    const old = !this.p.carrierRules && ws.length ? Math.max(...ws.map(h => h.attention)) : 0; // v0.5 double-counted Attention
+    const opt = this.bestOption(c, [["sneaky", diff + old], ["savage", diff]]);
+    const res = this.roll(c, { approach: opt[0], diff: opt[1], helpers, seen: ws, important: true, why: "haul" });
+    res.apply();
+    return works(res.result) && c.status === "in";
   }
 
   /** Someone else has the prize: head for their exit and wait inside until it's out (policy). */
@@ -741,9 +767,9 @@ class Robbery {
       for (const x of group) x.acted = true;
       res.apply();
       if (!works(res.result) || lead.status !== "in") return false;
-    } else if (lead.carrying && this.seenBy(lead).length) {
-      for (const x of group) x.acted = true;
-      if (!this.simpleInView(lead, "out with the prize")) return false;
+    } else if (lead.carrying && (this.seenBy(lead).length || this.mustHaul())) {
+      if (this.p.carrierRules) { if (!this.haul(group, this.seenBy(lead))) return false; }
+      else { for (const x of group) x.acted = true; if (!this.simpleInView(lead, "out with the prize")) return false; }
     }
     if (e.reopen) { e.reopen.open = true; this.rec.event("reopened"); }
     if (e.noisy) this.noise.push(e.room);
@@ -852,10 +878,10 @@ class Robbery {
       for (const { hu } of takers) {
         if (hu.room !== room) this.rec.event("answeredNoise");
         hu.room = room; answered.add(hu.key);
-        if (this.p.lureMess && this.messes?.has(room)) { this.messes.delete(room); this.moodChange({ side: "broom", steps: 1 }, null, "mess found"); }
+        if (this.p.lureMess && !this.p.carrierRules && this.messes?.has(room)) { this.messes.delete(room); this.moodChange({ side: "broom", steps: 1 }, null, "mess found"); }
       }
     }
-    this.messes?.clear();
+    if (!this.p.carrierRules) this.messes?.clear();
     // routines
     for (const hu of this.humans) {
       if (hu.holding) { this.holderActs(hu); continue; }
@@ -864,6 +890,12 @@ class Robbery {
       if (hu.searching && hu.asleepUntil < this.round) {
         // Searching: stay with a cat in sight, else step into a next room with a cat in sight (carriers first), else the routine
         const visible = room => this.cats.filter(c => c.status === "in" && c.loc === room && !c.hidden);
+        if (this.cr("search") && this.phase() === "get" && !this.prize.withHuman) {
+          // v0.6: they go for the prize first: stay with it, or step into its room next door
+          const z = this.prize;
+          if (z.room === hu.room) { this.rec.event("searchStayed"); continue; }
+          if (this.waysFrom(hu.room).some(x => x.to === z.room)) { hu.room = z.room; this.rec.event("searchFound"); continue; }
+        }
         if (visible(hu.room).length) { this.rec.event("searchStayed"); continue; }
         const next = this.waysFrom(hu.room).map(x => x.to).filter(r => visible(r).length);
         if (next.length) {
@@ -877,8 +909,30 @@ class Robbery {
       if (res !== "stay") hu.room = res;
       if (hu.kind === "grandparent" && this.rng.d6() <= 2) hu.asleepUntil = this.round + 1;
     }
+    // v0.6 finding: at the end of the House phase, a human not yet Searching in the prize's room
+    // (where it is, or where the Clock put it) finds it disturbed: +1 Broom each, and starts Searching
+    if (this.p.carrierRules) {
+      const z = this.prize;
+      // a Searching human who can see a cat now: +1 Broom (once a round; checked before anyone new starts Searching)
+      const inSight = hu => this.cats.find(c => c.status === "in" && c.loc === hu.room && !c.hidden);
+      const spotter = this.cr("spotted") && this.humans.find(hu => hu.searching && !hu.holding && hu.asleepUntil < this.round && inSight(hu));
+      if (spotter) { this.rec.event("spotted"); this.moodChange({ side: "broom", steps: 1 }, inSight(spotter), "spotted"); }
+      if (this.p.discovery && !z.withHuman && this.phase() === "get" && z.disturbed && this.cr("find")) {
+        // +1 Broom once, however many find it; each of them starts Searching
+        const finders = this.humans.filter(hu => !hu.searching && !hu.holding && hu.asleepUntil < this.round && (hu.room === z.room || hu.room === z.spotRoom));
+        for (const hu of finders) if (this.p.searching) hu.searching = true;
+        const seenCat = finders.map(hu => this.cats.find(c => c.status === "in" && c.loc === hu.room && !c.hidden)).find(Boolean) ?? null;
+        if (finders.length) { this.rec.event("discovered"); this.moodChange({ side: "broom", steps: 1 }, seenCat, "found it"); }
+      }
+      if (!this.cr("mess")) this.messes?.clear();
+      if (this.p.lureMess) for (const room of [...(this.messes ?? [])]) {
+        if (this.humans.some(hu => hu.room === room && !hu.holding && hu.asleepUntil < this.round)) {
+          this.messes.delete(room); this.moodChange({ side: "broom", steps: 1 }, null, "mess found");
+        }
+      }
+    }
     // discovery: a human who has just walked in on a disturbed prize (CORE-RULES "The prize")
-    if (this.p.discovery && !this.prize.withHuman && this.phase() === "get") {
+    else if (this.p.discovery && !this.prize.withHuman && this.phase() === "get") {
       const z = this.prize;
       const disturbed = z.down && (z.spotSteps.length > 0 || z.eaten > 0) || z.carriers.length > 0 || z.eaten > 0;
       for (const hu of this.humans) {
