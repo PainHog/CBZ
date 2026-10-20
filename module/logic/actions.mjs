@@ -272,7 +272,8 @@ export function doAction(state, catId, optionId, args = {}, ctx = {}) {
   if (!c || !o) throw new Error(`${c?.name ?? "That cat"} can't do that now.`);
   if (o.disabled && !args.force) throw new Error(`${c.name} can't: ${o.disabled}.`);
   if (o.roll && !args.force) throw new Error(`${o.label}: that needs a roll.`);
-  const res = perform(s, c, o, { result: null, helpers: args.helpers ?? queuedHelpers(s, c), ...args }, ev, ctx);
+  const res = perform(s, c, o, { ...args, result: null, helpers: args.helpers ?? queuedHelpers(s, c) }, ev, ctx);
+  for (const id of res.ok ? (args.helpers ?? queuedHelpers(s, c)) : []) delete s.help?.[id];
   pushLog(s, ev);
   return { state: s, events: ev, ok: res.ok, cattitude: [] };
 }
