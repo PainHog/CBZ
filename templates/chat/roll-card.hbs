@@ -1,0 +1,23 @@
+<div class="cat-burglars catb-card catb-roll catb-{{resultKey}}">
+  <header class="catb-card-head">
+    <h3>{{catName}}: {{approachLabel}}</h3>
+    {{#if optionLabel}}<p class="catb-sub">{{optionLabel}}</p>{{/if}}
+  </header>
+  <div class="catb-dice">
+    {{#each dice}}<span class="catb-die {{this.cls}}">{{this.face}}</span>{{/each}}
+  </div>
+  <p class="catb-result"><strong>{{resultLabel}}</strong> — {{resultText}}</p>
+  {{#if zero}}<p class="catb-note">0 dice or fewer: two dice rolled and the lower one read, no better than a Scrape.</p>{{/if}}
+  <p class="catb-plan">{{planText}}</p>
+  <p class="catb-seen">{{#if seen}}<span class="catb-badge catb-seen-badge">Seen</span> by {{seenNames}}{{#if kid}} (a kid: Cuddle steps ×2){{/if}}{{else}}<span class="catb-badge">Not seen</span>{{/if}}</p>
+  <p class="catb-mood">{{moodText}}</p>
+  {{#if noise}}<p class="catb-noise">Noise{{#if roomName}} in the {{roomName}}{{/if}}.</p>{{/if}}
+  {{#if pushText}}<p class="catb-push">{{pushText}}</p>{{/if}}
+  {{#if applied.length}}
+  <ul class="catb-applied">
+    {{#each applied}}<li>{{this}}</li>{{/each}}
+  </ul>
+  {{/if}}
+  <p class="catb-status">{{statusText}}</p>
+  <div class="catb-buttons"></div>
+</div>

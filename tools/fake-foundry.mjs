@@ -348,6 +348,85 @@ class ClientSettings {
   }
 }
 
+/* -------------------------------------------------------- data fields -- */
+// Just enough of foundry.data.fields for TypeDataModel schemas: initial values,
+// casting, and the validation Foundry does on create/update (min, max, integer,
+// choices) — an invalid write THROWS, as it does in Foundry, so a bug that
+// writes Cattitude 6 fails the test instead of passing silently.
+
+class DataField {
+  constructor(options = {}) { this.options = { required: false, nullable: false, ...options }; }
+  get initial() { return this.options.initial; }
+  getInitialValue() { const i = this.options.initial; return clone(typeof i === "function" ? i() : i); }
+  clean(value, path) {
+    if (value === undefined) return this.getInitialValue();
+    if (value === null) { if (this.options.nullable) return null; return this.getInitialValue(); }
+    return this.cast(value, path);
+  }
+  cast(value) { return value; }
+  fail(path, msg) { throw new Error(`Validation error: ${path}: ${msg}`); }
+}
+class NumberField extends DataField {
+  getInitialValue() { const v = super.getInitialValue(); return v === undefined ? (this.options.nullable ? null : 0) : v; }
+  cast(value, path) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) this.fail(path, `"${value}" is not a number`);
+    if (this.options.integer && !Number.isInteger(n)) this.fail(path, `${n} is not an integer`);
+    if (this.options.min !== undefined && n < this.options.min) this.fail(path, `${n} may not be less than ${this.options.min}`);
+    if (this.options.max !== undefined && n > this.options.max) this.fail(path, `${n} may not be greater than ${this.options.max}`);
+    if (this.options.choices && !Object.keys(this.options.choices).map(Number).includes(n) && !(Array.isArray(this.options.choices) && this.options.choices.includes(n))) this.fail(path, `${n} is not a valid choice`);
+    return n;
+  }
+}
+class StringField extends DataField {
+  getInitialValue() { const v = super.getInitialValue(); return v === undefined ? (this.options.blank === false ? undefined : "") : v; }
+  cast(value, path) {
+    const s = String(value);
+    const ch = typeof this.options.choices === "function" ? this.options.choices() : this.options.choices;
+    if (ch) {
+      const keys = Array.isArray(ch) ? ch : Object.keys(ch);
+      if (!keys.includes(s) && !(s === "" && this.options.blank !== false)) this.fail(path, `"${s}" is not a valid choice`);
+    }
+    return s;
+  }
+}
+class HTMLField extends StringField {}
+class FilePathField extends StringField {}
+class BooleanField extends DataField {
+  getInitialValue() { const v = super.getInitialValue(); return v === undefined ? false : v; }
+  cast(value) { return value === true || value === "true" || value === "on" || value === 1; }
+}
+class ObjectField extends DataField {
+  getInitialValue() { const v = super.getInitialValue(); return v === undefined ? {} : v; }
+}
+class ArrayField extends DataField {
+  constructor(element, options = {}) { super(options); this.element = element; }
+  getInitialValue() { const v = super.getInitialValue(); return v === undefined ? [] : v; }
+  cast(value, path) {
+    const arr = Array.isArray(value) ? value : isObj(value) ? Object.values(value) : [value];
+    return arr.map((v, i) => (this.element ? this.element.clean(v, `${path}.${i}`) : v));
+  }
+}
+class SetField extends ArrayField {}
+class SchemaField extends DataField {
+  constructor(fields = {}, options = {}) { super(options); this.fields = fields; }
+  getInitialValue() { return this.cast({}, ""); }
+  cast(value, path) { return cleanSchema(this.fields, isObj(value) ? value : {}, path); }
+}
+function cleanSchema(fields, src, path = "system") {
+  const out = {};
+  for (const [k, f] of Object.entries(fields)) out[k] = f.clean(src?.[k], path ? `${path}.${k}` : k);
+  return out;
+}
+const FIELDS = { DataField, NumberField, StringField, HTMLField, FilePathField, BooleanField, ObjectField, ArrayField, SetField, SchemaField };
+const fieldsNamespace = new Proxy(FIELDS, { get: (t, k) => t[k] ?? DataField });
+
+/** The system data for a document type: schema defaults applied and validated (throws like Foundry). */
+function cleanSystem(Model, system) {
+  if (typeof Model?.defineSchema !== "function") return clone(system ?? {});
+  return cleanSchema(Model.defineSchema(), system ?? {}, "system");
+}
+
 /* ---------------------------------------------------------- Documents -- */
 
 const OWNER = 3;
@@ -420,7 +499,7 @@ export class Actor extends BaseDocument {
     this.img = data.img ?? "icons/svg/mystery-man.svg";
     this.flags = clone(data.flags ?? {});
     this.ownership = clone(data.ownership ?? { default: 0 });
-    this.system = clone(data.system ?? {});
+    this.system = cleanSystem(CONFIG.Actor.dataModels?.[this.type], data.system);
     this.items = new Collection();
     const IC = CONFIG.Item.documentClass ?? Item;
     for (const i of data.items ?? []) this.items.push(new IC(i, { parent: this }));
@@ -446,7 +525,12 @@ export class Actor extends BaseDocument {
   async update(changes, options = {}) {
     touch();
     if (!this.isOwner) throw new Error(`${game.user.name} lacks permission to update Actor ${this.name}`);
+    // validate the would-be system data first, as Foundry does (an invalid update changes nothing and throws)
+    const trial = { system: clone({ ...this.system }) };
+    applyUpdate(trial, Object.fromEntries(Object.entries(changes).filter(([k]) => k === "system" || k.startsWith("system."))));
+    const cleanedSystem = cleanSystem(CONFIG.Actor.dataModels?.[this.type], trial.system);
     const diff = applyUpdate(this, changes);
+    this.system = Object.assign(Object.create(Object.getPrototypeOf(this.system)), cleanedSystem);
     this.prepareData();
     broadcast("updateActor", this, diff, options, game.user.id);
     return this;
@@ -731,7 +815,7 @@ export function installFoundry({ users = [] } = {}) {
       expandObject, isNewerVersion, escapeHTML, debounce: fn => fn
     },
     abstract: { TypeDataModel: class { static defineSchema() { return {}; } } },
-    data: { fields: new Proxy({}, { get: () => class { constructor(...a) { this.args = a; } } }) },
+    data: { fields: fieldsNamespace },
     applications: {
       api: { ApplicationV2, HandlebarsApplicationMixin, DialogV2, DocumentSheetV2 },
       sheets: { ActorSheetV2, ItemSheetV2 },

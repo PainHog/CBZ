@@ -388,11 +388,21 @@ function giveIn(s, c, instinct, ev, moodMode) {
  */
 export function endRound(state, ctx = {}) {
   if (state.phase !== "robbery") throw new Error("There is no robbery running.");
-  if (typeof ctx.d6 !== "function") throw new Error("endRound needs ctx.d6");
+  if (typeof ctx.d6 !== "function" && ctx.houseTurn !== false) throw new Error("endRound needs ctx.d6");
   const s = clone(state);
   const ev = [{ type: "houseTurn", text: `The house's turn (round ${s.round}).` }];
   const mood = ctx.mood ?? "auto";
   s.stage = "house";
+  if (ctx.houseTurn === false) {
+    // autoHouseTurn "manual": the Storyteller runs the house by hand; only the round's bookkeeping happens here
+    ev.push({ type: "manualHouse", text: "The Storyteller runs the house's turn by hand." });
+    s.noise = []; s.messes = []; s.help = {};
+    s.stage = "between";
+    const end = endCheck(s);
+    if (end.due) ev.push({ type: "endDue", reason: end.reason, text: end.text });
+    pushLog(s, ev);
+    return { state: s, events: ev, end };
+  }
   const before = new Map(s.humans.map(h => [h.key, h.room]));
   petsAct(s, ctx, ev);
   const { answered, mood: noiseMood } = resolveNoise(s, ev);

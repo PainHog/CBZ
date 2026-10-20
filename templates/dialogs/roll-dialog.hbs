@@ -1,0 +1,57 @@
+<div class="cat-burglars catb-roll-dialog">
+  <p class="catb-sub"><strong>{{catName}}</strong>{{#if optionLabel}} — {{optionLabel}}{{/if}}{{#if roomName}} ({{roomName}}){{/if}}</p>
+  <div class="form-group">
+    <label>Approach</label>
+    <select name="approach">
+      {{#each approaches}}<option value="{{this.approach}}" {{#if this.selected}}selected{{/if}}>{{this.text}}</option>{{/each}}
+    </select>
+  </div>
+  <table class="catb-preview">
+    <thead><tr><th>Approach</th><th>Dice</th><th>It works</th><th>Clean+</th></tr></thead>
+    <tbody>
+      {{#each approaches}}<tr><td>{{this.label}}</td><td>{{this.diceText}}</td><td>{{this.works}}</td><td>{{this.clean}}</td></tr>{{/each}}
+    </tbody>
+  </table>
+  <div class="form-group">
+    <label>Difficulty</label>
+    <select name="difficulty">
+      {{#each difficulties}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Knack (+1 die)</label>
+    <select name="knack">
+      {{#each knacks}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+    </select>
+  </div>
+  {{#if helpers.length}}
+  <fieldset class="catb-helpers">
+    <legend>Help (+1 die each, at most +2; their Action is used)</legend>
+    {{#each helpers}}
+    <label class="checkbox"><input type="checkbox" name="help-{{this.id}}" {{#if this.queued}}checked{{/if}} {{#if this.locked}}disabled{{/if}}> {{this.name}}{{#if this.queued}} (said they'd help){{/if}}</label>
+    {{/each}}
+  </fieldset>
+  {{/if}}
+  {{#if canCattitude}}
+  <div class="form-group">
+    <label class="checkbox"><input type="checkbox" name="cattitudeDie"> Spend 1 Cattitude for +1 die (you have {{cattitude}})</label>
+  </div>
+  {{/if}}
+  {{#if bodyDie}}<p class="catb-note">Chonky: +1 die to wriggle free.</p>{{/if}}
+  <div class="form-group">
+    <label>A pet in the way (its rating)</label>
+    <input type="number" name="opposition" value="{{opposition}}" min="0" max="3">
+  </div>
+  <div class="form-group">
+    <label>Seen</label>
+    <select name="seen">
+      {{#each seenChoices}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Watching human's Attention (Sneaky and Sweet only)</label>
+    <input type="number" name="attention" value="{{attention}}" min="0" max="2">
+  </div>
+  <p class="catb-note">{{seenText}}</p>
+  {{#if warnings.length}}<ul class="catb-warn">{{#each warnings}}<li>{{this}}</li>{{/each}}</ul>{{/if}}
+</div>
