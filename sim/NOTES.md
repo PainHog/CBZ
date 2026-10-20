@@ -1,4 +1,4 @@
-# Simulator notes — policies, abstractions and gaps (core rules v0.5)
+# Simulator notes — policies, abstractions and gaps (core rules v0.6)
 
 ## Abstractions
 - **Rooms are nodes.** No grid inside a room; a cat is in a room or outside. Humans walk to any room in one round.
@@ -11,7 +11,9 @@
 - **Entrance:** best chance of getting in, minus 0.15 per room from the prize; avoid an angry dog.
 - **Distract:** each round, if the prize room (or the carriers' next room) has watchers, the best Sweet cat (2+) in or next to that room distracts one of them, unless that would fill Cuddle.
 - **Lure:** if one watcher can't be distracted, a free cat in a neighbouring empty room knocks something over to pull them away.
-- **Wait:** while time allows, cats don't act in view of a watcher when the Broom meter is close to full (`boldness: mixed`). Carriers wait for the next room to clear until 3 rounds before Lights Out.
+- **Wait:** while time allows, cats don't act in view of a watcher when the Broom meter is close to full (`boldness: mixed`). Carriers wait for the next room to clear until 3 rounds before Lights Out — but not when a Searching human is watching them (v0.6: waiting there costs +1 Broom a round).
+- **Hide (v0.6):** a cat that ends the cats' turn with its Action unused, not carrying and not seen, hides (a free simple Action). Searching humans then walk past it and "spotted" doesn't fire.
+- **Haul (v0.6):** the lead carrier rolls Sneaky or Savage, whichever has the better chance; the other carriers help.
 - **Long shots:** a cat doesn't try a roll under 45% if a better cat is around, or under 30% at all, unless time is short.
 - **Pets:** confront only with at least a 40% chance; otherwise leave the room.
 - **Eat or carry:** food is always eaten on the spot.

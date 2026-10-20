@@ -43,6 +43,8 @@ export const PARAMS = {
     doc: "Searching humans skip their routine: they stay with a cat they can see, or step into a next room where one is." },
   ownerFetch: { def: true, alt: [false], title: "The Prize Clock's move still happens when the cats have the prize", ref: "CORE-RULES v0.5 The prize", pkg: true,
     doc: "The owner goes to its spot, finds it gone (+1 Broom) and starts Searching." },
+  carrierRules: { def: true, alt: [false], title: "v0.6 fix round: hauling, finding it, Searching for the prize", ref: "CORE-RULES v0.6", pkg: true,
+    doc: "Moving a Medium/Large prize is always a roll; carriers can't hide; a human in the prize's room at the end of the House phase finds it disturbed (+1 Broom, Searching); Searching goes for the prize first; messes wait to be found; a driven-off dog hides 3 rounds counting this one; a failed pet roll chases the cat back." },
   dogOnEntry: { def: true, alt: [false], title: "An awake dog confronts a cat as soon as it enters", ref: "CORE-RULES v0.5 Residents", pkg: true, doc: "" },
   reopenEntrance: { def: true, alt: [false], title: "A shut entrance can be reopened from inside (Streetwise, Hard)", ref: "CORE-RULES v0.5 In and out", pkg: true, doc: "" },
   lifeEffect: { def: "bolt", alt: ["hide"], title: "Where a cat ends up after spending a Life", ref: "CORE-RULES Lives", pkg: true,
@@ -69,7 +71,10 @@ export const PARAMS = {
   clockShift: { def: 0, alt: [-2, 2], title: "Shift every Prize Clock (rounds)", ref: "houses.mjs", pkg: true, doc: "" },
   // ---- gang (players' policy, not rules) ----
   gangScaling: { def: true, alt: [false], title: "Gang-size scaling", ref: "CORE-RULES The table", pkg: true,
-    doc: "3 cats: Patience +1 and Prize Clock +1. 5 cats: Prize Clock −1." },
+    doc: "Shifts by gang size: scale3, scale3Cat, scale5 (v0.5 was 3 cats: Patience +1, Clock +1; 5 cats: Clock −1)." },
+  scale3: { def: [1, 2], alt: [[1, 1], [2, 2]], title: "3 cats: [Patience, Prize Clock] shift", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
+  scale3Cat: { def: 1, alt: [0, 2], title: "3 cats: extra starting Cattitude each", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
+  scale5: { def: [-1, -1], alt: [[0, -1], [-1, 0]], title: "5 cats: [Patience, Prize Clock] shift", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
   gangSize: { def: 4, alt: [3, 5], title: "Cats in the gang", ref: "CORE-RULES table (3–5 players)", doc: "" },
   pushPolicy: { def: "sensible", alt: ["never", "always"], title: "When players Push", ref: "policy",
     doc: "sensible: push a Flop that matters if Cattitude or safe Mood allows." },
@@ -94,10 +99,12 @@ export const PRESETS = {
  * P1 = core rules v0.2 base (two Mood meters, every Action in view is a roll, zero-dice fix,
  *      one-round distraction, Lives bolt outside, front door lets one cat in, meow to be let out).
  * P6 = adopted for core rules v0.3/v0.4. P7 = core rules v0.5 (searching, the owner fetching the prize, dogs on entry,
- * reopening entrances); the defaults above equal the ADOPTED package.
+ * reopening entrances). P8 = core rules v0.6 (hauling, finding it, Searching for the prize: the playtest fix round);
+ * the defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false };
+  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false,
+  scale3: [1, 1], scale3Cat: 0, scale5: [0, -1] }; // the v0.5 gang scaling (used once gangScaling is on)
 export const PACKAGES = {
   P1: { ...OFF },
   P2: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet" },
@@ -107,8 +114,10 @@ export const PACKAGES = {
   P6: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true },
   P7: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true },
+  P8: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
 };
-export const ADOPTED = "P7";
+export const ADOPTED = "P8";
 
 export function makeParams(overrides = {}) {
   return { ...defaults(), ...overrides };

@@ -1,6 +1,6 @@
-Now: Checking the newest rules with two more playtests: the box house again, and the easy chicken house
-Next: Writing the rules chapters of the rulebook
-Number: Design decisions made = 33
+Now: Finishing the rulebook pictures and the online version for the table
+Next: A final playtest of the finished rulebook, then a full read-through
+Number: Design decisions made = 36
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
@@ -35,7 +35,9 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Tune easy, standard and hard houses to their targets (easy still plays a little easy)
 - [x] First computer playtest with real dice (the hard birthday-cake house)
 - [x] Second playtest (the box house) and its fixes: humans now search for the cats when something's missing
-- [ ] Check playtests on the new rules
-- [ ] First full rulebook draft
+- [x] Check playtests on the new rules (the box house again, and the chicken house with five cats)
+- [x] Fix what they found: dragging a big prize is now a risk, and humans notice when it's been touched
+- [x] First full rulebook draft (all eighteen chapters, the sheets and the five houses)
+- [ ] Final playtest of the finished rulebook
 - [ ] Pictures for the rulebook
 - [ ] Online version that runs the rules for the table

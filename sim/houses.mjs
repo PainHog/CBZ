@@ -47,11 +47,11 @@ export const HOUSES = [
       roam: ["kitchen", "hall", "living", "utility"], routine: ["stay", "stay", "living", "kitchen", "hall", "sniff"] }],
     prize: {
       kind: "delicious", name: "rotisserie chicken", size: "medium", perCat: 1, plus: 1,
-      script: [{ round: 2, room: "kitchen", steps: [climb, wrapped], by: "pell" }], goneAt: 7,
+      script: [{ round: 2, room: "kitchen", steps: [climb, wrapped], by: "pell" }], goneAt: 8,
     },
   },
   {
-    key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 6,
+    key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 8,
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], garage: [5, 0, 3, 5], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -71,7 +71,7 @@ export const HOUSES = [
     ways: [["hall", "living", "big"], ["hall", "kitchen", "big"], ["kitchen", "garage", "big"],
       ["hall", "landing", "normal"], ["landing", "bathroom", "big"], ["landing", "kidsroom", "big"]],
     entrances: [
-      { key: "front", name: "Front door (behind the courier)", room: "hall", size: "big", rounds: [1], one: true, letOut: true, opts: [["sneaky", 2], ["sweet", 0, "charm"]] },
+      { key: "front", name: "Front door (behind Mrs Okafor)", room: "hall", size: "big", rounds: [1], one: true, letOut: true, opts: [["sneaky", 2], ["sweet", 0, "charm"]] },
       { key: "dogdoor", name: "Dog door", room: "kitchen", size: "normal", opts: [] },
       { key: "bathwin", name: "Bathroom window (over the shed roof)", room: "bathroom", size: "normal", climb: true, opts: climb },
       { key: "garage", name: "Garage side door, ajar", room: "garage", size: "big", opts: [] },
@@ -87,11 +87,11 @@ export const HOUSES = [
       roam: ["kitchen", "hall", "living", "garage"], routine: ["stay", "stay", "hall", "garage", "living", "sniff"] }],
     prize: {
       kind: "box", name: "big delivery box", size: "large",
-      script: [{ round: 1, room: "hall", steps: [], by: "mum" }, { round: 5, room: "living", steps: [], by: "mum" }], goneAt: 11,
+      script: [{ round: 1, room: "hall", steps: [], by: "mum" }, { round: 5, room: "living", steps: [], by: "mum" }], goneAt: 13,
     },
   },
   {
-    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 6,
+    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 7,
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -113,7 +113,7 @@ export const HOUSES = [
       ["hall", "landing", "normal"], ["landing", "bedroom", "big"], ["landing", "bathroom", "big"]],
     entrances: [
       { key: "front", name: "Front door (behind Grandpa)", room: "hall", size: "big", rounds: [1], one: true, letOut: true, opts: [["sneaky", 2], ["sweet", 0, "charm"]] },
-      { key: "flap", name: "Duchess's microchip cat flap (jam it open)", room: "kitchen", size: "normal", opts: [["streetwise", 1, "open"]], jam: true, noisy: true },
+      { key: "flap", name: "Pom-Pom's microchip cat flap (jam it open)", room: "kitchen", size: "normal", opts: [["streetwise", 1, "open"]], jam: true, noisy: true },
       { key: "cellarwin", name: "Cracked cellar window", room: "cellar", size: "tight", opts: [] },
       { key: "bedwin", name: "Bedroom window (up the drainpipe)", room: "bedroom", size: "normal", climb: true, opts: hardClimb },
     ],
@@ -125,16 +125,16 @@ export const HOUSES = [
         routine: ["stay", "stay", "stay", "living", "hall", "kitchen"] },
     ],
     pets: [
-      { key: "duchess", name: "Duchess", kind: "housecat", rating: 2, soft: true, start: "living" },
+      { key: "pompom", name: "Pom-Pom", kind: "housecat", rating: 2, soft: true, start: "living" },
       { key: "roomba", name: "The robot vacuum", kind: "vacuum", start: "living", roam: ["living", "hall", "kitchen"] },
     ],
     prize: {
       kind: "fun", name: "catnip mouse", size: "small",
-      script: [{ round: 1, room: "hall", steps: [bag], by: "wendell" }, { round: 4, room: "living", steps: [], by: "wendell" }], goneAt: 11,
+      script: [{ round: 1, room: "hall", steps: [bag], by: "wendell" }, { round: 4, room: "living", steps: [], by: "wendell" }], goneAt: 9,
     },
   },
   {
-    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 3,
+    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 4,
     map: {
       floors: [{ name: "Ground floor", rooms: { dining: [0, 0, 3, 3], kitchen: [3, 0, 3, 2], utility: [6, 0, 2, 2], loo: [0, 3, 3, 2], hall: [3, 2, 2, 3], living: [5, 2, 3, 3] } }],
       entrances: { front: "bottom", patio: "left", utilwin: "top" },
@@ -172,7 +172,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 3,
+    key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 5,
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 3, 2], living: [0, 2, 3, 3], hall: [3, 2, 4, 3] } },
@@ -211,7 +211,7 @@ export const HOUSES = [
     ],
     prize: {
       kind: "delicious", name: "whole salmon", size: "medium", perCat: 1, plus: 2,
-      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 10,
+      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 9,
     },
   },
 ];

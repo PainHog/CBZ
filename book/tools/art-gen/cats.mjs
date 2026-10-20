@@ -65,9 +65,13 @@ export function beans(x, y, s = 1, rot = 0) {
  */
 export function catSide(o) {
   const L = typeof o.look === "string" ? LOOKS[o.look] : o.look;
-  const { x = 0, y = 0, s = 1, flip = false, step = 0.5, tailUp = 0.8, head = 0 } = o;
+  const { x = 0, y = 0, s = 1, flip = false, step = 0.5, tailUp = 0.8, head = 0, crouch = 0, tailLow = false } = o;
   const chonk = L.body === "chonky" ? 1 : 0;
   const k = `${o.id ?? "cat"}${Math.round(x)}${Math.round(y)}`;
+  // crouch (0..1): the body sinks, the legs fold; leg points are squashed, body parts translated
+  const lift = crouch * 36, kk = lift / 90;
+  const LP = pts => pts.map(([px, py]) => [px, py > -90 ? py * (1 - kk) : py + lift]);
+  const up = str => lift ? `<g transform="translate(0 ${r1(lift)})">${str}</g>` : str;
   const coat = L.coat, deep = L.deep;
   const near = flip ? "right" : "left"; // facing +x the cat shows its left side; flipped, its right
   const pz = L.patches ? L.patches[near] : null;
@@ -81,67 +85,66 @@ export function catSide(o) {
   // --- far legs (behind the body, deep tone), offset from the near ones
   const fF = 56 - step * 16, fH = -60 + step * 18;
   const farSock = L.sock === "leftFront" && flip;
-  g += tube(smooth([[54, -84], [52, -40], [fF, 0]]), legW - 2, deep);
-  if (farSock) g += tube(smooth([[52, -24], [fF, 0]]), legW - 2, C.whiteDeep, C.ink, 0);
+  g += tube(smooth(LP([[54, -84], [52, -40], [fF, 0]])), legW - 2, deep);
+  if (farSock) g += tube(smooth(LP([[52, -24], [fF, 0]])), legW - 2, C.whiteDeep, C.ink, 0);
   g += pawSide(fF, 0, farSock ? C.whiteDeep : deep, 13);
-  g += tube(smooth([[-72, -78], [-58, -56], [fH - 14, -26], [fH, 0]]), legW - 2, deep) + pawSide(fH, 0, deep, 13);
+  g += tube(smooth(LP([[-72, -78], [-58, -56], [fH - 14, -26], [fH, 0]])), legW - 2, deep) + pawSide(fH, 0, deep, 13);
 
   // --- tail (one tail, from the rump)
   const t0 = [-90, -108];
-  const tailPts = L.tail === "kinked"
+  const tailPts = tailLow ? (L.tail === "kinked" ? [t0, [-128, -114], [-168, -112], [-204, -106], [-214, -122]] : [t0, [-128, -114], [-168, -112], [-206, -104], [-226, -96]]) : L.tail === "kinked"
     ? [t0, [-124, -122], [-148, -146 - tailUp * 30], [-152, -182 - tailUp * 40], [-136, -196 - tailUp * 44]]
     : [t0, [-124, -120], [-152, -146 - tailUp * 28], [-158, -184 - tailUp * 36], [-148, -208 - tailUp * 40]];
   const tw = L.tail === "fluffy" ? 24 : 15 + chonk * 2;
-  g += tube(smooth(tailPts), tw, coat);
+  let gt = tube(smooth(tailPts), tw, coat);
   if (L.tabby) for (let i = 1; i < tailPts.length - 1; i++) {
     const [a, b] = [tailPts[i], tailPts[i + 1]];
     const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, ang = Math.atan2(b[1] - a[1], b[0] - a[0]) + Math.PI / 2;
     const dx = Math.cos(ang) * tw * 0.45, dy = Math.sin(ang) * tw * 0.45;
-    g += path(`M${r1(mx - dx)} ${r1(my - dy)} L${r1(mx + dx)} ${r1(my + dy)}`, "none", L.stripe, 4);
+    gt += path(`M${r1(mx - dx)} ${r1(my - dy)} L${r1(mx + dx)} ${r1(my + dy)}`, "none", L.stripe, 4);
   }
-  if (L.patches?.tailTip) g += tube(smooth(tailPts.slice(2)), tw, L.patches.tailTip);
+  if (L.patches?.tailTip) gt += tube(smooth(tailPts.slice(2)), tw, L.patches.tailTip);
+  g += up(gt);
 
   // --- body, with the neck rising behind the head
   const body = [[-90, -110], [-56, backY], [10, backY + 4], [62, backY - 2], [96, -158], [128, -124],
     [104, -92], [80, bellyY - 4], [20, bellyY], [-44, bellyY - 2], [-86, -82]];
   const bd = smooth(body, true);
-  g += `<clipPath id="${k}-b"><path d="${bd}"/></clipPath>`;
-  g += path(bd, coat, C.ink, 0);
-  g += `<g clip-path="url(#${k}-b)">`;
-  g += ell(20, bellyY + 4, 78, 22 + chonk * 6, L.belly);
-  g += ell(0, backY + 2, 104, 14, deep, C.ink, 0, ` opacity="0.3"`);
+  let gb = `<clipPath id="${k}-b"><path d="${bd}"/></clipPath>`;
+  gb += path(bd, coat, C.ink, 0);
+  gb += `<g clip-path="url(#${k}-b)">`;
+  gb += ell(20, bellyY + 4, 78, 22 + chonk * 6, L.belly);
+  gb += ell(0, backY + 2, 104, 14, deep, C.ink, 0, ` opacity="0.3"`);
   if (L.tabby) for (let i = 0; i < 5; i++) {
     const sx = 52 - i * 24;
-    g += path(`M${sx} ${backY - 2} q-6 ${20 + (i % 2) * 6} 4 ${36 + chonk * 4}`, "none", L.stripe, 5.5);
+    gb += path(`M${sx} ${backY - 2} q-6 ${20 + (i % 2) * 6} 4 ${36 + chonk * 4}`, "none", L.stripe, 5.5);
   }
-  if (pz?.flank) g += ell(-30, backY + 22, 40, 26, pz.flank);
-  if (L.patches?.shoulder) g += ell(40, backY + 4, 22, 14, L.patches.shoulder);
-  if (L.chestStar) g += ell(110, -104, 9, 13, L.chestStar);
-  g += `</g>`;
-  if (L.rim) g += path(bd, "none", L.rim, 2);
-  g += path(bd, "none", C.ink, 3.4);
+  if (pz?.flank) gb += ell(-30, backY + 22, 40, 26, pz.flank);
+  if (L.patches?.shoulder) gb += ell(40, backY + 4, 22, 14, L.patches.shoulder);
+  if (L.chestStar) gb += ell(110, -104, 9, 13, L.chestStar);
+  gb += `</g>`;
+  if (L.rim) gb += path(bd, "none", L.rim, 2);
+  gb += path(bd, "none", C.ink, 3.4);
+  g += up(gb);
 
   // --- near hind leg: haunch (thigh) on the body, then shin back to the hock and down to the paw
   const nH = -62 - step * 16, nF = 78 + step * 14;
   const thigh = smooth([[-80, -100], [-52, -112], [-28, -90], [-34, -62], [-60, -56], [-84, -72]], true);
-  g += path(thigh, coat, C.ink, 0);
-  if (pz?.flank) g += `<g clip-path="url(#${k}-b)">${ell(-56, -96, 26, 16, pz.flank)}</g>`;
-  g += tube(smooth([[-42, -66], [nH - 12, -28], [nH, 0]]), legW, coat);
-  g += path(thigh, coat, C.ink, 0);
-  g += path(`M-84 -74 Q-60 -54 -34 -62 Q-26 -86 -40 -104`, "none", C.ink, 3); // haunch contour
-  if (L.tabby) g += path(`M-66 -96 q12 8 20 0 M-70 -80 q14 8 26 0`, "none", L.stripe, 4.5);
+  g += up(path(thigh, coat, C.ink, 0) + (pz?.flank ? `<g clip-path="url(#${k}-b)">${ell(-56, -96, 26, 16, pz.flank)}</g>` : ""));
+  g += tube(smooth([[-42, -66 + lift], ...LP([[nH - 12, -28], [nH, 0]])]), legW, coat);
+  g += up(path(thigh, coat, C.ink, 0) + path(`M-84 -74 Q-60 -54 -34 -62 Q-26 -86 -40 -104`, "none", C.ink, 3) + // haunch contour
+    (L.tabby ? path(`M-66 -96 q12 8 20 0 M-70 -80 q14 8 26 0`, "none", L.stripe, 4.5) : ""));
   g += pawSide(nH, 0, coat, 15);
 
   // --- near front leg (merges into the chest)
   const sockCol = L.sock === "leftFront" && !flip ? C.white : coat;
-  g += tube(smooth([[80, -84], [78, -40], [nF, 0]]), legW, coat);
-  if (sockCol !== coat) g += tube(smooth([[78, -24], [nF, 0]]), legW, sockCol, C.ink, 0);
-  g += ell(84, -84, 14, 12, coat);
-  g += path(`M${r1(80 - legW / 2 - 3)} -60 Q${r1(80 - legW / 2 - 3)} -76 72 -84`, "none", C.ink, 3);
+  g += tube(smooth([[80, -84 + lift], ...LP([[78, -40], [nF, 0]])]), legW, coat);
+  if (sockCol !== coat) g += tube(smooth(LP([[78, -24], [nF, 0]])), legW, sockCol, C.ink, 0);
+  g += up(ell(84, -84, 14, 12, coat) + path(`M${r1(80 - legW / 2 - 3)} -60 Q${r1(80 - legW / 2 - 3)} -76 72 -84`, "none", C.ink, 3));
   g += pawSide(nF, 0, sockCol, 15);
 
   // --- head
-  g += headSide(L, hx, hy, k, { ...o, near });
+  g += up(headSide(L, hx, hy, k, { ...o, near }));
   return g + "</g>";
 }
 
@@ -293,4 +296,58 @@ function headFront(L, hx, hy, k) {
     if (L.collar.tag) g += circ(hx, hy + R * 1.0 + 8, 7, C.accentB, C.ink, 2) + circ(hx, hy + R + 8, 1.6, C.ink);
   }
   return g;
+}
+
+// ---------------------------------------------------------------- curled up asleep (side)
+/**
+ * A cat curled up asleep, facing +x: a round body, the head resting on the front paws, eyes
+ * closed (one shows from this side), both ears, the tail wrapped round the front. o: { look, x, y, s, flip }
+ */
+export function catCurl(o) {
+  const L = typeof o.look === "string" ? LOOKS[o.look] : o.look;
+  const { x = 0, y = 0, s = 1, flip = false } = o;
+  const chonk = L.body === "chonky" ? 1 : 0;
+  const near = flip ? "right" : "left";
+  const k = `${o.id ?? "curl"}${Math.round(x)}${Math.round(y)}`;
+  let g = `<g transform="translate(${r1(x)} ${r1(y)}) scale(${flip ? -s : s} ${s})">`;
+  g += ell(0, 2, 104 + chonk * 8, 7, C.ink, C.ink, 0, ` opacity="0.16"`);
+  // body: a loaf resting on the floor
+  const bd = smooth([[-92, -4], [-98, -50], [-60, -92 - chonk * 6], [10, -98 - chonk * 6], [62, -76], [80, -30], [70, -4], [0, 0]], true);
+  g += `<clipPath id="${k}-b"><path d="${bd}"/></clipPath>` + path(bd, L.coat, C.ink, 0);
+  g += `<g clip-path="url(#${k}-b)">`;
+  if (L.tabby) for (let i = 0; i < 5; i++) g += path(`M${-70 + i * 28} -96 q-6 22 4 40`, "none", L.stripe, 5.5);
+  if (L.patches?.[near]?.flank) g += ell(-34, -54, 40, 28, L.patches[near].flank);
+  if (L.patches?.shoulder) g += ell(30, -84, 22, 14, L.patches.shoulder);
+  g += `</g>` + (L.rim ? path(bd, "none", L.rim, 2) : "") + path(bd, "none", C.ink, 3.4);
+  // haunch line and the tucked hind paw
+  g += path(`M-80 -14 Q-60 -64 -16 -52`, "none", C.ink, 3) + ell(-40, -8, 18, 8, L.coat, C.ink, 3);
+  // tail wrapped along the floor round the front, tip by the nose
+  const tail = smooth([[-90, -10], [-60, 6], [10, 8], [80, 4], [112, -10]]);
+  g += tube(tail, L.tail === "fluffy" ? 20 : 14, L.coat);
+  if (L.patches?.tailTip) g += tube(smooth([[80, 4], [112, -10]]), L.tail === "fluffy" ? 20 : 14, L.patches.tailTip);
+  if (L.tabby) g += path(`M-40 -2 l2 12 M10 -2 l0 12 M60 -4 l-2 12`, "none", L.stripe, 4);
+  // front paws together under the chin
+  const sockCol = L.sock === "leftFront" && !flip ? C.white : L.coat;
+  g += ell(92, -14, 18, 9, L.coat, C.ink, 3) + ell(100, -8, 18, 9, sockCol, C.ink, 3);
+  // head resting on the paws
+  const hx = 96, hy = -44, R = 34 + (L.young ? 3 : 0);
+  const earH = L.ears === "tall" ? 28 : L.ears === "small" ? 18 : 22;
+  const farSide = near === "left" ? "right" : "left";
+  g += path(`M${hx - 20} ${hy - 18} L${hx - 26} ${hy - 18 - earH} L${hx - 2} ${hy - 26} Z`, L.patches?.[farSide]?.ear ?? L.deep, C.ink, 3);
+  const hd = smooth([[hx - R, hy + 6], [hx - R * 0.6, hy - R * 0.8], [hx + 6, hy - R], [hx + R * 0.8, hy - R * 0.5], [hx + R + 6, hy + 2], [hx + R * 0.7, hy + R * 0.7], [hx - 6, hy + R * 0.8]], true);
+  g += `<clipPath id="${k}-h"><path d="${hd}"/></clipPath>` + path(hd, L.coat, C.ink, 0) + `<g clip-path="url(#${k}-h)">`;
+  if (L.muzzle) g += ell(hx + R * 0.7, hy + 10, 18, 14, L.muzzle);
+  if (L.tabby) g += path(`M${hx - 4} ${hy - R + 4} l4 12 M${hx + 8} ${hy - R + 2} l2 12`, "none", L.stripe, 4);
+  if (L.patches?.[near]?.face) g += ell(hx - 10, hy - 10, 20, 18, L.patches[near].face);
+  g += `</g>` + (L.rim ? path(hd, "none", L.rim, 2) : "") + path(hd, "none", C.ink, 3.4);
+  const nx = hx + 2, ny = hy - R * 0.8;
+  g += path(`M${nx - 12} ${ny + 6} L${nx - 4} ${ny - earH} L${nx + 16} ${ny + 2} Z`, L.patches?.[near]?.ear ?? L.coat, C.ink, 3);
+  g += path(`M${nx - 5} ${ny + 2} L${nx - 2} ${ny - earH * 0.6} L${nx + 9} ${ny} Z`, C.pink, C.ink, 0);
+  if (L.notch === near) g += path(`M${nx + 5} ${ny - earH * 0.42} l6 3 l-3 5`, C.paper, C.ink, 2.2);
+  // closed eye, nose, whiskers both sides of the muzzle (the far side's tips show)
+  g += path(`M${hx + 8} ${hy - 4} q8 6 16 0`, "none", C.ink, 2.6);
+  g += path(`M${hx + R + 2} ${hy - 2} l5 1 l-2 5 Z`, C.pinkDeep, C.ink, 1.4);
+  g += path(`M${hx + R - 6} ${hy + 6} l24 -6 M${hx + R - 6} ${hy + 9} l26 2`, "none", C.ink, 1.4) + path(`M${hx + R + 2} ${hy + 1} l18 -8`, "none", C.inkSoft, 1.2);
+  if (L.collar) g += path(`M${hx - R * 0.5} ${hy + R * 0.5} Q${hx} ${hy + R * 0.95} ${hx + R * 0.5} ${hy + R * 0.7}`, "none", L.collar.col, 6);
+  return g + "</g>";
 }
