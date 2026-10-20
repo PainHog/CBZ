@@ -17,7 +17,8 @@ import { robbery, dice, arrange, cat, human, pet, texts } from "./fixtures.mjs";
 test("a new robbery: cats outside, Patience and Clock scaled for gang size, portions per cat", () => {
   const s4 = robbery("number-12");
   assert.equal(s4.patience0, 4);
-  assert.deepEqual(s4.clock, { goneAt: 7, lightsOut: 9 });
+  assert.deepEqual(s4.clock, { goneAt: 8, lightsOut: 10 });
+  assert.equal(s4.cattitudeStart, 2);
   assert.equal(s4.prize.portions, 5, "1 per cat + 1");
   assert.ok(s4.cats.every(c => c.status === "outside" && c.where === "outside"));
   assert.equal(s4.prize.withHuman, "pell");
@@ -26,11 +27,14 @@ test("a new robbery: cats outside, Patience and Clock scaled for gang size, port
   assert.equal(s4.ways.find(w => w.id === "kitchen~utility").open, false, "the utility door is shut");
   const s3 = robbery("number-12", ["tilly", "biscuit", "velvet"]);
   assert.equal(s3.patience0, 5, "3 cats: Patience +1");
-  assert.deepEqual(s3.clock, { goneAt: 8, lightsOut: 10 }, "…and the prize goes 1 round later");
+  assert.deepEqual(s3.clock, { goneAt: 10, lightsOut: 12 }, "…the prize goes 2 rounds later");
+  assert.equal(s3.cattitudeStart, 3, "…and each cat starts with 3 Cattitude");
   assert.equal(s3.prize.portions, 4);
   const s5 = robbery("number-12", ["tilly", "biscuit", "velvet", "mags", "pip"]);
-  assert.equal(s5.patience0, 4);
-  assert.deepEqual(s5.clock, { goneAt: 6, lightsOut: 8 }, "5 cats: 1 round sooner");
+  assert.equal(s5.patience0, 3, "5 cats: Patience −1");
+  assert.deepEqual(s5.clock, { goneAt: 7, lightsOut: 9 }, "…and 1 round sooner");
+  assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet"]).patience0, 9, "Patience can reach 9");
+  assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet", "mags", "pip"]).patience0, 7);
   assert.equal(robbery("birthday-cake").prize.portions, 8, "a cake is 2 per cat");
   assert.equal(robbery("okafor-box").prize.portions, 0, "a box has no portions");
   assert.equal(pet(robbery("okafor-box"), "noodle").mode, "asleep");
@@ -59,7 +63,7 @@ test("the Prize Clock puts the prize down at the start of its round; the human s
 });
 
 test("the prize is gone at the start of its Clock's last round — unless the gang is carrying it", () => {
-  let s = arrange(robbery("number-12"), { round: 6 });
+  let s = arrange(robbery("number-12"), { round: 7 });
   s.prize.withHuman = null;
   let r = beginRound(s);
   assert.equal(r.state.prize.gone, true);
@@ -69,7 +73,7 @@ test("the prize is gone at the start of its Clock's last round — unless the ga
   assert.equal(r.state.prize.gone, false);
 });
 
-test("if the gang has the prize when the Clock moves it, the owner finds it gone: +1 Broom and Searching", () => {
+test("the prize not where the Clock left it: the owner goes there, stays, finds it gone (+1 Broom and Searching, once)", () => {
   let s = beginRound(robbery("okafor-box")).state;
   assert.equal(s.prize.spotRoom, "hall");
   s = arrange(s, { round: 4, cats: { tilly: { where: "kitchen", status: "free", carrying: true }, biscuit: { where: "kitchen", status: "free", carrying: true } }, humans: { mum: "living" } });
@@ -82,6 +86,14 @@ test("if the gang has the prize when the Clock moves it, the owner finds it gone
   assert.equal(moodNow(state).broom, 1);
   assert.equal(state.prize.room, "kitchen", "the prize stays with the carriers");
   assert.match(texts(events), /finds it gone: \+1 Broom/);
+  // dropped in another room (not carried) counts too; a human already Searching adds nothing more
+  let d = beginRound(robbery("okafor-box")).state;
+  d = arrange(d, { round: 4, humans: { mum: { room: "living", searching: true } } });
+  d.prize.room = "kitchen"; d.prize.down = true;
+  const r2 = beginRound(d);
+  assert.equal(human(r2.state, "mum").room, "hall");
+  assert.equal(moodNow(r2.state).broom, 0, "already Searching: no new Broom");
+  assert.equal(r2.state.prize.room, "kitchen");
 });
 
 /* ------------------------------------------------------------ temptation -- */
@@ -148,16 +160,33 @@ test("giving in, instinct by instinct (Ch 7 table)", () => {
   assert.equal(cat(r.state, "tilly").hidden, true);
   assert.equal(moodNow(r.state).broom, 0);
   r = giveIn("biscuit", "scrapper", "kitchen");
-  assert.equal(pet(r.state, "pudding").mode, "angry", "a dog there turns angry");
+  assert.equal(pet(r.state, "pudding").mode, "awake", "v0.6: squaring up is noise, nothing more");
   assert.equal(moodNow(r.state).broom, 1);
   assert.equal(r.state.noise.length, 1);
 });
 
-test("Lap Cat: a human there is Distracted until the round ends (+1 Cuddle); nobody there, a sunny spot", () => {
+test("any room with an awake dog or house cat tempts Scrappers (v0.6)", () => {
+  let s = arrange(beginRound(robbery("number-12")).state, { cats: { biscuit: "kitchen" } });
+  s.rooms.kitchen.tempt = [];
+  assert.ok(roomTemptations(s, "kitchen").includes("scrapper"));
+  assert.ok(temptationOptions(s).some(o => o.catId === "biscuit" && o.instinct === "scrapper"));
+  s = arrange(s, { pets: { pudding: { mode: "asleep" } } });
+  assert.ok(!roomTemptations(s, "kitchen").includes("scrapper"), "a sleeping dog doesn't");
+  const w = beginRound(robbery("wendell-mouse")).state;
+  assert.ok(roomTemptations(w, "living").includes("scrapper"), "Pom-Pom guards the living room");
+});
+
+test("Lap Cat: its player picks a human there — Distracted until the house's turn, +1 Cuddle (2 for a kid); nobody, a sunny spot", () => {
   let r = giveIn("velvet", "lapCat", "living");
   assert.equal(human(r.state, "pell").distractedRound, 1);
   assert.equal(moodNow(r.state).cuddle, 1);
   assert.match(texts(r.events), /gives Velvet a fuss/);
+  let c = arrange(beginRound(robbery("birthday-cake")).state, { cats: { velvet: "living" } });
+  c = tempt(c, { catId: "velvet", instinct: "lapCat" }).state;
+  const kid = answerTemptation(c, { choice: "gaveIn", human: "leo" });
+  assert.equal(human(kid.state, "leo").distractedRound, 1, "the player picked Leo");
+  assert.equal(human(kid.state, "mia").distractedRound, -1);
+  assert.equal(moodNow(kid.state).cuddle, 2, "a kid: 2 Cuddle");
   r = giveIn("velvet", "lapCat", "living", { watch: false });
   assert.equal(moodNow(r.state).cuddle, 0);
   assert.match(texts(r.events), /sunny spot/);
@@ -318,20 +347,71 @@ test("Searching: stay with a cat in sight, else step into a next room with one (
   assert.equal(human(r.state, "pell").room, "living", "nobody in sight: the routine");
 });
 
-test("discovery: walking into the prize's room and finding it disturbed: +1 Broom and Searching", () => {
-  let s = arrange(beginRound(robbery("number-12")).state, { round: 3, humans: { pell: "hall" }, pets: { pudding: { mode: "hiding", until: 99 } } });
-  s.prize = { ...s.prize, withHuman: null, room: "kitchen", spotRoom: "kitchen", spotSteps: [[["sneaky", 1]], [["streetwise", 1]]], stepsLeft: 1, down: false };
-  let r = endRound(s, { d6: dice(3) });
-  assert.equal(human(r.state, "pell").searching, true);
+test("Finding it: everyone awake beside a disturbed prize (or where the Clock put it) finds it: +1 Broom once, and Searching", () => {
+  const base = arrange(beginRound(robbery("birthday-cake")).state, { round: 3, humans: { dad: "kitchen", rosalind: "living", mia: "living", leo: "loo" }, pets: { captain: { mode: "covered" } } });
+  base.prize = { ...base.prize, withHuman: null, room: "kitchen", spotRoom: "kitchen", spotSteps: [[["sneaky", 1]], [["streetwise", 1]]], stepsLeft: 1, down: false };
+  let r = endRound(base, { d6: dice(), routines: false });
+  assert.equal(human(r.state, "dad").searching, true, "Dad stood by it the whole time and still notices");
   assert.equal(moodNow(r.state).broom, 1);
-  assert.match(texts(r.events), /finds the rotisserie chicken disturbed/);
-  s.prize.stepsLeft = 2;
-  r = endRound(s, { d6: dice(3) });
+  assert.match(texts(r.events), /Dad finds the birthday cake disturbed/);
+  r = endRound(arrange(base, { humans: { rosalind: "kitchen" } }), { d6: dice(), routines: false });
+  assert.equal(moodNow(r.state).broom, 1, "two of them: +1 Broom once");
+  assert.ok(human(r.state, "rosalind").searching && human(r.state, "dad").searching);
+  const carried = arrange(base, { cats: { tilly: { where: "hall", status: "free", carrying: true } } });
+  carried.prize = { ...carried.prize, room: "hall", carriers: ["tilly"], stepsLeft: 0, down: true };
+  r = endRound(carried, { d6: dice(), routines: false });
+  assert.equal(human(r.state, "dad").searching, true, "in the room where the Clock put it: finds it gone");
+  const quiet = arrange(base, {});
+  quiet.prize.stepsLeft = 2;
+  r = endRound(quiet, { d6: dice(), routines: false });
   assert.equal(moodNow(r.state).broom, 0, "nothing done to it: not disturbed");
-  s = arrange(s, { humans: { pell: "kitchen" } });
-  s.prize.eaten = 1;
+  const asleep = arrange(beginRound(robbery("wendell-mouse")).state, { round: 3, humans: { wendell: { room: "hall", asleepUntil: 3 }, june: "bedroom" } });
+  asleep.pets = [];
+  asleep.prize = { ...asleep.prize, withHuman: null, room: "hall", spotRoom: "hall", spotSteps: [[["sneaky", 1]]], stepsLeft: 0, down: true };
+  r = endRound(asleep, { d6: dice(), routines: false });
+  assert.equal(human(r.state, "wendell").searching, false, "asleep: notices nothing");
+});
+
+test("Finding it: a Searching human who can see a cat: +1 Broom once a round; hidden cats aren't seen", () => {
+  let s = arrange(beginRound(robbery("number-12")).state, { round: 3, cats: { mags: "living", tilly: "living" }, humans: { pell: { room: "living", searching: true } }, pets: { pudding: { mode: "hiding", until: 99 } } });
+  let r = endRound(s, { d6: dice() });
+  assert.equal(human(r.state, "pell").room, "living", "stays with a cat in sight");
+  assert.equal(moodNow(r.state).broom, 1, "two cats in sight: still +1 once");
+  assert.match(texts(r.events), /is Searching and can see/);
+  s = arrange(s, { cats: { mags: { hidden: true }, tilly: { hidden: true } } });
   r = endRound(s, { d6: dice(1) });
-  assert.equal(moodNow(r.state).broom, 0, "already in the room: didn't walk in");
+  assert.equal(moodNow(r.state).broom, 0);
+});
+
+test("messes wait until a human ends the house's turn in that room: +1 Broom, and it's cleared", () => {
+  let s = arrange(beginRound(robbery("number-12")).state, { round: 3, humans: { pell: "loo" }, pets: { pudding: { mode: "hiding", until: 99 } } });
+  s.messes = ["living"];
+  let r = endRound(s, { d6: dice(1) });
+  assert.deepEqual(r.state.messes, ["living"], "nobody came: the mess is still there");
+  r = beginRound(r.state);
+  assert.deepEqual(r.state.messes, ["living"], "it lasts into the next round");
+  const k = arrange(r.state, { humans: { pell: "living" } });
+  r = endRound(k, { d6: dice(1) });
+  assert.deepEqual(r.state.messes, []);
+  assert.equal(moodNow(r.state).broom, 1);
+  assert.match(texts(r.events), /finds the mess in the living room/);
+});
+
+test("Searching goes for the prize first: stays with it, or steps into its room next door", () => {
+  const base = arrange(beginRound(robbery("number-12")).state, { round: 3, humans: { pell: { room: "living", searching: true } }, cats: { mags: "living" }, pets: { pudding: { mode: "hiding", until: 99 } } });
+  base.prize = { ...base.prize, withHuman: null, room: "hall", spotRoom: "kitchen", down: true };
+  let r = endRound(base, { d6: dice() });
+  assert.equal(human(r.state, "pell").room, "hall", "the prize next door beats the cat in sight");
+  base.prize.room = "living";
+  r = endRound(base, { d6: dice() });
+  assert.equal(human(r.state, "pell").room, "living");
+});
+
+test("a distraction lasts until the house's turn: the human then answers noise as usual", () => {
+  let s = arrange(beginRound(robbery("number-12")).state, { round: 3, humans: { pell: { room: "hall", distractedRound: 3 } }, pets: { pudding: { mode: "hiding", until: 99 } } });
+  s.noise = [{ room: "living" }];
+  const r = endRound(s, { d6: dice() });
+  assert.equal(human(r.state, "pell").room, "living");
 });
 
 test("pets: a sleeping dog wakes on noise in its room or next door; an awake dog barks at a cat in its room", () => {
@@ -345,7 +425,7 @@ test("pets: a sleeping dog wakes on noise in its room or next door; an awake dog
   assert.equal(pet(r.state, "noodle").room, "garage", "then follows its routine (4: garage)");
   s = arrange(beginRound(robbery("number-12")).state, { round: 3, cats: { tilly: { where: "kitchen", status: "free", hidden: true } }, humans: { pell: "living" } });
   r = endRound(s, { d6: dice(1) });
-  assert.equal(pet(r.state, "pudding").mode, "angry");
+  assert.equal(pet(r.state, "pudding").room, "kitchen", "it barks and stays");
   assert.match(texts(r.events), /Pudding barks/);
   assert.equal(human(r.state, "pell").room, "kitchen", "the bark draws Mr Pell");
 });
@@ -388,7 +468,7 @@ test("holders roll a d6: keep, the Den (its door shut), or outside; driven-off p
 /* ------------------------------------------------------------ the end -- */
 
 test("the end: Lights Out at the end of the second round after the prize goes; or when no free cat is inside", () => {
-  let s = arrange(beginRound(robbery("number-12")).state, { round: 9, humans: { pell: "loo" }, pets: { pudding: { mode: "hiding", until: 99 } } });
+  let s = arrange(beginRound(robbery("number-12")).state, { round: 10, humans: { pell: "loo" }, pets: { pudding: { mode: "hiding", until: 99 } } });
   let r = endRound(s, { d6: dice(1) });
   assert.deepEqual([r.end.due, r.end.reason], [true, "lightsOut"]);
   s = arrange(s, { round: 4 });

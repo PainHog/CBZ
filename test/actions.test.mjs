@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { catOptions, rollContext, doAction, applyRoll, queueHelp, eligibleHelpers, findOption, markTurn } from "../module/logic/actions.mjs";
-import { beginRound, moodNow } from "../module/logic/round.mjs";
+import { beginRound, moodNow, tempt, answerTemptation, setMood } from "../module/logic/round.mjs";
 import { robbery, arrange, cat, human, pet, texts } from "./fixtures.mjs";
 
 const opt = (s, id, optionId) => findOption(s, id, optionId);
@@ -107,7 +107,7 @@ test("the prize: each step needs one working roll by any cat; a step done stays 
   assert.ok(opt(r.state, "mags", "take") === null, "Mags isn't in the kitchen");
 });
 
-test("taking the prize: Medium needs a Chonky cat or two; carriers move together; past a human it's a roll", () => {
+test("taking the prize: Medium needs a Chonky cat or two; carriers hold it without spending Actions", () => {
   let s = kitchen12({ cats: { tilly: "kitchen", biscuit: "kitchen", velvet: "kitchen" } });
   let r = doAction(s, "tilly", "take");
   assert.equal(r.ok, false);
@@ -117,23 +117,41 @@ test("taking the prize: Medium needs a Chonky cat or two; carriers move together
   assert.deepEqual(r.state.prize.carriers, ["tilly", "velvet"]);
   r = doAction(s, "biscuit", "take");
   assert.deepEqual(r.state.prize.carriers, ["biscuit"], "a Chonky cat carries a Medium thing alone");
-  r = doAction(r.state, "biscuit", "move:hall");
-  assert.equal(r.state.prize.room, "hall");
-  assert.equal(cat(r.state, "biscuit").where, "hall");
-  s = arrange(r.state, { round: 4, humans: { pell: "kitchen" } });
-  s.cats.forEach(c => { c.moved = false; c.acted = false; });
-  const past = opt(s, "biscuit", "move:kitchen");
-  assert.deepEqual(past.uses, ["move", "action"]);
-  assert.match(past.label, /past a human/);
-  r = roll(s, "biscuit", "move:kitchen", "savage", "flop");
-  assert.equal(r.state.prize.room, "hall", "a Flop: it doesn't move");
-  assert.equal(moodNow(r.state).broom, 2);
+  assert.equal(opt(r.state, "biscuit", "hide"), null, "a cat holding the prize can't hide");
 });
 
-test("getting out with the prize: no climbing with Medium or Large; Large needs Big ways; out = got", () => {
+test("hauling (v0.6): a Medium or Large prize moves only on a roll, seen or not — every carrier's Action, the others help", () => {
+  let s = kitchen12({ cats: { tilly: { where: "kitchen", status: "free", carrying: true }, velvet: { where: "kitchen", status: "free", carrying: true } } });
+  s.prize.carriers = ["tilly", "velvet"];
+  const haul = opt(s, "tilly", "move:hall");
+  assert.equal(haul.kind, "carry");
+  assert.deepEqual(haul.uses, ["move", "action"]);
+  assert.equal(haul.label, "Haul the rotisserie chicken to the hall (a roll)");
+  assert.throws(() => doAction(s, "tilly", "move:hall"), /needs a roll/, "nobody watching, still a roll");
+  const ctx = rollContext(s, "tilly", "move:hall");
+  assert.deepEqual(ctx.seenBy, []);
+  assert.deepEqual(ctx.helpers.map(h => [h.id, h.queued]), [["velvet", true]], "the other carrier helps");
+  assert.equal(ctx.autoHelpers, true);
+  let r = roll(s, "tilly", "move:hall", "sneaky", "flop", { helpers: ["velvet"] });
+  assert.equal(r.state.prize.room, "kitchen", "a Flop: it doesn't budge");
+  assert.ok(cat(r.state, "tilly").acted && cat(r.state, "velvet").acted);
+  assert.equal(moodNow(r.state).broom, 0, "an unseen Flop doesn't move the Mood");
+  r = roll(s, "tilly", "move:hall", "savage", "scrape", { helpers: ["velvet"] });
+  assert.equal(r.state.prize.room, "hall");
+  assert.ok(["tilly", "velvet"].every(id => cat(r.state, id).where === "hall"));
+  // a Small prize: a roll only when a human in either room sees it
+  let w = arrange(beginRound(robbery("wendell-mouse")).state, { round: 2, cats: { mags: { where: "hall", status: "free", carrying: true } }, humans: { wendell: "bedroom", june: "bedroom" } });
+  w.prize = { ...w.prize, withHuman: null, room: "hall", spotRoom: "hall", carriers: ["mags"], down: true, stepsLeft: 0 };
+  assert.equal(opt(w, "mags", "move:kitchen").roll, null);
+  assert.equal(doAction(w, "mags", "move:kitchen").state.prize.room, "kitchen");
+  w = arrange(w, { humans: { june: "kitchen" } });
+  assert.ok(opt(w, "mags", "move:kitchen").roll, "June in the next room sees it come in");
+});
+
+test("getting out with the prize: a climb takes Small things only; Large needs Big ways; hauling it out is a roll; out = got", () => {
   let s = kitchen12({ cats: { biscuit: { where: "kitchen", status: "free", carrying: true } } });
   s.prize.carriers = ["biscuit"];
-  assert.match(opt(s, "biscuit", "exit:window").disabled, /no climbing/);
+  assert.match(opt(s, "biscuit", "exit:window").disabled, /Small things only/);
   let o = arrange(beginRound(robbery("okafor-box")).state, { round: 3, cats: { tilly: "garage", mags: "garage", velvet: "garage" }, humans: { mum: "living", tayo: "kidsroom" } });
   o.prize = { ...o.prize, withHuman: null, room: "garage", spotRoom: "hall", down: true };
   let r = doAction(o, "tilly", "take", { helpers: ["mags"] });
@@ -142,10 +160,29 @@ test("getting out with the prize: no climbing with Medium or Large; Large needs 
   assert.equal(r.state.prize.carriers.length, 3);
   const k = arrange(r.state, { round: 4 });
   k.cats.forEach(c => { c.moved = false; c.acted = false; });
-  r = doAction(k, "mags", "exit:garage");
+  assert.throws(() => doAction(k, "mags", "exit:garage"), /needs a roll/);
+  assert.deepEqual(rollContext(k, "mags", "exit:garage").helpers.map(h => h.id).sort(), ["tilly", "velvet"]);
+  r = roll(k, "mags", "exit:garage", "savage", "clean", { helpers: ["tilly", "velvet"] });
   assert.equal(r.state.prize.out, true);
   assert.ok(["tilly", "mags", "velvet"].every(id => cat(r.state, id).status === "outside"));
   assert.match(texts(r.events), /with the big delivery box!/);
+});
+
+test("going out through an entrance with no roll can be the Move or the Action; noisy entrances clack for every cat", () => {
+  let s = kitchen12({ cats: { mags: "kitchen", tilly: "utility" } });
+  s.ways.find(w => w.id === "kitchen~utility").open = true;
+  s = doAction(s, "mags", "move:utility").state;
+  assert.equal(cat(s, "mags").moved, true);
+  const out = opt(s, "mags", "exit:flap");
+  assert.deepEqual(out.uses, ["action"]);
+  assert.match(out.label, /as your Action/);
+  let r = doAction(s, "mags", "exit:flap");
+  assert.equal(cat(r.state, "mags").status, "outside");
+  assert.equal(cat(r.state, "mags").acted, true);
+  const e = beginRound(robbery("number-12")).state;
+  r = roll(queueHelp(e, "biscuit", "tilly").state, "tilly", "enter:window", "sneaky", "clean", { helpers: ["biscuit"] });
+  const flapIn = doAction(doAction(e, "mags", "enter:flap").state, "velvet", "enter:flap");
+  assert.equal(flapIn.state.noise.filter(n => n.room === "utility").length, 2, "one clack per cat");
 });
 
 test("simple things are free unseen and a roll in view; a hidden cat that acts comes out and is seen", () => {
@@ -180,26 +217,59 @@ test("distract: a Sweet roll at a watching human; each earlier distraction takes
 });
 
 test("a dog in the room: deal with it or leave first; Savage drives it off, Sweet befriends a soft one, Sneaky slips past", () => {
-  const base = arrange(kitchen12({ cats: { tilly: "kitchen", biscuit: "kitchen" } }), { pets: { pudding: { mode: "awake", room: "kitchen" } } });
+  const base = arrange(kitchen12({ cats: { tilly: { where: "kitchen", status: "free", cameFrom: "hall" }, biscuit: "kitchen" } }), { pets: { pudding: { mode: "awake", room: "kitchen" } } });
   assert.match(opt(base, "tilly", "eat").disabled, /Pudding is in the way/);
   assert.equal(opt(base, "tilly", "move:hall").disabled, null, "leaving is always allowed");
   const ctx = rollContext(base, "biscuit", "confront:pudding");
-  assert.equal(ctx.opposition, 2);
+  assert.equal(ctx.opposition, 2, "the roll loses the dog's rating in dice");
   assert.deepEqual(ctx.options.map(o => [o.approach, o.knack]), [["savage", true], ["sneaky", false], ["sweet", false]]);
   let r = roll(base, "biscuit", "confront:pudding", "savage", "clean");
   assert.equal(pet(r.state, "pudding").mode, "hiding");
-  assert.equal(pet(r.state, "pudding").until, 6);
+  assert.equal(pet(r.state, "pudding").until, 5, "3 rounds counting this one (round 3): back at the end of round 5");
   assert.equal(opt(r.state, "tilly", "eat").disabled, null);
   r = roll(base, "biscuit", "confront:pudding", "sweet", "scrape");
   assert.equal(pet(r.state, "pudding").mode, "friendly");
+  assert.equal(opt(r.state, "tilly", "eat").disabled, null, "befriended for the whole gang");
   r = roll(base, "tilly", "confront:pudding", "sneaky", "clean");
   assert.deepEqual(cat(r.state, "tilly").slipped, ["pudding"]);
   assert.match(opt(r.state, "biscuit", "eat").disabled, /Pudding/, "slipping past is for that cat only");
   r = roll(base, "tilly", "confront:pudding", "sneaky", "flop");
-  assert.equal(pet(r.state, "pudding").mode, "angry");
-  assert.equal(cat(r.state, "tilly").where, "hall", "a Flop: the dog chases you into the next room");
+  assert.equal(pet(r.state, "pudding").mode, "awake", "no 'angry' dogs in v0.6");
+  assert.equal(cat(r.state, "tilly").where, "hall", "a Flop: chased back the way it came");
+  assert.equal(cat(r.state, "tilly").moved, false, "…which isn't its Move");
+  const carrying = arrange(base, { cats: { biscuit: { where: "kitchen", status: "free", carrying: true, cameFrom: "hall" } } });
+  carrying.prize.carriers = ["biscuit"];
+  r = roll(carrying, "biscuit", "confront:pudding", "savage", "flop");
+  assert.equal(r.state.prize.carriers.length, 0, "a carrier drops the prize");
+  assert.equal(r.state.prize.room, "kitchen");
   const brutus = arrange(beginRound(robbery("marchetti-salmon")).state, { cats: { biscuit: "utility" } });
   assert.deepEqual(rollContext(brutus, "biscuit", "confront:brutus").options.map(o => o.approach), ["savage", "sneaky"], "Brutus isn't soft");
+});
+
+test("the tempted cat answers and goes first; the others wait", () => {
+  let s = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "kitchen", velvet: "hall" }, pets: { pudding: { mode: "hiding", until: 99 } } });
+  s = tempt(s, { catId: "tilly", instinct: "climber" }).state;
+  assert.match(opt(s, "velvet", "move:living").disabled, /Two-Bin Tilly is tempted and goes first/);
+  assert.match(opt(s, "tilly", "move:hall").disabled, /answer the temptation first/);
+  s = answerTemptation(s, { choice: "resisted", cattitude: 2 }).state;
+  assert.equal(opt(s, "velvet", "move:living").disabled, null);
+});
+
+test("a roll that fills a meter still does what it did, but Shoo! comes before the cat goes anywhere", () => {
+  let s = kitchen12({ cats: { biscuit: { where: "kitchen", status: "free", carrying: true } }, humans: { pell: "hall" } });
+  s.prize.carriers = ["biscuit"];
+  s = setMood(s, { broom: 3 }).state;
+  let r = roll(s, "biscuit", "move:hall", "savage", "scrape");
+  assert.equal(cat(r.state, "biscuit").status, "outside", "Shoo!");
+  assert.equal(r.state.prize.room, "kitchen", "the prize is put back where the Clock left it");
+  assert.equal(r.state.prize.stepsLeft, 2, "…wrapped again");
+  assert.match(texts(r.events), /before Big Biscuit goes anywhere/);
+  s = arrange(kitchen12({ cats: { tilly: "kitchen" }, humans: { pell: "kitchen" } }), {});
+  s.prize.stepsLeft = 2; s.prize.down = false;
+  s = setMood(s, { broom: 3 }).state;
+  r = roll(s, "tilly", "step", "savage", "scrape");
+  assert.equal(r.state.prize.stepsLeft, 1, "the step stays done… until the human puts it back");
+  assert.equal(cat(r.state, "tilly").status, "outside");
 });
 
 test("held: wriggle free (Savage, Tricky; Chonky +1 die); shut in: the Den door, from inside or the next room", () => {

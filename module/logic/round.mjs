@@ -18,7 +18,7 @@ import { foldMood, upsertEntry, stepEntry, undoLast, liveEntries } from "./mood.
 import { nearestEntrances, wayId } from "./map.mjs";
 import {
   watchers, catById, humanByKey, petByKey, roomName, freeInside, leadWatcher, isAsleep,
-  petsAct, resolveNoise, humanRoutines, holdersRoll, petsReturn, addNoise, hasTrait
+  petsAct, resolveNoise, humanRoutines, holdersRoll, petsReturn, addNoise, hasTrait, findingIt
 } from "./residents.mjs";
 import { newPrize, gangScaling, prizeClock, prizePhase, isDisturbed, dropPrize, robberyOutcome, OUTCOME_LABEL, prizeGot } from "./prize.mjs";
 import { humanTraits } from "./house-catalog.mjs";
@@ -59,6 +59,7 @@ export function newRobbery(house, { id = "robbery", cats = [], gangSize = null }
     v: 1, id, houseKey: house.key, name: house.name, label: house.label, gangSize: g,
     phase: "robbery", stage: "between", round: 0, roundSerial: 0,
     patience0: Math.max(R.minPatience, house.patience + sc.patience), housePatience: house.patience,
+    cattitudeStart: R.cattitudeStart + (sc.cattitude ?? 0),
     moodLedger: [],
     clock: { goneAt, lightsOut: goneAt + R.lightsOut },
     rooms: Object.fromEntries(Object.entries(house.rooms).map(([k, r]) => [k, { name: r.name, tempt: [...(r.tempt ?? [])], hide: r.hide !== false }])),
@@ -73,7 +74,7 @@ export function newRobbery(house, { id = "robbery", cats = [], gangSize = null }
     noise: [], messes: [], help: {}, temptation: null, applied: [], log: [], outcome: null
   };
   state.prize = newPrize(house, humans, g, goneAt);
-  pushLog(state, [{ type: "start", text: `The robbery at ${house.name} begins: ${g} cats, Patience ${state.patience0}, the ${house.prize.name} is gone at the start of round ${goneAt}, Lights Out at the end of round ${goneAt + R.lightsOut}.` }]);
+  pushLog(state, [{ type: "start", text: `The robbery at ${house.name} begins: ${g} cats (${state.cattitudeStart} Cattitude each), Patience ${state.patience0}, the ${house.prize.name} is gone at the start of round ${goneAt}, Lights Out at the end of round ${goneAt + R.lightsOut}.` }]);
   return state;
 }
 
@@ -257,7 +258,7 @@ export function beginRound(state, ctx = {}) {
   s.roundSerial += 1;
   s.stage = "cats";
   for (const c of s.cats) { c.moved = false; c.acted = false; c.slipped = []; }
-  s.noise = []; s.messes = []; s.help = {}; s.temptation = null;
+  s.noise = []; s.help = {}; s.temptation = null; // messes stay until a human finds them (v0.6)
   ev.push({ type: "round", text: `Round ${s.round} begins.` });
   if (ctx.prizeClock !== false) {
     const pc = prizeClock(s);
@@ -273,17 +274,23 @@ export function beginRound(state, ctx = {}) {
 
 /* -------------------------------------------------------- temptation -- */
 
-/** Ch 7: the instincts a room tempts (a robot vacuum tempts Hunters wherever it is). */
+/**
+ * Ch 7: the instincts a room tempts. A robot vacuum tempts Hunters wherever it
+ * is; any room with an awake dog or house cat in it tempts Scrappers (v0.6).
+ */
 export function roomTemptations(s, room) {
   const list = [...(s.rooms[room]?.tempt ?? [])];
-  if ((s.pets ?? []).some(p => p.kind === "vacuum" && p.room === room) && !list.includes("hunter")) list.push("hunter");
+  const pets = (s.pets ?? []).filter(p => p.room === room);
+  if (pets.some(p => p.kind === "vacuum") && !list.includes("hunter")) list.push("hunter");
+  if (pets.some(p => (p.kind === "dog" || p.kind === "housecat") && p.mode !== "asleep" && p.mode !== "hiding") && !list.includes("scrapper")) list.push("scrapper");
   return list;
 }
 
 /**
  * Ch 7 "Temptation": the cats the Storyteller may tempt this round — free cats in
  * a room with a temptation for one of their instincts, never the same cat with
- * the same thing twice, who haven't moved or acted yet. One per round.
+ * the same thing twice, who haven't moved or acted yet. One per round; the
+ * tempted cat takes its turn first (actions.mjs holds the others back).
  */
 export function temptationOptions(state) {
   if (state.phase !== "robbery" || state.stage !== "cats" || state.temptation) return [];
@@ -321,11 +328,12 @@ export function tempt(state, pick) {
 
 /**
  * Ch 7: the tempted cat gives in (+1 Cattitude; the instinct thing is its
- * Action, done right away, there, never a roll; anything it carries is dropped)
- * or resists (−1 Cattitude; with none it must give in).
- * @param {{choice: "gaveIn"|"resisted", cattitude: number}} answer
+ * Action, done right away, there, never a roll; a carrier drops the prize in
+ * that room first and the other carriers let go too) or resists (−1 Cattitude;
+ * with none it must give in). A Lap Cat's player picks the human (`human`).
+ * @param {{choice: "gaveIn"|"resisted", cattitude: number, human?: string}} answer
  */
-export function answerTemptation(state, { choice, cattitude = 0 }, ctx = {}) {
+export function answerTemptation(state, { choice, cattitude = 0, human = null }, ctx = {}) {
   const s = clone(state);
   const t = s.temptation;
   if (!t || t.choice) throw new Error("No temptation is waiting for an answer.");
@@ -340,7 +348,7 @@ export function answerTemptation(state, { choice, cattitude = 0 }, ctx = {}) {
     if (choice === "resisted") ev.push({ type: "mustGiveIn", cat: c.id, text: `${c.name} has no Cattitude left to resist with.` });
     cat.push({ catId: c.id, delta: +1, why: "gave in to a temptation" });
     ev.push({ type: "gaveIn", cat: c.id, instinct: t.instinct, text: `${c.name} gives in (+1 Cattitude): ${CATB.instincts[t.instinct].giveInText}` });
-    giveIn(s, c, t.instinct, ev, ctx.mood ?? "auto");
+    giveIn(s, c, t.instinct, ev, ctx.mood ?? "auto", human);
     c.acted = true;
   }
   t.choice = final;
@@ -349,28 +357,28 @@ export function answerTemptation(state, { choice, cattitude = 0 }, ctx = {}) {
 }
 
 /** What giving in does (Ch 7 table). MUTATES s. */
-function giveIn(s, c, instinct, ev, moodMode) {
+function giveIn(s, c, instinct, ev, moodMode, pickHuman = null) {
   const g = CATB.instincts[instinct].giveIn;
   const room = c.where;
   if (c.carrying) {
     dropPrize(s);
-    ev.push({ type: "dropped", cat: c.id, text: `${c.name} drops the ${s.prize.name}.` });
+    ev.push({ type: "dropped", cat: c.id, text: `${c.name} drops the ${s.prize.name} in the ${roomName(s, room).toLowerCase()}.` });
   }
   if (g.hidden) { c.hidden = true; c.riding = null; return; }
   c.hidden = false; // doing anything else ends hiding (CORE-RULES "Seen")
   const ws = watchers(s, room);
   if (g.fuss) {
-    if (!ws.length) { ev.push({ type: "sunnySpot", cat: c.id, text: `Nobody to fuss: ${c.name} finds a sunny spot.` }); return; }
-    const h = ws[0];
+    // Ch 7 (v0.6): its player picks a human in the room; Distracted until the house's turn; +1 Cuddle, 2 for a kid
+    const here = s.humans.filter(h => h.room === room && !isAsleep(s, h) && !h.holding);
+    if (!here.length) { ev.push({ type: "sunnySpot", cat: c.id, text: `Nobody to fuss: ${c.name} finds a sunny spot.` }); return; }
+    const h = here.find(x => x.key === pickHuman) ?? ws[0] ?? here[0];
     h.distractedRound = s.round;
-    ev.push({ type: "fuss", cat: c.id, human: h.key, text: `${h.name} gives ${c.name} a fuss and is Distracted until the round ends.` });
-    addMood(s, stepEntry({ side: "cuddle", steps: 1, cause: `${c.name} goes for a fuss`, catId: c.id, seenBy: [h.key], kind: "temptation" }), ev, moodMode);
+    const steps = hasTrait(h, "kid") ? (g.seen.kid ?? 2) : g.seen.steps;
+    ev.push({ type: "fuss", cat: c.id, human: h.key, text: `${h.name} gives ${c.name} a fuss and is Distracted until the house's turn.` });
+    addMood(s, stepEntry({ side: "cuddle", steps, cause: `${c.name} goes for a fuss with ${h.name}`, catId: c.id, seenBy: [h.key], kind: "temptation" }), ev, moodMode);
     return;
   }
   if (g.noise) addNoise(s, room, `${c.name} (${CATB.instincts[instinct].label})`, c.id, { mess: !!g.mess });
-  if (g.angersDog) {
-    for (const p of s.pets) if (p.room === room && p.kind === "dog" && p.mode !== "hiding") { p.mode = "angry"; ev.push({ type: "angry", pet: p.key, text: `${p.name} turns angry.` }); }
-  }
   if (g.seen && ws.length) {
     addMood(s, stepEntry({ side: g.seen.side, steps: g.seen.steps, cause: `${c.name} gives in to ${CATB.instincts[instinct].label} in view`, catId: c.id, seenBy: ws.map(h => h.key), kind: "temptation" }), ev, moodMode);
   }
@@ -379,10 +387,11 @@ function giveIn(s, c, instinct, ev, moodMode) {
 /* ------------------------------------------------------ the house's turn -- */
 
 /**
- * Ch 6 "The house's turn" (order as AUTOMATION.md §5 and the simulator):
- * pets act (barks and squawks are noise), noise is answered (a mess found:
- * +1 Broom), every other human follows their routine (Searching humans hunt),
- * discovery (+1 Broom and Searching), holders roll, driven-off pets come back.
+ * Ch 6 "The house's turn" (core rules v0.6): pets act (a sleeping dog woken by
+ * noise acts at once; barks and squawks are noise), noise is answered, every
+ * other human follows their routine (Searching humans hunt instead), holders
+ * roll, then Finding it (spotted, the disturbed prize, messes); driven-off pets
+ * count down and come back.
  * ctx: { d6: () => 1..6, routines: bool, holders: bool, mood: mode }
  * Returns { state, events, end: endCheck(state) }.
  */
@@ -396,32 +405,21 @@ export function endRound(state, ctx = {}) {
   if (ctx.houseTurn === false) {
     // autoHouseTurn "manual": the Storyteller runs the house by hand; only the round's bookkeeping happens here
     ev.push({ type: "manualHouse", text: "The Storyteller runs the house's turn by hand." });
-    s.noise = []; s.messes = []; s.help = {};
+    s.noise = []; s.help = {};
     s.stage = "between";
     const end = endCheck(s);
     if (end.due) ev.push({ type: "endDue", reason: end.reason, text: end.text });
     pushLog(s, ev);
     return { state: s, events: ev, end };
   }
-  const before = new Map(s.humans.map(h => [h.key, h.room]));
   petsAct(s, ctx, ev);
-  const { answered, mood: noiseMood } = resolveNoise(s, ev);
-  for (const m of noiseMood) addMood(s, stepEntry({ ...m, catId: null }), ev, mood);
+  const { answered } = resolveNoise(s, ev);
   humanRoutines(s, ctx, answered, ev);
-  // Discovery (Ch 6): anyone who walked into the prize's room and found it disturbed: +1 Broom, and Searching.
-  const z = s.prize;
-  if (prizePhase(s) === "get" && isDisturbed(z)) {
-    for (const h of s.humans) {
-      if (h.room === z.spotRoom && before.get(h.key) !== h.room && !h.holding) {
-        h.searching = true;
-        ev.push({ type: "discovery", human: h.key, text: `${h.name} walks into the ${roomName(s, z.spotRoom).toLowerCase()} and finds the ${z.name} disturbed: +1 Broom, and starts Searching.` });
-        addMood(s, stepEntry({ side: "broom", steps: 1, cause: `${h.name} finds the ${z.name} disturbed`, catId: null, seenBy: [h.key], kind: "discovery" }), ev, mood);
-      }
-    }
-  }
   if (ctx.holders !== false) holdersRoll(s, ctx, ev, { shutInDen: (c, h) => shutInDen(s, c, h) });
+  const found = findingIt(s, ev, { disturbed: isDisturbed(s.prize), inPlay: prizePhase(s) === "get" && !s.prize.withHuman });
+  for (const m of found) addMood(s, stepEntry({ ...m }), ev, mood);
   petsReturn(s, ev);
-  s.noise = []; s.messes = []; s.help = {};
+  s.noise = []; s.help = {};
   s.stage = "between";
   const end = endCheck(s);
   if (end.due) ev.push({ type: "endDue", reason: end.reason, text: end.text });

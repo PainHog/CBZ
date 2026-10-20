@@ -42,8 +42,11 @@ export function catOptions(state, catId) {
   if (!c || s.phase !== "robbery") return out;
   const opt = o => out.options.push({ uses: [], roll: null, group: false, simple: false, disabled: null, room: c.where, ...o });
   const moveLeft = !c.moved, actLeft = !c.acted;
+  const t = s.temptation && !s.temptation.choice ? s.temptation : null;
   const need = (uses, roll) => {
     if (!turnOpen(s)) return "wait for the round to begin";
+    // Ch 7 (v0.6): the tempted cat answers first and takes its turn before any other cat
+    if (t) return t.catId === c.id ? "answer the temptation first" : `${catById(s, t.catId)?.name ?? "the tempted cat"} is tempted and goes first`;
     if (uses.includes("move") && !moveLeft) return "already moved this round";
     if ((uses.includes("action") || roll) && !actLeft) return "already acted this round";
     return null;
@@ -92,13 +95,16 @@ export function catOptions(state, catId) {
   const carriers = c.carrying ? z.carriers.map(id => catById(s, id)).filter(Boolean) : [];
   for (const { to, way } of waysFrom(s, room)) {
     if (c.carrying) {
+      // Ch 8 "Hauling" (v0.6): a Medium or Large prize is a roll every time, seen or not; a Small one
+      // only when a human in either room sees it. Every carrier's Action; one rolls, the others help.
       const fit = carriers.every(x => fits(way.size, { body: x.body, carry: z.size }));
       const past = [...ws, ...watchers(s, to)];
-      const roll = past.length ? { options: SIMPLE_IN_VIEW([]), seenRooms: [room, to] } : null;
+      const haul = z.size !== "small" || past.length > 0;
+      const roll = haul ? { options: SIMPLE_IN_VIEW([]), seenRooms: [room, to], haul: true } : null;
       const uses = roll ? ["move", "action"] : ["move"];
       const why = !way.open ? "the way is shut" : !fit ? `the ${z.name} won't fit through` : carriers.some(x => x.moved) ? "a carrier has already moved"
-        : (roll && carriers.some(x => x.acted)) ? "a carrier has already acted (carrying it past a human is a roll)" : null;
-      opt({ id: `move:${to}`, kind: "carry", label: `Carry the ${z.name} to the ${low(roomName(s, to))}${roll ? " (past a human: a roll)" : ""}`,
+        : (roll && carriers.some(x => x.acted)) ? "a carrier has already acted (hauling is every carrier's Action)" : null;
+      opt({ id: `move:${to}`, kind: "carry", label: `${roll ? "Haul" : "Carry"} the ${z.name} to the ${low(roomName(s, to))}${roll ? " (a roll)" : ""}`,
         target: to, uses, roll, group: true, disabled: why ?? need(uses, roll) });
     } else {
       const why = !way.open ? "the way is shut" : !fits(way.size, { body: c.body }) ? "too tight for a Chonky cat" : null;
@@ -117,17 +123,19 @@ export function catOptions(state, catId) {
     const carry = c.carrying ? z.size : null;
     const group = c.carrying ? carriers : [c];
     const fit = group.every(x => fits(e.size, { body: x.body, carry }));
+    // If the entrance lists a roll, that's the roll; else hauling a Medium/Large prize out is a roll (Small: if seen)
     let roll = e.opts.length ? { options: e.opts } : null;
-    if (!roll && c.carrying && ws.length) roll = { options: SIMPLE_IN_VIEW([]) };
-    const uses = roll ? ["move", "action"] : ["move"];
+    if (!roll && c.carrying && (z.size !== "small" || ws.length)) roll = { options: SIMPLE_IN_VIEW([]), haul: true };
+    // Ch 8 (v0.6): going out through an entrance that needs no roll can be the Move or the Action
+    const uses = roll ? ["move", "action"] : (group.every(x => !x.moved) ? ["move"] : ["action"]);
     const why = !e.open ? (e.rounds ? "it's shut" : "it's shut (reopen it from inside first)")
       : (e.rounds && !e.rounds.includes(s.round)) ? `only in round ${e.rounds.join(" or ")}`
       : !fit ? (carry ? `the ${z.name} won't fit through` : "too tight for a Chonky cat")
-      : (carry && e.climb && z.size !== "small") ? `no climbing with a ${z.size} prize`
-      : group.some(x => x.moved) ? "already moved this round"
-      : (roll && group.some(x => x.acted)) ? "already acted this round" : null;
-    opt({ id: `exit:${e.key}`, kind: "exit", label: `Out through the ${e.name}${carry ? ` with the ${z.name}` : ""}`, target: e.key, uses, roll,
-      group: true, disabled: why ?? need(uses, roll) });
+      : (carry && e.climb && z.size !== "small") ? "a climb takes Small things only"
+      : roll ? (group.some(x => x.moved) ? "already moved this round" : group.some(x => x.acted) ? "already acted this round" : null)
+      : (group.some(x => x.moved && x.acted) ? "no Move or Action left" : null);
+    opt({ id: `exit:${e.key}`, kind: "exit", label: `Out through the ${e.name}${carry ? ` with the ${z.name}` : ""}${!roll && uses[0] === "action" ? " (as your Action)" : ""}`, target: e.key, uses, roll,
+      group: true, disabled: why ?? (t ? need(uses, roll) : (turnOpen(s) ? null : need(uses, roll))) });
     if (e.letOut) {
       act({ id: `meow:${e.key}`, kind: "meow", label: `Meow at the ${e.name} to be let out`, target: e.key, uses: ["move", "action"],
         roll: { options: [["sweet", 0, "charm"]] }, allowBlocked: true,
@@ -190,7 +198,7 @@ export function helpTargetsFor(s, c) {
 /** Cats who could help this cat's roll now: same place, not acted (for enter/exit groups also not moved). */
 export function eligibleHelpers(s, c, option = null) {
   if (!c) return [];
-  if (option?.kind === "carry") return s.prize.carriers.filter(id => id !== c.id).map(id => catById(s, id));
+  if (option?.kind === "carry" || (option?.kind === "exit" && c.carrying)) return s.prize.carriers.filter(id => id !== c.id).map(id => catById(s, id));
   return s.cats.filter(x => x.id !== c.id && x.status === c.status && x.where === c.where && !x.acted
     && (c.status === "free" || c.status === "outside")
     && !(option?.group && ["enter", "exit"].includes(option.kind) && x.moved));
@@ -244,8 +252,8 @@ export function rollContext(state, catId, optionId = "free") {
     option: o, cat: c, room: rollRoom(s, c, o), roomName: roomName(s, rollRoom(s, c, o)),
     options, opposition: o.roll?.opposition ?? 0, bodyDie: !!o.roll?.bodyDie, diffLabel: o.roll?.diffLabel ?? null,
     seenBy: seen.map(h => h.key), seenNames: seen.map(h => h.name), attention: highestAttention(seen), kid: kidAmong(seen),
-    helpers: helpers.map(x => ({ id: x.id, name: x.name, queued: queued.includes(x.id) || o.kind === "carry" })),
-    autoHelpers: o.kind === "carry"
+    helpers: helpers.map(x => ({ id: x.id, name: x.name, queued: queued.includes(x.id) || o.kind === "carry" || (o.kind === "exit" && c.carrying) })),
+    autoHelpers: o.kind === "carry" || (o.kind === "exit" && c.carrying)
   };
 }
 
@@ -304,6 +312,18 @@ export function applyRoll(state, card, ctx = {}) {
   if (c.riding && !(o?.kind === "ride")) c.riding = null;
   // helpers spend their Actions
   for (const id of card.helpers ?? []) { const h = catById(s, id); if (h) { h.acted = true; delete s.help[id]; } }
+  const entry = rollEntry({ ...card, catName: c.name }, { round: s.round });
+  if (o && ctx.effects !== false && ok && MOVING.has(o.kind) && wouldTrigger(s, entry, ctx)) {
+    // Ch 5 (v0.6): a roll that fills a meter still does what it did, but the Shoo! or Scoop happens
+    // before the cat goes anywhere (a carrier drops the prize; the human puts it back)
+    const group = o.kind === "carry" || (o.kind === "exit" && c.carrying) ? s.prize.carriers.map(id => catById(s, id)).filter(Boolean) : [c];
+    for (const x of group) { x.acted = true; }
+    ev.push({ type: "stopped", cat: c.id, text: `…but before ${c.name} goes anywhere:` });
+    if (makesNoise(card.result) && !card.quiet && room) addNoise(s, room, `${c.name}'s ${card.result}`, c.id);
+    addMood(s, entry, ev, ctx.mood ?? "auto");
+    pushLog(s, ev);
+    return { state: s, events: ev, cattitude: card.result === "purrfect" ? [{ catId: c.id, delta: +1, why: "a Purrfect" }] : [], ok };
+  }
   if (o && ctx.effects !== false) {
     perform(s, c, o, { result: card.result, approach: card.approach, helpers: card.helpers ?? [] }, ev, ctx);
   } else {
@@ -313,9 +333,20 @@ export function applyRoll(state, card, ctx = {}) {
   }
   if (makesNoise(card.result) && !card.quiet && room) addNoise(s, room, `${c.name}'s ${card.result}`, c.id);
   if (card.result === "purrfect") cattitude.push({ catId: c.id, delta: +1, why: "a Purrfect" });
-  addMood(s, rollEntry({ ...card, catName: c.name }, { round: s.round }), ev, ctx.mood ?? "auto");
+  addMood(s, entry, ev, ctx.mood ?? "auto");
   pushLog(s, ev);
   return { state: s, events: ev, cattitude, ok };
+}
+
+const MOVING = new Set(["carry", "exit", "meow", "move"]);
+
+/** Would this roll's Mood entry fire Shoo!/Scooped! on its cat right now? (tried on a copy) */
+function wouldTrigger(s, entry, ctx) {
+  if ((ctx.mood ?? "auto") !== "auto") return false;
+  const t = clone(s);
+  const ev = [];
+  addMood(t, entry, ev, "auto");
+  return ev.some(e => (e.type === "shoo" || e.type === "scooped") && e.cat === entry.catId);
 }
 
 /**
@@ -330,7 +361,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
   const helpCats = helpers.map(id => catById(s, id)).filter(Boolean);
   switch (o.kind) {
     case "move": {
-      Object.assign(c, { where: o.target, hidden: false, riding: null });
+      Object.assign(c, { cameFrom: c.where, where: o.target, hidden: false, riding: null });
       mark(c);
       ev.push({ type: "move", cat: c.id, to: o.target, text: `${c.name} goes to the ${low(roomName(s, o.target))}.` });
       break;
@@ -339,7 +370,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       const group = z.carriers.map(id => catById(s, id)).filter(Boolean);
       for (const x of group) { if (o.roll) x.acted = true; }
       if (!ok) { ev.push({ type: "carryFailed", text: `The carriers can't get the ${z.name} past.` }); break; }
-      for (const x of group) Object.assign(x, { where: o.target, moved: true, hidden: false, riding: null });
+      for (const x of group) Object.assign(x, { cameFrom: x.where, where: o.target, moved: true, hidden: false, riding: null });
       z.room = o.target;
       ev.push({ type: "carry", to: o.target, text: `${group.map(x => x.name).join(" and ")} carry the ${z.name} to the ${low(roomName(s, o.target))}.` });
       break;
@@ -351,8 +382,8 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       if (e.one) e.open = false; // Ch 8: the front door lets in one cat, then it shuts
       if (!ok) { ev.push({ type: "enterFailed", cat: c.id, text: `${c.name} doesn't get in through the ${e.name}.` }); break; }
       if (e.jam && o.roll) { e.opts = []; ev.push({ type: "jammed", text: `The ${e.name} is jammed open now: no roll for anyone.` }); }
-      for (const x of group) Object.assign(x, { where: e.room, status: "free", hidden: false });
-      if (e.noisy) { addNoise(s, e.room, e.name, c.id); }
+      for (const x of group) Object.assign(x, { where: e.room, status: "free", hidden: false, cameFrom: "outside" });
+      if (e.noisy) for (const x of group) addNoise(s, e.room, e.name, x.id); // v0.6: a noise for each cat
       ev.push({ type: "enter", cat: c.id, text: `${group.map(x => x.name).join(" and ")} ${group.length > 1 ? "come" : "comes"} in through the ${e.name}${e.noisy ? " (it clacks: noise)" : ""}.` });
       break;
     }
@@ -360,12 +391,13 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       const e = s.entrances.find(x => x.key === o.target);
       const group = c.carrying ? z.carriers.map(id => catById(s, id)).filter(Boolean)
         : [c, ...helpCats.filter(x => x.status === "free" && x.where === c.where && !x.moved && fits(e.size, { body: x.body }))];
-      for (const x of group) mark(x, { move: ok, act: !!o.roll });
+      if (o.roll) for (const x of group) mark(x, { move: ok, act: true });
+      else for (const x of group) { if (!x.moved) x.moved = true; else x.acted = true; } // the Move, or else the Action
       if (!ok) { ev.push({ type: "exitFailed", cat: c.id, text: `${c.name} doesn't get out through the ${e.name}.` }); break; }
       const withPrize = c.carrying;
       for (const x of group) Object.assign(x, { where: "outside", status: "outside", hidden: false, riding: null, carrying: false });
       if (withPrize) { z.out = true; z.carriers = []; z.room = null; }
-      if (e.noisy) addNoise(s, e.room, e.name, c.id);
+      if (e.noisy) for (const x of group) addNoise(s, e.room, e.name, x.id);
       ev.push({ type: "exit", cat: c.id, text: `${group.map(x => x.name).join(" and ")} ${group.length > 1 ? "get" : "gets"} out through the ${e.name}${withPrize ? ` with the ${z.name}!` : "."}` });
       break;
     }
@@ -459,17 +491,19 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       mark(c);
       const p = petByKey(s, o.target);
       if (ok) {
-        if (approach === "savage") { p.mode = "hiding"; p.until = s.round + R.petHideRounds; ev.push({ type: "drivenOff", pet: p.key, text: `${c.name} drives ${p.name} off: it hides for ${R.petHideRounds} rounds.` }); }
-        else if (approach === "sweet") { p.mode = "friendly"; ev.push({ type: "befriended", pet: p.key, text: `${c.name} befriends ${p.name} for the rest of the robbery.` }); }
+        // Ch 10 (v0.6): driven off = hides for 3 rounds counting this one (back at the end of the third)
+        if (approach === "savage") { p.mode = "hiding"; p.until = s.round + R.petHideRounds - 1; ev.push({ type: "drivenOff", pet: p.key, text: `${c.name} drives ${p.name} off: it hides for ${R.petHideRounds} rounds, counting this one.` }); }
+        else if (approach === "sweet") { p.mode = "friendly"; ev.push({ type: "befriended", pet: p.key, text: `${c.name} befriends ${p.name}: it leaves the whole gang alone for the rest of the robbery.` }); }
         else { c.slipped = [...(c.slipped ?? []), p.key]; ev.push({ type: "slipped", pet: p.key, text: `${c.name} slips past ${p.name} this turn.` }); }
-      } else if (p.kind === "dog") {
-        p.mode = "angry";
-        const away = waysFrom(s, c.where).find(x => x.way.open && fits(x.way.size, { body: c.body }));
+      } else {
+        // a failed roll: it chases you back the way you came (not your Move; a carrier drops the prize)
+        const open = waysFrom(s, c.where).filter(x => x.way.open && fits(x.way.size, { body: c.body }));
+        const away = open.find(x => x.to === c.cameFrom) ?? open[0];
         if (away) {
-          if (c.carrying) dropPrize(s);
-          Object.assign(c, { where: away.to, moved: true, hidden: false, riding: null });
-          ev.push({ type: "chased", pet: p.key, text: `${p.name} chases ${c.name} into the ${low(roomName(s, away.to))}, barking!` });
-        } else ev.push({ type: "chased", pet: p.key, text: `${p.name} turns angry.` });
+          if (c.carrying) { dropPrize(s); ev.push({ type: "dropped", cat: c.id, text: `${c.name} drops the ${z.name}.` }); }
+          Object.assign(c, { cameFrom: c.where, where: away.to, hidden: false, riding: null });
+          ev.push({ type: "chased", pet: p.key, text: `${p.name} chases ${c.name} back into the ${low(roomName(s, away.to))}!` });
+        } else ev.push({ type: "chased", pet: p.key, text: `${p.name} won't let ${c.name} by.` });
       }
       break;
     }

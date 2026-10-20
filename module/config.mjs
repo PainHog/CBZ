@@ -7,8 +7,8 @@
  * `game`, `ui`, `foundry` or DOM, so `module/logic/` can import it under plain Node.
  *
  * Source of truth: the rulebook (book/src/chapters/, summarised in
- * docs/CORE-RULES.md v0.5). The numbers in CATB.rules are the simulator's adopted
- * package P7 (sim/params.mjs); test/parity.test.mjs keeps the two in step.
+ * docs/CORE-RULES.md v0.6). The numbers in CATB.rules are the simulator's adopted
+ * package P8 (sim/params.mjs); test/parity.test.mjs keeps the two in step.
  */
 
 export const CATB = {};
@@ -33,7 +33,7 @@ CATB.approachKeys = Object.freeze(["sneaky", "sweet", "savage", "streetwise"]);
  * The eight instincts (Ch 7). `knack` lists the action tags the Knack die covers
  * (the simulator's table, sim/character.mjs KNACK); `giveIn` is what giving in
  * to a temptation does (Ch 7 table): noise, a mess, hidden, the Mood step if a
- * human sees it, and the special effects (Lap Cat's fuss, Scrapper's angry dog).
+ * human sees it, and the special effects (Lap Cat's fuss: +2 Cuddle for a kid).
  */
 CATB.instincts = Object.freeze({
   curious: { key: "curious", label: "Curious", knack: ["open"], knackText: "open, search, figure things out",
@@ -49,8 +49,8 @@ CATB.instincts = Object.freeze({
     tempt: "anything that moves", giveInText: "You chase it round the room. Noise.",
     giveIn: { noise: true, mess: false, hidden: false, seen: null } },
   lapCat: { key: "lapCat", label: "Lap Cat", knack: ["charm"], knackText: "charm a human",
-    tempt: "a lap, a sunny spot, a hand to rub", giveInText: "You go for a fuss: a human in the room is Distracted until the round ends. No human? A sunny spot: quiet.",
-    giveIn: { noise: false, mess: false, hidden: false, seen: { side: "cuddle", steps: 1 }, fuss: true } },
+    tempt: "a lap, a sunny spot, a hand to rub", giveInText: "You go for a fuss: the human you pick is Distracted until the house's turn. No human? A sunny spot: quiet.",
+    giveIn: { noise: false, mess: false, hidden: false, seen: { side: "cuddle", steps: 1, kid: 2 }, fuss: true } },
   foodie: { key: "foodie", label: "Foodie", knack: ["food"], knackText: "find, steal and eat food",
     tempt: "food that isn't the prize", giveInText: "You eat it. Quiet.",
     giveIn: { noise: false, mess: false, hidden: false, seen: { side: "broom", steps: 1 } } },
@@ -58,8 +58,8 @@ CATB.instincts = Object.freeze({
     tempt: "somewhere high", giveInText: "You go up there. Quiet, and you're hidden.",
     giveIn: { noise: false, mess: false, hidden: true, seen: null } },
   scrapper: { key: "scrapper", label: "Scrapper", knack: ["fight"], knackText: "face down and fight animals",
-    tempt: "an animal that stares, barks or hisses", giveInText: "You square up to it. Noise; a dog there turns angry.",
-    giveIn: { noise: true, mess: false, hidden: false, seen: { side: "broom", steps: 1 }, angersDog: true } }
+    tempt: "an awake dog or cat", giveInText: "You square up to it. Noise.",
+    giveIn: { noise: true, mess: false, hidden: false, seen: { side: "broom", steps: 1 } } }
 });
 CATB.instinctKeys = Object.freeze(Object.keys(CATB.instincts));
 
@@ -94,11 +94,11 @@ CATB.humanTraits = Object.freeze({
 });
 CATB.petKinds = Object.freeze({ dog: "Dog", housecat: "House cat", parrot: "Parrot", vacuum: "Robot vacuum" });
 CATB.petModes = Object.freeze({
-  awake: "Awake", asleep: "Asleep", angry: "Angry", hiding: "Driven off", friendly: "Friendly", covered: "Covered"
+  awake: "Awake", asleep: "Asleep", hiding: "Driven off", friendly: "Befriended", covered: "Covered"
 });
 
 /**
- * The adopted rules numbers (core rules v0.5 = simulator package P7). Every
+ * The adopted rules numbers (core rules v0.6 = simulator package P8). Every
  * number the automation uses comes from here, so one place follows the book.
  */
 CATB.rules = Object.freeze({
@@ -118,10 +118,11 @@ CATB.rules = Object.freeze({
   holdTable: [3, 5],     // Ch 9: 1–3 keeps cuddling, 4–5 the Den, 6 outside
   wriggleDifficulty: 1,  // Ch 9: Savage, Tricky
   lightsOut: 2,          // Ch 8: Lights Out at the end of the second round after the prize goes
-  petHideRounds: 3,      // Ch 10: a driven-off pet hides for 3 rounds
+  petHideRounds: 3,      // Ch 10: a driven-off pet hides for 3 rounds, counting this one
   dozeOn: 2,             // Ch 10: dozes on a 1–2
-  // Ch 8 "Gang size": the houses are written for four cats.
-  gangScaling: { 3: { patience: 1, clock: 1 }, 4: { patience: 0, clock: 0 }, 5: { patience: 0, clock: -1 } },
+  // Ch 8 "Gang size": the houses are written for four cats. 3 cats: Patience +1, the prize 2 rounds
+  // later, 3 starting Cattitude each; 5 cats: Patience −1, the prize 1 round sooner.
+  gangScaling: { 3: { patience: 1, clock: 2, cattitude: 1 }, 4: { patience: 0, clock: 0, cattitude: 0 }, 5: { patience: -1, clock: -1, cattitude: 0 } },
   // Ch 9 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
   denDoor: [["streetwise", 1, "open"], ["savage", 2]],   // a friend in the next room
   denInside: [["streetwise", 2, "open"]],               // the cat on its own

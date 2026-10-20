@@ -89,8 +89,9 @@ export function carryRule(size) {
 
 /**
  * The carriers let go. `putBack` (Shoo!/Scooped!): the human puts it back where
- * the Clock last put it (and its steps start over, the simulator's reading).
- * Otherwise (a carrier drops it, or gives in to a temptation) it lies where it is.
+ * the Clock last put it, wrapped again if it was wrapped (Ch 5: its steps start
+ * over). Otherwise (a carrier puts it down, gives in, or is chased by a dog) it
+ * lies where it is.
  */
 export function dropPrize(s, { putBack = false } = {}) {
   const z = s.prize;
@@ -102,10 +103,12 @@ export function dropPrize(s, { putBack = false } = {}) {
 }
 
 /**
- * Ch 6 / Ch 8 "Where it goes": the Prize Clock acts at the start of its round.
- * The human puts it in its place and stays in that room this round. If the gang
- * already has it, the human goes to its place instead, finds it gone (+1 Broom)
- * and starts Searching. At the start of the gone round it's gone (unless carried).
+ * Ch 6 / Ch 8 "Where it goes" (v0.6): the Prize Clock acts at the start of its
+ * round. The human puts it in its place and stays in that room this round
+ * (unless a noise draws them away). If the prize isn't where the Clock last put
+ * it, the human goes there instead, stays, and finds it gone: +1 Broom and they
+ * start Searching (if they weren't already). At the start of the gone round
+ * it's gone — unless a cat is holding it, and then it stays the gang's.
  * Returns { events, mood: [{ side, steps, cause, kind }] }.
  */
 export function prizeClock(s) {
@@ -117,13 +120,15 @@ export function prizeClock(s) {
   for (const step of z.script) {
     if (step.round !== s.round) continue;
     const by = humanByKey(s, step.by);
-    if (z.carriers.length) {
-      if (by && !by.holding && z.spotRoom) {
+    if (z.spotRoom && (z.carriers.length || z.room !== z.spotRoom)) {
+      if (by && !by.holding) {
         by.room = z.spotRoom;
         by.staysRound = s.round;
-        by.searching = true;
-        mood.push({ side: "broom", steps: 1, cause: `${by.name} comes for the ${z.name} and finds it gone`, kind: "discovery", seenBy: [by.key] });
-        events.push({ type: "ownerFindsItGone", human: by.key, text: `${by.name} goes to fetch the ${z.name} from the ${roomName(s, z.spotRoom).toLowerCase()} and finds it gone: +1 Broom, and starts Searching.` });
+        if (!by.searching) {
+          by.searching = true;
+          mood.push({ side: "broom", steps: 1, cause: `${by.name} comes for the ${z.name} and finds it gone`, kind: "discovery", seenBy: [by.key] });
+          events.push({ type: "ownerFindsItGone", human: by.key, text: `${by.name} goes to fetch the ${z.name} from the ${roomName(s, z.spotRoom).toLowerCase()} and finds it gone: +1 Broom, and starts Searching.` });
+        } else events.push({ type: "ownerFindsItGone", human: by.key, text: `${by.name} goes to the ${roomName(s, z.spotRoom).toLowerCase()} for the ${z.name}: still gone.` });
       }
       continue;
     }

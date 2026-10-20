@@ -1,6 +1,6 @@
 /**
  * Parity: the table's rules (module/logic/) and the simulator's (sim/) must
- * agree under the adopted package (sim/params.mjs ADOPTED, P7), and the house
+ * agree under the adopted package (sim/params.mjs ADOPTED, P8 = core rules v0.6), and the house
  * catalog must be an exact copy of sim/houses.mjs (AUTOMATION.md §9).
  * module/ never imports from sim/; this test is the only bridge.
  */
@@ -16,8 +16,9 @@ import { CATB } from "../module/config.mjs";
 
 const p = makeParams();
 
-test("the simulator's defaults are the adopted package (so parity means P7)", () => {
-  assert.equal(ADOPTED, "P7");
+test("the simulator's defaults are the adopted package (so parity means P8, core rules v0.6)", () => {
+  assert.equal(ADOPTED, "P8");
+  assert.equal(p.carrierRules, true, "v0.6: hauling, finding it, Searching for the prize");
   for (const [k, v] of Object.entries(PACKAGES[ADOPTED])) assert.deepEqual(p[k], v, k);
 });
 
@@ -40,6 +41,9 @@ test("the rules numbers in config match the simulator's adopted parameters", () 
   assert.equal(p.flopDirection, "nearer");
   assert.equal(p.distractEscalation, true);
   assert.equal(p.gangScaling, true);
+  assert.deepEqual(R.gangScaling[3], { patience: p.scale3[0], clock: p.scale3[1], cattitude: p.scale3Cat }, "3 cats");
+  assert.deepEqual(R.gangScaling[5], { patience: p.scale5[0], clock: p.scale5[1], cattitude: 0 }, "5 cats");
+  assert.deepEqual(R.gangScaling[4], { patience: 0, clock: 0, cattitude: 0 });
 });
 
 test("the Knack table matches the simulator's", () => {
