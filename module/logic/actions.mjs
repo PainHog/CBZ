@@ -302,8 +302,15 @@ export function applyRoll(state, card, ctx = {}) {
     pushLog(s, ev);
     return { state: s, events: ev, cattitude };
   }
-  const o = card.optionId && card.optionId !== "free" ? findOption(s, c.id, card.optionId) : null;
-  if (card.optionId && card.optionId !== "free" && !o) ev.push({ type: "stale", text: `(${c.name}'s roll no longer fits the house as it is now: the Storyteller applies it by hand.)` });
+  let o = card.optionId && card.optionId !== "free" ? findOption(s, c.id, card.optionId) : null;
+  let spent = false;
+  if (o?.disabled && /already (acted|moved)|no Move or Action left|carrier has already/.test(o.disabled)) {
+    // e.g. two rolls in one round: the Mood and noise still count, the effect doesn't happen twice
+    ev.push({ type: "spent", text: `(${c.name} had ${o.disabled.replace(/ this round$/, "")}: the Storyteller decides what this roll does.)` });
+    o = null;
+    spent = true;
+  }
+  if (card.optionId && card.optionId !== "free" && !o && !spent) ev.push({ type: "stale", text: `(${c.name}'s roll no longer fits the house as it is now: the Storyteller applies it by hand.)` });
   const room = o ? rollRoom(s, c, o) : (c.where === "outside" ? null : c.where);
   const ok = works(card.result);
   ev.push({ type: "roll", cat: c.id, result: card.result,

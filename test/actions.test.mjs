@@ -336,6 +336,14 @@ test("parrot, robot vacuum, help, Purrfect, idempotence and effects off", () => 
   assert.equal(queueHelp(s, "tilly", null).state.help.tilly, undefined);
 });
 
+test("a second roll in one round still counts for the Mood and noise, but its effect isn't applied twice", () => {
+  let s = kitchen12({ cats: { tilly: "kitchen" } });
+  s = roll(s, "tilly", "open:kitchen~utility", "streetwise", "flop").state;
+  const r = applyRoll(s, { eventId: "again", catId: "tilly", optionId: "open:kitchen~utility", approach: "streetwise", result: "clean" });
+  assert.equal(r.state.ways.find(w => w.id === "kitchen~utility").open, false);
+  assert.match(texts(r.events), /had already acted/);
+});
+
 test("nothing to do between rounds, and a held or shut cat has only its way out", () => {
   const s = robbery("number-12");
   assert.match(opt(s, "tilly", "enter:flap").disabled, /wait for the round/);
