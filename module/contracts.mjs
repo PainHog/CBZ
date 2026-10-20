@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — Cross-package contracts.
+ * NINE LIVES GANG — Cross-package contracts.
  * Constants only: no imports, no Foundry globals, no logic. Every name that two
  * parts of the system must agree on (setting keys, chat-card kinds, GM operation
  * names, hook names, flag scopes) is declared here once and imported everywhere,

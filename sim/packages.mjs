@@ -47,7 +47,7 @@ export function measure(pkg, runs, seed) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const lines = [];
-  lines.push("# Cat Burglars — balance packages", "");
+  lines.push("# Nine Lives Gang — balance packages", "");
   lines.push(`\`node sim/packages.mjs --runs ${runs} --seed ${seed} --packages ${pkgs.join(",")}\``, "");
   lines.push("Each package runs every house with gangs of 3, 4 and 5 cats on the same gangs and dice. Win = Clean or Messy Getaway.", "");
   lines.push("## Gang of 4 against the targets", "");

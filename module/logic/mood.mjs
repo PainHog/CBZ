@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the Mood ledger (pure)
+ * NINE LIVES GANG — the Mood ledger (pure)
  * ----------------------------------------
  * The house's Mood is two meters, Broom and Cuddle, each filling to the house's
  * Patience (Ch 5). Instead of storing the meters, the robbery keeps a ledger of

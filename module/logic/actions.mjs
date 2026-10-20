@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — a cat's turn (pure)
+ * NINE LIVES GANG — a cat's turn (pure)
  * -------------------------------------
  * Ch 6 "Your turn": one Move and one Action, either way round. This module
  * lists what a cat can do right now (`catOptions`), what a roll for it looks

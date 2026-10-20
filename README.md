@@ -1,4 +1,4 @@
-# Cat Burglars
+# Nine Lives Gang
 
 A tabletop roleplaying game by **Richard Moore**. The players are a gang of street cats. They've just watched a human carry something into a house: something delicious, something fun, or a box. They must get it at all costs, without getting caught.
 

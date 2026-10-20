@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — rolling (Ch 4; AUTOMATION.md §4).
+ * NINE LIVES GANG — rolling (Ch 4; AUTOMATION.md §4).
  *
  * rollFor(actor, { approach, optionId }):
  *   1. inside a robbery, pick what the cat is doing (an option from the robbery

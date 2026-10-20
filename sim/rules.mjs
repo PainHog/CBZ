@@ -1,5 +1,5 @@
 /**
- * Cat Burglars — rules functions the simulator plays by (core rules v0.1,
+ * Nine Lives Gang — rules functions the simulator plays by (core rules v0.1,
  * docs/CORE-RULES.md). Pure: plain data in, plain data out, dice from the
  * Rng passed in. Every judgement call is a named parameter (params.mjs), so
  * the same code can be swept across readings and packages.

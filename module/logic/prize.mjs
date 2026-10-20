@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the prize (pure)
+ * NINE LIVES GANG — the prize (pure)
  * ----------------------------------
  * Where it is, who carries it, portions, the Prize Clock and the outcome
  * (Ch 8 "In, Out, and the Prize"). Internal helpers mutate the state they are

@@ -1,4 +1,4 @@
-Cat Burglars — Rulebook and Foundry VTT System
+Nine Lives Gang — Rulebook and Foundry VTT System
 Copyright (c) 2026 Richard Moore. All rights reserved.
 
 This repository contains two kinds of material:
@@ -7,7 +7,7 @@ This repository contains two kinds of material:
    module/, styles/, templates/, lang/, tools/, sim/, test/, book/build.mjs,
    book/tools/, and the manifest files).
 
-2. GAME CONTENT — the text of the game "Cat Burglars" (the rulebook source
+2. GAME CONTENT — the text of the game "Nine Lives Gang" (the rulebook source
    under book/src/, its illustrations under book/art/, the built rulebook PDFs,
    and any compendium source data under packs/_source/ and the compiled packs/),
    including the rules, the setting, its characters, and all associated writing

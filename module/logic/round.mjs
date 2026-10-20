@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — a robbery, round by round (pure)
+ * NINE LIVES GANG — a robbery, round by round (pure)
  * --------------------------------------------------
  * The robbery state (AUTOMATION.md §2) and every change to it that isn't a
  * cat's own turn (those are in actions.mjs): setting up a robbery, beginning a

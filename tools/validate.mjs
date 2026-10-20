@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — Pre-commit / CI Validator
+ * NINE LIVES GANG — Pre-commit / CI Validator
  * --------------------------------------------
  * Run before every commit and in CI:  node tools/validate.mjs   (npm run validate)
  *

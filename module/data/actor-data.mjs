@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — actor data models (TypeDataModel) for cats, humans and pets
+ * NINE LIVES GANG — actor data models (TypeDataModel) for cats, humans and pets
  * (AUTOMATION.md §7). Numbers follow Chapter 2 (cats) and Chapter 10
  * (residents); the limits come from CONFIG data in ../config.mjs.
  */

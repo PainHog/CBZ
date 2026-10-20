@@ -1,4 +1,4 @@
-// Shared scene kit for the Cat Burglars book art (cover, part pages, chapter
+// Shared scene kit for the Nine Lives Gang book art (cover, part pages, chapter
 // vignettes, spots, diagrams). Palette-agnostic: colours come from the PLACEHOLDER
 // palette in ../lib.mjs (which mirrors book/src/book.css). Nothing here draws a
 // particular character or place.

@@ -1,4 +1,4 @@
-# Cat Burglars — Foundry automation design
+# Nine Lives Gang — Foundry automation design
 
 > **Goal:** players and the Storyteller never track rules by hand (the project's working rules). The system does the bookkeeping; where the rules need a human choice (which cat to tempt, how to narrate), the Storyteller gets **one click with a rules-correct default**.
 

@@ -1,5 +1,5 @@
 /**
- * Build the portal copy of the Foundry system: downloads/Cat_Burglars_Foundry_v<version>.zip.
+ * Build the portal copy of the Foundry system: downloads/Nine_Lives_Gang_Foundry_v<version>.zip.
  * Run by hand only (npm run build:portal-zip), never from check, CI or a hook:
  * every changed zip is a new file Richard has to check before sharing it.
  *
@@ -138,7 +138,7 @@ try {
     "",
     "1. Unzip this file into Foundry's `Data/systems` folder, so you get `Data/systems/cat-burglars/system.json`.",
     "2. Restart Foundry.",
-    "3. Pick Cat Burglars when creating a world.",
+    "3. Pick Nine Lives Gang when creating a world.",
     "",
     "## Credits",
     "",
@@ -168,7 +168,7 @@ try {
   walkDirs(stage);
   staged.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
-  const name = `Cat_Burglars_Foundry_v${version}.zip`;
+  const name = `Nine_Lives_Gang_Foundry_v${version}.zip`;
   const tmpZip = join(tmp, name);
   execFileSync("zip", ["-X", "-q", "-@", tmpZip], {
     cwd: stage, input: staged.join("\n") + "\n", env: { ...process.env, TZ: "UTC" }

@@ -312,6 +312,7 @@ Audited 2026-10-20 for version 0.5. Re-audit any piece whose generator changes.
 | Garden wall with coping | — | full width, on the pavement |
 | Pavement | — | — |
 | Roast chicken (body, both drumsticks; one bone end held in Biscuit's teeth) | hangs straight down under his chin, clear of his legs and the ground | Biscuit's mouth |
+| The gang's tag (2026-10-20): sprayed paint, a cat's head with two ears, whiskers both sides, a 9 inside, two short drips running straight down from the chin with a drop at each end | painted on the wall face | the garden wall: wholly on the bricks, below the coping, right of Biscuit's tail and clear of every cat; reads as paint (soft overspray, no outline of its own) |
 
 | Figure | Eyes | Ears | Legs | Tail | Marks |
 |---|---|---|---|---|---|
@@ -320,8 +321,13 @@ Audited 2026-10-20 for version 0.5. Re-audit any piece whose generator changes.
 | Pip (sitting on the pavement, at 0.85× the size of a grown cat) | 2 | 2 | 4 | 1 | ✓ |
 | Biscuit (walking left, flipped) | 1 | 2 | 4 | 1 | right side shows ✓ |
 
-- The lettering sits over the sky under the top scrim.
+- The lettering (the spray-paint logo, tilted 2°) sits over the sky under the top scrim.
 - The subject sits in the middle band, and the edition line is on the pavement.
+
+### orn-tag (140×110; part pages, credits page, back cover)
+- The same tag as on the cover wall, drawn in the page's colour (amber on dark, deep amber on cream).
+- 1 head, 2 ears, 2 whiskers each side, one 9 (a closed loop and a tail), 2 drips running straight down, each ending in a drop.
+- Nothing is cut by the frame. It is a printed mark, not an object, so nothing supports it.
 
 ### part-gang
 - A framed night panel.

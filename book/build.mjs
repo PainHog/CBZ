@@ -1,9 +1,9 @@
 /**
- * CAT BURGLARS — Rulebook build
+ * NINE LIVES GANG — Rulebook build
  * ---------------------------------
  * book/src/chapters/*.html (in filename order) + book/src/book.css + book/art/*.svg
- *   → book/dist/cat-burglars.html  (self-contained print HTML)
- *   → book/dist/Cat_Burglars_v<version>.pdf
+ *   → book/dist/nine-lives-gang.html  (self-contained print HTML)
+ *   → book/dist/Nine_Lives_Gang_v<version>.pdf
  *
  * Printed by the local Chromium (Playwright) using native CSS paged media:
  * @page sizes/margins, named pages (cover, part), margin-box page numbers.
@@ -31,12 +31,12 @@ const ART = join(BOOK, "art");
 const DIST = join(BOOK, "dist");
 
 /* ------------------------------------------------------------ the book -- */
-const BOOK_TITLE = "Cat Burglars";             // curly apostrophe, as in the chapters
+const BOOK_TITLE = "Nine Lives Gang";             // curly apostrophe, as in the chapters
 const BOOK_DESCRIPTION = "A tabletop roleplaying game of street cats, sticky paws and getting away with it";
 const AUTHOR = "Richard Moore";
 const VERSION = "0.8";
-const FILE_STEM = "Cat_Burglars";        // → Cat_Burglars_v0.1.pdf
-const HTML_NAME = "cat-burglars.html";   // the self-contained print HTML (digital build only)
+const FILE_STEM = "Nine_Lives_Gang";        // → Nine_Lives_Gang_v0.1.pdf
+const HTML_NAME = "nine-lives-gang.html";   // the self-contained print HTML (digital build only)
 // An ornament anchored in the top-left corner of the Table of Contents page
 // (an art name from book/art/, or null for none). Art direction is undecided.
 const TOC_ART = null;
@@ -171,7 +171,10 @@ const fontFace = (family, pkg, weight, style) => {
 const fonts = [
   ...[400, 600, 700, 900].flatMap(w => [fontFace("Fraunces", "fraunces", w, "normal"), fontFace("Fraunces", "fraunces", w, "italic")]),
   ...[400, 500, 700, 800].flatMap(w => [fontFace("Alegreya", "alegreya", w, "normal"), fontFace("Alegreya", "alegreya", w, "italic")]),
-  ...[400, 500, 700, 800].flatMap(w => [fontFace("Alegreya Sans", "alegreya-sans", w, "normal"), fontFace("Alegreya Sans", "alegreya-sans", w, "italic")])
+  ...[400, 500, 700, 800].flatMap(w => [fontFace("Alegreya Sans", "alegreya-sans", w, "normal"), fontFace("Alegreya Sans", "alegreya-sans", w, "italic")]),
+  // the gang look (DESIGN.md, 2026-10-20): the spray-paint logo and the stencil chapter and part titles
+  fontFace("Rubik Spray Paint", "rubik-spray-paint", 400, "normal"),
+  fontFace("Saira Stencil One", "saira-stencil-one", 400, "normal")
 ].join("\n");
 
 /* ---------------------------------------------------------------- page -- */

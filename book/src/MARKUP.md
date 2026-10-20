@@ -1,4 +1,4 @@
-# Cat Burglars rulebook — source markup
+# Nine Lives Gang rulebook — source markup
 
 The book is plain HTML fragments + one stylesheet, paginated by Chromium's native
 CSS paged media and printed to PDF (`npm run build:book`). Every chapter is one

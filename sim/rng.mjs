@@ -1,5 +1,5 @@
 /**
- * Seeded RNG for the Cat Burglars rules simulator (carried over unchanged
+ * Seeded RNG for the Nine Lives Gang rules simulator (carried over unchanged
  * in behaviour from Heisty Spideys, plus generic dice helpers).
  *
  * mulberry32 — small, fast, good enough for Monte Carlo dice. Every run derives

@@ -7,7 +7,7 @@ footer), then prints every non-equal span so each can be checked against
 book/REVIEW.md."""
 import sys, re, difflib, unicodedata, pymupdf
 
-TITLE = "Cat Burglars"   # keep in step with BOOK_TITLE in book/build.mjs
+TITLE = "Nine Lives Gang"   # keep in step with BOOK_TITLE in book/build.mjs
 FOOTER = re.compile(re.escape(TITLE.upper()).replace("'", "['’]") + r"\s*·\s*\d+", re.I)
 
 def words(path, skip_pages=()):

@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS
+ * NINE LIVES GANG
  * A tabletop roleplaying game by Richard Moore.
  * Foundry VTT game system — entry point.
  *
@@ -30,7 +30,7 @@ import * as rules from "./logic/rules.mjs";
 /* -------------------------------------------- */
 
 Hooks.once("init", function () {
-  console.log("Cat Burglars | Initialising the system.");
+  console.log("Nine Lives Gang | Initialising the system.");
 
   // Static game data, reachable as CONFIG.CATB (and from macros/modules via the API below).
   CONFIG.CATB = CATB;
@@ -79,9 +79,9 @@ Hooks.on("getSceneControlButtons", controls => {
 /* -------------------------------------------- */
 
 Hooks.once("ready", async function () {
-  console.log("Cat Burglars | Ready.");
+  console.log("Nine Lives Gang | Ready.");
   if (!isActiveGM()) return;
   if (setting(SETTINGS.migrationVersion) !== game.system.version) await game.settings.set(SYSTEM_ID, SETTINGS.migrationVersion, game.system.version);
   const n = await reconcile();
-  if (n) ui.notifications?.info(`Cat Burglars: applied ${n} roll${n > 1 ? "s" : ""} made while the Storyteller was away.`);
+  if (n) ui.notifications?.info(`Nine Lives Gang: applied ${n} roll${n > 1 ? "s" : ""} made while the Storyteller was away.`);
 });

@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the humans and pets (pure)
+ * NINE LIVES GANG — the humans and pets (pure)
  * --------------------------------------------
  * Who sees whom (Ch 5 "Who sees you"), pets in the way (Ch 10), and the house's
  * turn: pets, noise, routines, Searching and the holders' d6 (Ch 6 "The house's

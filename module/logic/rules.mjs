@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — Pure Rules Logic: dice, the roll plan, Push and Mood steps
+ * NINE LIVES GANG — Pure Rules Logic: dice, the roll plan, Push and Mood steps
  * ---------------------------------------------------------------------------
  * The convention (carried over from Heisty Spideys): every rule the system
  * automates is computed by a Foundry-free function in module/logic/ — no

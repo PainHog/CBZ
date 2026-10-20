@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the Robbery Tracker (AUTOMATION.md §6).
+ * NINE LIVES GANG — the Robbery Tracker (AUTOMATION.md §6).
  * ApplicationV2 + HandlebarsApplicationMixin (pattern from Heisty Spideys).
  * Opens from the token controls, from a chat card, or game.catBurglars.openTracker().
  * Header: the house, the round, the Prize Clock, the two Mood meters and
@@ -22,7 +22,7 @@ const T = part => `systems/${SYSTEM_ID}/templates/apps/tracker-${part}.hbs`;
 
 const guard = fn => async function (event, target) {
   try { return await fn.call(this, event, target); }
-  catch (err) { console.error("Cat Burglars |", err); ui.notifications?.warn(err?.message ?? String(err)); return null; }
+  catch (err) { console.error("Nine Lives Gang |", err); ui.notifications?.warn(err?.message ?? String(err)); return null; }
 };
 
 export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {

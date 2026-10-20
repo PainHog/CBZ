@@ -1,4 +1,4 @@
-# Cat Burglars — the rulebook
+# Nine Lives Gang — the rulebook
 
 The game is not written yet: every chapter, the cover and the art are clearly
 marked PLACEHOLDERs (dashed red outline on the proofs) so nothing ships by accident.
@@ -13,18 +13,18 @@ marked PLACEHOLDERs (dashed red outline on the proofs) so nothing ships by accid
 | `tools/contact-sheet.py` | Renders a PDF's pages into one contact-sheet image for layout review |
 | `tools/text-diff.py` | Word-level diff of two builds' text (to prove only intended text changed) |
 | `REVIEW.md` | The log of every ruling and text change (what, where, why, source) |
-| `dist/Cat_Burglars_v0.1.pdf` | The typeset edition (digital) |
-| `dist/Cat_Burglars_v0.1_print-*.pdf` | Print-on-demand files: interior (8.75×11.25in incl. 0.125in bleed, even page count) and separate front/back covers |
+| `dist/Nine_Lives_Gang_v0.1.pdf` | The typeset edition (digital) |
+| `dist/Nine_Lives_Gang_v0.1_print-*.pdf` | Print-on-demand files: interior (8.75×11.25in incl. 0.125in bleed, even page count) and separate front/back covers |
 
 ```bash
 npm install
-npm run build:book                                   # → book/dist/Cat_Burglars_v0.1.pdf
+npm run build:book                                   # → book/dist/Nine_Lives_Gang_v0.1.pdf
 npm run build:book -- --print                        # → print-on-demand interior + covers (with bleed)
 npm run build:book -- --draft                        # missing art becomes a labelled box instead of an error
 node book/tools/art-gen/scenes/build.mjs [name …]    # regenerate art into book/art/
 node book/tools/preview-art.mjs /tmp/art [name …]    # look at the art (PNG per piece + _sheet.png)
-python3 book/tools/contact-sheet.py book/dist/Cat_Burglars_v0.1.pdf /tmp/sheet 40 6   # look at every page
-python3 book/tools/text-diff.py old.pdf book/dist/Cat_Burglars_v0.1.pdf               # text check vs an earlier build
+python3 book/tools/contact-sheet.py book/dist/Nine_Lives_Gang_v0.1.pdf /tmp/sheet 40 6   # look at every page
+python3 book/tools/text-diff.py old.pdf book/dist/Nine_Lives_Gang_v0.1.pdf               # text check vs an earlier build
 ```
 
 ## What the build does

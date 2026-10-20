@@ -4,13 +4,13 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 
 ## 0. Set up (once)
 
-1. Install the system. Nothing is released yet, so install it by hand: quit Foundry, unzip `Cat_Burglars_Foundry_v0.8.0-test.zip` into the `Data/systems` folder of your Foundry user data (it holds a `cat-burglars` folder, so you end up with `Data/systems/cat-burglars/system.json`), and start Foundry again. Once a release exists you can instead use **Game Systems → Install System** with the manifest URL
+1. Install the system. Nothing is released yet, so install it by hand: quit Foundry, unzip `Nine_Lives_Gang_Foundry_v0.8.0-test.zip` into the `Data/systems` folder of your Foundry user data (it holds a `cat-burglars` folder, so you end up with `Data/systems/cat-burglars/system.json`), and start Foundry again. Once a release exists you can instead use **Game Systems → Install System** with the manifest URL
    `https://github.com/PainHog/CBZ/releases/latest/download/system.json`.
-2. Create a world with the **Cat Burglars** system and launch it.
+2. Create a world with the **Nine Lives Gang** system and launch it.
 3. **Game Settings → Users**: add a player called **Lena** (role Player). Open a second browser (or a private window) at the same address and log in as Lena. From now on, **GM** means your first window and **Lena** the second.
-4. GM: open **Compendium Packs → Cat Burglars → The Ready-Made Gang**. Import **Two-Bin Tilly**, **Big Biscuit**, **Velvet** and **Marmalade Mags**.
+4. GM: open **Compendium Packs → Nine Lives Gang → The Ready-Made Gang**. Import **Two-Bin Tilly**, **Big Biscuit**, **Velvet** and **Marmalade Mags**.
 5. GM: right-click Velvet and Tilly → **Configure Ownership** → Lena: Owner. Biscuit and Mags stay yours (you play them for the "second player").
-6. GM: **Configure Settings → System Settings**: leave every Cat Burglars setting at its default for now.
+6. GM: **Configure Settings → System Settings**: leave every Nine Lives Gang setting at its default for now.
 
 ## 1. Sheets and the roll dialog
 

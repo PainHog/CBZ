@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — GM-authoritative operations (AUTOMATION.md §1; the pattern
+ * NINE LIVES GANG — GM-authoritative operations (AUTOMATION.md §1; the pattern
  * from Heisty Spideys, docs/reference/heisty-automation-design.md §8).
  *
  * Players write only their own actors and their own chat messages. Anything
@@ -69,7 +69,7 @@ export const gm = {
         const err = h.check ? await h.check(args, user) : null;
         result = err ? { ok: false, error: err } : { ok: true, ...((await h.apply(args, user)) ?? {}) };
       } catch (e) {
-        console.error(`Cat Burglars | GM op ${op} failed`, e);
+        console.error(`Nine Lives Gang | GM op ${op} failed`, e);
         result = { ok: false, error: e?.message ?? String(e) };
       }
     }

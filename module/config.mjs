@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — System Configuration
+ * NINE LIVES GANG — System Configuration
  * ---------------------------------------
  * Static, version-agnostic game data lives here (approaches, instincts, the
  * adopted rules numbers …) so data models, sheets, dice code and the pure rules

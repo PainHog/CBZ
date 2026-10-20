@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the five ready-to-run houses (pure data + lookups)
+ * NINE LIVES GANG — the five ready-to-run houses (pure data + lookups)
  * --------------------------------------------------------------------
  * COPIED from sim/houses.mjs (core rules v0.8, simulator package P10), which the
  * rulebook house chapters (Ch 14–18, book/tools/house-pages.mjs) are generated

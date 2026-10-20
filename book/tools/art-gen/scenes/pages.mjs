@@ -33,6 +33,31 @@ function panel(id, inner) {
     `<rect x="5" y="5" width="890" height="290" rx="22" fill="none" stroke="${C.accent}" stroke-width="5"/>`;
 }
 
+// ------------------------------------------------------------------ the gang's tag
+/**
+ * The Nine Lives Gang's tag, sprayed in paint: a cat's head (two ears, whiskers both sides)
+ * with a 9 in it, and two short drips running straight down from the chin. Centred on (x, y);
+ * at s = 1 it is about 130 wide and 100 tall. Each stroke is sprayed twice: a soft wide
+ * overspray under a solid core. col = "currentColor" lets the page set the colour.
+ */
+export function gangTag(x, y, s = 1, col = "currentColor", op = 1) {
+  const head = "M-40 -6Q-42 30 0 34Q42 30 40 -6L36 -44L14 -24Q0 -28 -14 -24L-36 -44Z";
+  const nine = "M11 -4A11 11 0 1 1 11 -5M11 -4Q12 18 -6 22";
+  const whiskers = "M-48 6H-62M-47 15L-60 19M48 6H62M47 15L60 19";
+  const drips = "M-18 32V44M22 31V38";
+  const spray = (d, w) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w * 2}" stroke-linecap="round" stroke-linejoin="round" opacity="0.22"/>` +
+    `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return `<g transform="translate(${r1(x)} ${r1(y)}) scale(${s})" opacity="${op}">` +
+    spray(head, 5.5) + spray(nine, 5.5) + spray(whiskers, 3.5) + spray(drips, 3.5) +
+    `<circle cx="-18" cy="47" r="3" fill="${col}"/><circle cx="22" cy="41" r="2.4" fill="${col}"/></g>`;
+}
+
+/** The tag on its own, for the part pages, the credits page and the back cover (the page sets its colour). */
+export function orn_tag() {
+  setPrefix("orn-tag");
+  return svg("0 0 140 110", "The Nine Lives Gang's tag: a cat's head with a 9 in it, sprayed in paint", gangTag(70, 52, 1));
+}
+
 // ------------------------------------------------------------------ cover
 /** The cover: the gang outside a lit house at night; Big Biscuit walks off with the chicken. */
 export function cover() {
@@ -52,6 +77,7 @@ export function cover() {
   b += streetLamp(64, G + 4, 456);
   // the garden wall across the whole width, and the pavement in front of it
   b += bricks(-10, 600, W + 20, G - 600, { coping: true, seed: 6 });
+  b += gangTag(548, 652, 0.68, C.accentB, 0.92); // the gang's tag, sprayed on the garden wall
   b += `<rect x="0" y="${G}" width="${W}" height="${H - G}" fill="${C.soft}"/>` + path(`M0 ${G}H${W}`, "none", C.ink, 3);
   const top = 588; // the wall's coping
   b += catSit({ look: "velvet", x: 156, y: top, s: 0.44, id: "cv" });
@@ -61,7 +87,7 @@ export function cover() {
   b += catSit({ look: "pip", x: 124, y: G + 14, s: 0.42, id: "cp", headTilt: -12 });
   b += catSide({ look: "biscuit", x: 360, y: G + 18, s: 0.52, flip: true, step: 0.6, tailUp: 0.9, head: 0, id: "cb" });
   b += carriedChicken(360, G + 18, 0.52, true);
-  return svg(`0 0 ${W} ${H}`, "Cover: at night outside a lit house, Velvet, Tilly and Mags sit and walk along the garden wall while Big Biscuit walks off down the pavement with a whole roast chicken in his mouth and Pip looks up at it", b);
+  return svg(`0 0 ${W} ${H}`, "Cover: at night outside a lit house, with the gang's cat-head tag sprayed on the garden wall, Velvet, Tilly and Mags sit and walk along the wall while Big Biscuit walks off down the pavement with a whole roast chicken in his mouth and Pip looks up at it", b);
 }
 
 // ------------------------------------------------------------------ part pages
