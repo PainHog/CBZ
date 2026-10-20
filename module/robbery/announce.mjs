@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — chat announcements for robbery events (Shoo!, Scooped!, …).
+ * NINE LIVES GANG — chat announcements for robbery events (Shoo!, Scooped!, …).
  * Kept apart from robbery.mjs so automation.mjs can use it without a cycle.
  */
 import { CARD, HOOKS } from "../contracts.mjs";

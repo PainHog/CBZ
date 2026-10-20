@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the house as a graph of rooms (pure)
+ * NINE LIVES GANG — the house as a graph of rooms (pure)
  * -----------------------------------------------------
  * Rooms are nodes; ways join them (Ch 8 "Ways through the house"). There is no
  * grid inside a room: a cat, human or pet is in a room or (cats) outside.

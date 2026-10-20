@@ -1,4 +1,4 @@
-# Cat Burglars — core rules (summary)
+# Nine Lives Gang — core rules (summary)
 
 *Version 0.8 — simulated (sim/BALANCE.md, package P10) and playtested eight times (sim/playtests/). Decisions: docs/DESIGN.md. Rulings: book/REVIEW.md. The rulebook chapters are the full rules; this is the summary.*
 

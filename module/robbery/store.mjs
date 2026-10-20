@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the robbery store (AUTOMATION.md §2).
+ * NINE LIVES GANG — the robbery store (AUTOMATION.md §2).
  * The robbery is one world setting, written only by the active GM. Every write
  * goes through one promise queue, applies a PURE function from module/logic/
  * to the latest state, and saves it; the setting's onChange then fires

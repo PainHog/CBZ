@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — compendium content, generated (not hand-edited).
+ * NINE LIVES GANG — compendium content, generated (not hand-edited).
  * --------------------------------------------------------------------
  * Writes packs/_source/{houses,gang,residents}/*.json from:
  *  - the house catalog (module/logic/house-catalog.mjs, a copy of sim/houses.mjs),

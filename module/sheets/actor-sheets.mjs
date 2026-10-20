@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — actor sheets (ApplicationV2 + HandlebarsApplicationMixin).
+ * NINE LIVES GANG — actor sheets (ApplicationV2 + HandlebarsApplicationMixin).
  * The Cat sheet shows approaches, instincts, body, Cattitude, Lives and a Roll
  * button per approach (AUTOMATION.md §7). Human and Pet sheets edit the
  * resident's numbers and d6 routine (Ch 10). Inputs named system.* save on change.
@@ -114,7 +114,7 @@ export class PetSheet extends CatBurglarsActorSheet {
 export function registerSheets() {
   const DSC = foundry.applications.apps.DocumentSheetConfig;
   const ActorCls = globalThis.Actor;
-  DSC.registerSheet(ActorCls, SYSTEM_ID, CatSheet, { types: ["cat"], makeDefault: true, label: "Cat Burglars: Cat" });
-  DSC.registerSheet(ActorCls, SYSTEM_ID, HumanSheet, { types: ["human"], makeDefault: true, label: "Cat Burglars: Human" });
-  DSC.registerSheet(ActorCls, SYSTEM_ID, PetSheet, { types: ["pet"], makeDefault: true, label: "Cat Burglars: Pet" });
+  DSC.registerSheet(ActorCls, SYSTEM_ID, CatSheet, { types: ["cat"], makeDefault: true, label: "Nine Lives Gang: Cat" });
+  DSC.registerSheet(ActorCls, SYSTEM_ID, HumanSheet, { types: ["human"], makeDefault: true, label: "Nine Lives Gang: Human" });
+  DSC.registerSheet(ActorCls, SYSTEM_ID, PetSheet, { types: ["pet"], makeDefault: true, label: "Nine Lives Gang: Pet" });
 }

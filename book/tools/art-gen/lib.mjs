@@ -1,4 +1,4 @@
-// Shared drawing primitives for the Cat Burglars book art.
+// Shared drawing primitives for the Nine Lives Gang book art.
 // Every colour comes from C, which mirrors the tokens at the top of
 // book/src/book.css (plus scene colours). Change C, book.css and
 // book/art/README.md together.

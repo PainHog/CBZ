@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — Compendium Pack Builder
+ * NINE LIVES GANG — Compendium Pack Builder
  * ------------------------------------------
  * Compiles the per-document source JSON in packs/_source/<name>/ into Foundry
  * LevelDB compendium packs in packs/<name>/ using Foundry's OFFICIAL
@@ -67,7 +67,7 @@ async function main() {
     console.log(`Cleaned ${PACKS.length} compiled pack(s).`);
     return;
   }
-  console.log("Building Cat Burglars compendium packs (official foundryvtt-cli)…");
+  console.log("Building Nine Lives Gang compendium packs (official foundryvtt-cli)…");
   if (!PACKS.length) { console.log("  no packs configured yet (tools/pack-config.mjs PACKS is empty) — nothing to build."); return; }
   if (!process.argv.includes("--no-generate")) {
     const n = writeSources();

@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — what the Robbery Tracker shows (AUTOMATION.md §6).
+ * NINE LIVES GANG — what the Robbery Tracker shows (AUTOMATION.md §6).
  * Foundry-free: robbery state + who is looking → a plain view object the
  * tracker's Handlebars templates render (precomputed, so the templates need no
  * helpers beyond if/each). The GM sees routines and every control; a player

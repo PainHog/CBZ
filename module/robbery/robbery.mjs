@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — running a robbery in Foundry (AUTOMATION.md §5–6).
+ * NINE LIVES GANG — running a robbery in Foundry (AUTOMATION.md §5–6).
  *
  * Storyteller commands (active GM only): start, begin round (Prize Clock,
  * temptation prompt), tempt, end round (the house's turn, rolled and applied),

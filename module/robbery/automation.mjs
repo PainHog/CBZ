@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — the GM client reacts to roll cards (AUTOMATION.md §1).
+ * NINE LIVES GANG — the GM client reacts to roll cards (AUTOMATION.md §1).
  * A player's roll is a chat message with structured flags. When it becomes
  * final, the ACTIVE GM's client applies it to the robbery (the option's effect,
  * noise, helpers, the Mood — one roll, one change), writes Cattitude for a

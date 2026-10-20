@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — settings (AUTOMATION.md §8). Every automation can be switched
+ * NINE LIVES GANG — settings (AUTOMATION.md §8). Every automation can be switched
  * off; names and hints are in lang/en.json under CATB.Settings.<key>.
  */
 import { SYSTEM_ID, SETTINGS, HOOKS } from "./contracts.mjs";

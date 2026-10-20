@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — chat cards.
+ * NINE LIVES GANG — chat cards.
  * Every card carries structured flags (flags["cat-burglars"].card = { kind, … })
  * so the GM client can react to it (AUTOMATION.md §1). Buttons are NOT stored
  * in the message: each client adds the ones its user may press when the card
@@ -35,7 +35,7 @@ export function onRenderChatMessage(message, html) {
   if (!fn) return;
   const box = html?.querySelector?.("div.catb-buttons");
   if (!box) return;
-  try { fn(message, card, box); } catch (err) { console.error("Cat Burglars | card buttons", err); }
+  try { fn(message, card, box); } catch (err) { console.error("Nine Lives Gang | card buttons", err); }
 }
 
 /** A button for a card. `onClick` runs as the clicking user. */
@@ -51,7 +51,7 @@ export function button(label, onClick, { cls = "", title = "", disabled = false 
     if (b.disabled) return;
     b.disabled = true;
     try { await onClick(ev); }
-    catch (err) { console.error("Cat Burglars |", err); ui.notifications?.warn(err?.message ?? String(err)); }
+    catch (err) { console.error("Nine Lives Gang |", err); ui.notifications?.warn(err?.message ?? String(err)); }
     finally { b.disabled = false; }
   });
   return b;

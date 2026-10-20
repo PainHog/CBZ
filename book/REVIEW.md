@@ -1,4 +1,4 @@
-# Cat Burglars — rulings and text changes
+# Nine Lives Gang — rulings and text changes
 
 Every ruling and every change to the rules text gets a row here: what changed, where,
 why, and the source (author / playtest / simulator). Before the chapters exist, "where" is a section of `docs/CORE-RULES.md`; each ruling is written into the matching chapter when it is drafted.
@@ -108,3 +108,4 @@ why, and the source (author / playtest / simulator). Before the chapters exist, 
 | 101 | 2026-10-20 | Foundry (docs/AUTOMATION.md A–F, H) | Confirmed as built: only the Prize Clock's hold beats noise (a Shooing human still answers noise); a cat put or chased outside mid-turn can't come back in that turn; a meter left at Patience by a Patience drop is full and goes off as soon as a human with free hands can see a cat; a meter filled where nobody sees a cat goes off on a cat any human with free hands can see; a cat a dog is stopping can help only the roll that deals with the dog; a held cat doesn't set off the parrot; a hidden cat may Distract (the roll brings it out). | Questions from the v0.8 Foundry build. | automation |
 | 102 | 2026-10-20 | Ch9, CORE Caught | The holder's 6 puts the cat out through the nearest entrance that works this round, as a Shoo! does. | Foundry question G: the front door outside its rounds was being used. | automation |
 | 103 | 2026-10-20 | Ch11 Gang size, CORE Ending, house At a glance, Foundry | Five cats: Patience −1 only; the Prize Clock no longer moves a round sooner. | Five cats ran 7 points behind four at Hard (50.7 vs 57.9); now 53.0. | simulator |
+| 104 | 2026-10-20 | Whole book, Foundry system, downloads | The game is now called *Nine Lives Gang*: cover, credits, Chapter 1, back cover, running footer, file names, the Foundry system's title. Credits name only Richard and list the two new typefaces. | Richard's title pick and credits ruling. | author |

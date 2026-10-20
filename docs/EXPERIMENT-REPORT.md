@@ -1,4 +1,4 @@
-# Cat Burglars — the delegated version: experiment report
+# Nine Lives Gang — the delegated version: experiment report
 
 *For Richard Moore, 2026-10-20. Merged into the main line on your say-so (a fresh single commit; the full history stays on the experiment branch).*
 
@@ -8,13 +8,13 @@ You chose the identity — instincts as the cats' heart, hiding in plain sight, 
 
 | Part | State |
 |---|---|
-| Design | 39 decisions in `docs/DESIGN.md` (the delegated ones marked "AI"); all 12 open questions settled. |
+| Design | 41 decisions in `docs/DESIGN.md` (the delegated ones marked "AI"); all 12 open questions settled. |
 | Core rules | `docs/CORE-RULES.md` v0.8 — a two-page summary of the book. |
-| Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Cat_Burglars_v0.8.pdf` (50 pages, every picture final; the cover says "draft" until you approve it), plus a print edition with bleed (`…_print-interior.pdf`, 48 pages, and front and back covers). Every ruling is a row in `book/REVIEW.md` (103 rows). |
-| Art | 49 pictures, all generated as code (`book/tools/art-gen/`): cover, part pages, 18 chapter pictures, 5 floor plans drawn from the same data the simulator plays, 5 cat portraits (plus a reference sheet per cat), 15 end-of-chapter spots and a back-cover picture. Each audited against `book/art/ART-CHECKLIST.md` (`book/art/AUDIT.md`). |
+| Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Nine_Lives_Gang_v0.8.pdf` (50 pages, every picture final; the cover says "draft" until you approve it), plus a print edition with bleed (`…_print-interior.pdf`, 48 pages, and front and back covers). Every ruling is a row in `book/REVIEW.md` (104 rows). |
+| Art | 50 pictures, all generated as code (`book/tools/art-gen/`): cover, the gang's tag, part pages, 18 chapter pictures, 5 floor plans drawn from the same data the simulator plays, 5 cat portraits (plus a reference sheet per cat), 15 end-of-chapter spots and a back-cover picture. Each audited against `book/art/ART-CHECKLIST.md` (`book/art/AUDIT.md`). |
 | Simulator | `sim/`: every rule as a switchable parameter, ten rule packages compared on the same dice; package P10 adopted. `sim/BALANCE.md`. |
 | Playtests | 9 agent playtests with real dice across all five houses (`sim/playtests/`), each followed by a fix round. The last (Number 12, v0.8) found only wording issues and judged it a good first robbery. |
-| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood ledger, the round and the house's turn, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 129 tests (pure logic, a seeded replay, 750-robbery fuzzing, fake-Foundry smoke tests with a Storyteller and two players). Never run in a live Foundry: `TESTING.md` is a two-client script for you. A zip for manual install (`Cat_Burglars_Foundry_v0.8.0.zip`) is attached to the hand-off; nothing is released. |
+| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood ledger, the round and the house's turn, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 129 tests (pure logic, a seeded replay, 750-robbery fuzzing, fake-Foundry smoke tests with a Storyteller and two players). Never run in a live Foundry: `TESTING.md` is a two-client script for you. A zip for manual install (`Nine_Lives_Gang_Foundry_v0.8.0-test.zip`) is attached to the hand-off; nothing is released. |
 | Portal | `PORTAL.md` current; the rulebook cover is the card's picture. |
 
 ## The game in one paragraph
@@ -59,7 +59,7 @@ Two late fixes: a gang of **five** now gets Patience −1 only (with the Prize C
 ## Things that are your call
 
 1. **Credits.** Settled: the credits page names only you ("Created by" and "Game design & writing: Richard Moore"), and nothing in the game or the docs names the AI tool or its maker.
-2. **The name.** Other games already use *Cat Burglars* (a free TTRPG on itch.io, a 2025 board game, an *Exploding Kittens* edition). It's the working title until you decide.
+2. **The name.** Settled: *Nine Lives Gang* (your pick, 2026-10-20), after *Cat Burglars* turned out to be taken. The book has a new spray-paint logo, the gang's tag on the cover wall, and stencil chapter titles.
 3. **Names changed for originality:** the Wendells' house cat is **Pom-Pom** (not "Duchess", *The Aristocats*); the Okafors' dog is **Noodle** (it was "Biscuit", which clashed with Big Biscuit).
 4. **Merging, releasing, the art direction:** nothing is merged, released or final without you.
 

@@ -1,4 +1,4 @@
-# Cat Burglars — balance (core rules v0.8)
+# Nine Lives Gang — balance (core rules v0.8)
 
 **Adopted: package P10** (the defaults in `sim/params.mjs`; `docs/CORE-RULES.md` v0.8 describes it). The first tables run P9 (v0.7's rules) and P10 on today's houses; older studies follow.
 

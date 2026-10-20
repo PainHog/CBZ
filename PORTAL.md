@@ -1,18 +1,18 @@
-Now: Done for now: the game is built, and a report for Richard explains how it turned out
-Next: Richard reads the report, compares it with his own version, and tries the game at a real table
-Number: Design decisions made = 39
+Now: The game has a new name, Nine Lives Gang, with a spray-paint logo and the gang's sign on the cover
+Next: Richard reviews the rulebook and tries the online version at a real table
+Number: Design decisions made = 41
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
-Number: Pictures in the rulebook = 49
+Number: Pictures in the rulebook = 50
 
-Screenshot: docs/portal/cover.png = The rulebook cover: the gang outside a lit house at night
-Download: book/dist/Cat_Burglars_v0.8.pdf = The rulebook, version 0.8, a draft (PDF)
-Download: downloads/Cat_Burglars_Foundry_v0.8.0-test.zip = The online version for Foundry VTT, version 0.8 test build, not yet released (unzip into Data/systems)
+Screenshot: docs/portal/cover.png = The rulebook cover: the gang outside a lit house at night, their sign sprayed on the wall
+Download: book/dist/Nine_Lives_Gang_v0.8.pdf = The rulebook, version 0.8, a draft (PDF)
+Download: downloads/Nine_Lives_Gang_Foundry_v0.8.0-test.zip = The online version for Foundry VTT, version 0.8 test build, not yet released (unzip into Data/systems)
 
-# Cat Burglars plan
+# Nine Lives Gang plan
 
-Read by Richard's project portal on every push to this branch and shown on the Cat Burglars card to everyone he has invited.
+Read by Richard's project portal on every push to this branch and shown on the Nine Lives Gang card to everyone he has invited.
 Plain words only: no repo names, usernames, file paths, links or commit IDs. Rules: the project's working rules, "Portal" section.
 
 This version is an experiment: Richard chose what makes the game its own, then asked an AI assistant to make every other design call and build the whole game, so it can be compared with the version Richard directs himself.
@@ -48,4 +48,5 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Pictures for the rulebook (cover, chapter pictures, maps, the gang, and little end-of-chapter drawings)
 - [x] Online version that runs the rules for the table (built and tested on a pretend table)
 - [x] Last fixes: games with five cats evened out, the house pages tidied, and a print-ready edition of the rulebook
+- [x] A new name and look: Nine Lives Gang, with a spray-paint logo, stencil chapter titles and the gang's sign on the cover
 - [ ] Richard tries the online version at a real table

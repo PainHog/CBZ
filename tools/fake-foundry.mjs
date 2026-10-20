@@ -1,5 +1,5 @@
 /**
- * CAT BURGLARS — a minimal, deterministic stand-in for Foundry VTT (test support)
+ * NINE LIVES GANG — a minimal, deterministic stand-in for Foundry VTT (test support)
  * ----------------------------------------------------------------------------------
  * Just enough of the v13 client API for integration smoke tests (test/*.test.mjs)
  * to boot the real system entry module (module/cat-burglars.mjs) and drive

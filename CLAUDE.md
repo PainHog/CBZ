@@ -1,9 +1,9 @@
-# Cat Burglars — working rules for Claude
+# Nine Lives Gang — working rules for Claude
 
 Author and designer: **Richard Moore**. This project reuses the tools and the lessons of his first game, *Heisty Spideys* (finished: rulebook v4.8 and a fully automated Foundry VTT system). Read `docs/DESIGN.md` before doing design work and `docs/LESSONS.md` before building anything.
 
 ## Keep Richard's other games separate
-- *Heisty Spideys* (the SpideyHeist repository) is a finished, separate product, and *Don't Get Forked* (the DontGetForked repository) is a separate game in development. Both are **read-only reference** here: never edit, commit to, push to, branch, or release from either while working on Cat Burglars, even if one is attached to the session.
+- *Heisty Spideys* (the SpideyHeist repository) is a finished, separate product, and *Don't Get Forked* (the DontGetForked repository) is a separate game in development. Both are **read-only reference** here: never edit, commit to, push to, branch, or release from either while working on Nine Lives Gang, even if one is attached to the session.
 - Copy what you need from them into this repository (with a note of where it came from) and adapt the copy here. Never import from or link to their files.
 - If a change to another game ever seems needed, stop and tell Richard; it's done in that game's own session.
 
