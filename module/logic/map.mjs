@@ -64,6 +64,17 @@ export function nearestEntrances(state, room) {
 }
 
 /**
+ * Ch 5 "Shoo!" (v0.8, REVIEW #83): the nearest entrances that work this round
+ * (a front door outside its rounds doesn't), all tied at the shortest distance,
+ * in house order — the Storyteller picks between ties. If none works this
+ * round, every entrance counts.
+ */
+export function shooEntrances(state, room) {
+  const works = (state.entrances ?? []).filter(e => !e.rounds || e.rounds.includes(state.round));
+  return nearestEntrances(works.length ? { ...state, entrances: works } : state, room);
+}
+
+/**
  * One room toward the nearest of `targets` (a pet's "sniff"). Pets pass closed doors (v0.7: `doors: true`);
  * otherwise only open ways count. Ties: the first in house order. Null when there's none.
  */

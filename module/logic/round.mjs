@@ -15,9 +15,9 @@
  */
 import { CATB } from "../config.mjs";
 import { foldMood, upsertEntry, stepEntry, undoLast, liveEntries } from "./mood.mjs";
-import { nearestEntrances, wayId, waysFrom, fits } from "./map.mjs";
+import { shooEntrances, wayId, waysFrom, fits } from "./map.mjs";
 import {
-  watchers, catById, humanByKey, petByKey, roomName, freeInside, leadWatcher, isAsleep,
+  watchers, catById, humanByKey, petByKey, roomName, freeInside, leadWatcher, isAsleep, catsInSight, parrotsLook,
   petsAct, resolveNoise, humanRoutines, holdersRoll, petsReturn, addNoise, hasTrait, findingIt, hostilePet
 } from "./residents.mjs";
 import { newPrize, gangScaling, prizeClock, prizePhase, isDisturbed, dropPrize, robberyOutcome, OUTCOME_LABEL, prizeGot } from "./prize.mjs";
@@ -121,12 +121,13 @@ export function moodNow(state) {
 
 /**
  * Add a Mood entry and settle it (Ch 5): when its meter fills, the human who
- * saw it acts on the cat (Shoo! or Scooped!); with nobody in sight the meter
- * stays full for the next cat seen on that side.
+ * saw it acts on the cat (Shoo! or Scooped!); with nobody with free hands in
+ * sight the meter stays full until someone can see a cat (settleWaiting).
  * `mode`: "auto" applies; "confirm" adds it pending (the GM clicks ✓); "manual" only reports it.
+ * `wait`: the autoMood setting for a meter left waiting ("manual": it never goes off by itself).
  * MUTATES s. Returns the entry (or null in manual mode).
  */
-export function addMood(s, raw, ev, mode = "auto") {
+export function addMood(s, raw, ev, mode = "auto", { wait = mode } = {}) {
   if (mode === "manual") {
     ev.push({ type: "moodAdvice", text: `Mood (by hand): ${raw.cause ?? "a roll"}.` });
     return null;
@@ -138,12 +139,12 @@ export function addMood(s, raw, ev, mode = "auto") {
     ev.push({ type: "moodProposed", entry: entry.id, text: `Mood change waiting for the Storyteller: ${entry.cause ?? ""}.` });
     return entry;
   }
-  settleMood(s, entry, ev);
+  settleMood(s, entry, ev, wait);
   return entry;
 }
 
 /** Fold, report the change, and fire Shoo!/Scooped! if this entry filled a meter on a cat in sight. MUTATES s. */
-export function settleMood(s, entry, ev) {
+export function settleMood(s, entry, ev, wait = "auto") {
   const fold = foldMood(s.moodLedger, s.patience0);
   const r = fold.resolved[entry.id];
   if (!r || !r.side) return;
@@ -152,8 +153,12 @@ export function settleMood(s, entry, ev) {
       text: `${METER[r.side]} ${r.steps > 0 ? "+" : ""}${r.steps} (${fold[r.side]}/${fold.patience})${entry.cause ? `: ${entry.cause}` : ""}.` });
   }
   if (r.steps <= 0 || !fold.full[r.side]) return;
-  const full = () => ev.push({ type: "moodFull", side: r.side,
-    text: `${METER[r.side]} is full, but no human can see a cat: it stays full, and the next cat seen on that side gets it.` });
+  // v0.8 (REVIEW #83): with nobody to act on this entry's cat, the meter waits — unless a human with free hands can see a cat right now
+  const full = () => {
+    if (!s.pendingTrigger && settleWaiting(s, ev, wait)) return;
+    ev.push({ type: "moodFull", side: r.side,
+      text: `${METER[r.side]} is full, but nobody with free hands can see a cat: it stays full, and as soon as someone can, they act at once.` });
+  };
   // v0.7: a meter filled with no roll (spotted, a find, a mess) falls on a cat that human can see — the Storyteller's pick
   if (!entry.catId && entry.candidates) {
     const cats = entry.candidates.map(id => catById(s, id)).filter(c => c && c.status === "free");
@@ -167,14 +172,56 @@ export function settleMood(s, entry, ev) {
   }
   const cat = entry.catId ? catById(s, entry.catId) : null;
   const inside = cat && (cat.status === "free" || cat.status === "held");
-  // the human who acts saw the roll; a human holding a cat still sees, but only acts on the cat they hold
+  // the human who acts saw the roll; a human holding a cat still sees, but only acts on the cat they hold (REVIEW #71)
   const who = inside ? (entry.seenBy ?? []).map(k => humanByKey(s, k)).filter(h => h && !isAsleep(s, h) && (!h.holding || h.holding === cat.id)) : [];
   if (!inside || !who.length) return full();
-  trigger(s, r.side, cat, leadWatcher(who), entry, ev);
+  // a held cat's own roll: its holder acts (Broom: the holder lets go and shoos it out, REVIEW #72)
+  const actor = (cat.status === "held" && who.find(h => h.holding === cat.id)) || leadWatcher(who);
+  trigger(s, r.side, cat, actor, entry, ev);
+}
+
+/**
+ * Ch 5 (v0.8, REVIEW #71, #83): a full meter that nobody could act on waits
+ * for someone with free hands; as soon as a human with free hands can see a
+ * cat, that human (the highest Attention; ties, the Storyteller's pick = house
+ * order) acts at once, on a cat they can see — one cat at once, several the
+ * Storyteller's pick (a pending pick; the cats wait for it). Broom first, then
+ * Cuddle. Returns true if a meter went off or a pick is now waiting. MUTATES s.
+ */
+export function settleWaiting(s, ev, mode = "auto") {
+  if (mode === "manual" || s.phase !== "robbery") return false;
+  let acted = false;
+  for (const side of ["broom", "cuddle"]) {
+    if (s.pendingTrigger) return acted; // the Storyteller is picking first
+    if (!foldMood(s.moodLedger, s.patience0).full[side]) continue;
+    const lookers = (s.humans ?? []).filter(h => !h.holding).map((h, i) => ({ h, i, cats: catsInSight(s, h) })).filter(x => x.cats.length);
+    if (!lookers.length) continue;
+    const tie = lookers.filter(x => (x.h.attention ?? 0) === Math.max(...lookers.map(y => y.h.attention ?? 0))).length > 1;
+    const { h, cats } = lookers.sort((a, b) => (b.h.attention ?? 0) - (a.h.attention ?? 0) || a.i - b.i)[0];
+    ev.push({ type: "waitingActs", side, human: h.key,
+      text: `${METER[side]} was waiting full: ${h.name}${tie ? " (a tie: the Storyteller's pick)" : ""} can see ${cats.map(c => c.name).join(" and ")} and acts at once.` });
+    acted = true;
+    if (cats.length === 1) { trigger(s, side, cats[0], h, null, ev); continue; }
+    s.pendingTrigger = { side, human: h.key, candidates: cats.map(c => c.id), entry: null, round: s.round };
+    ev.push({ type: "pickTarget", side, human: h.key, cats: cats.map(c => c.id),
+      text: `${METER[side]} is full: the Storyteller picks which cat ${h.name} ${side === "broom" ? "chases out" : "picks up"} (${cats.map(c => c.name).join(" or ")}).` });
+  }
+  return acted;
+}
+
+/**
+ * After any change to the robbery (v0.8): parrots note who they saw this round,
+ * and a waiting meter goes off as soon as someone with free hands can see a cat.
+ * MUTATES s.
+ */
+export function look(s, ev, mode = "auto") {
+  if (s.phase !== "robbery") return;
+  parrotsLook(s);
+  settleWaiting(s, ev, mode);
 }
 
 /** The Storyteller picks the cat for a meter that filled with no roll (v0.7). */
-export function resolvePendingTrigger(state, catId) {
+export function resolvePendingTrigger(state, catId, ctx = {}) {
   const s = clone(state);
   const p = s.pendingTrigger;
   if (!p) throw new Error("No meter is waiting for the Storyteller's pick.");
@@ -183,13 +230,21 @@ export function resolvePendingTrigger(state, catId) {
   const human = humanByKey(s, p.human);
   const ev = [];
   if (!foldMood(s.moodLedger, s.patience0).full[p.side]) { s.pendingTrigger = null; ev.push({ type: "moodFull", text: "That meter isn't full any more: nobody is chased out or picked up." }); }
-  else if (!cat || cat.status !== "free" || !human) { s.pendingTrigger = null; ev.push({ type: "moodFull", text: "That cat isn't there any more: the meter stays full for the next cat seen." }); }
+  else if (!cat || cat.status !== "free" || !human) { s.pendingTrigger = null; ev.push({ type: "moodFull", text: "That cat isn't there any more: the meter stays full until someone with free hands can see a cat." }); }
   else trigger(s, p.side, cat, human, s.moodLedger.find(e => e.id === p.entry) ?? null, ev);
+  look(s, ev, ctx.mood);
   pushLog(s, ev);
   return { state: s, events: ev };
 }
 
-/** Ch 5 "Shoo!" / "Scooped!" and "After a Shoo! or a Scoop". MUTATES s. */
+/**
+ * Ch 5 "Shoo!" / "Scooped!" and "After a Shoo! or a Scoop" (v0.8). Shoo!: out
+ * through the nearest entrance that works this round (ties: the Storyteller's
+ * pick, house order here), which the human shuts, and the human stays in that
+ * entrance's room this round; a cat chased out can't come back in this turn.
+ * Scooped!: the human picks the cat up. Either way a carried prize goes back
+ * where the Clock last put it, every step of its spot to do again. MUTATES s.
+ */
 export function trigger(s, side, cat, human, cause, ev) {
   const undo = {
     cat: clone(cat), prize: clone(s.prize), cats: clone(s.cats.filter(c => c.carrying || c.id === cat.id)),
@@ -202,17 +257,22 @@ export function trigger(s, side, cat, human, cause, ev) {
   let entrance = null;
   if (side === "broom") {
     if (cat.heldBy) { const holder = humanByKey(s, cat.heldBy); if (holder) holder.holding = null; }
-    entrance = nearestEntrances(s, cat.where)[0] ?? null;
+    const near = shooEntrances(s, cat.where);
+    entrance = near[0] ?? null;
     if (entrance) { undo.entrance = { key: entrance.key, open: entrance.open }; entrance.open = false; }
-    Object.assign(cat, { where: "outside", status: "outside", hidden: false, riding: null, heldBy: null, carrying: false });
-    ev.push({ type: "shoo", cat: cat.id, human: human.key, entrance: entrance?.key ?? null,
-      text: `Shoo! ${human.name} grabs the broom and chases ${cat.name} out through the ${entrance?.name ?? "nearest way out"}${entrance ? ", then shuts it" : ""}.${carried ? ` ${cat.name} drops the ${s.prize.name}, and ${human.name} puts it back.` : ""}` });
+    const from = cat.where;
+    Object.assign(cat, { where: "outside", status: "outside", hidden: false, riding: null, heldBy: null, carrying: false, outSerial: s.roundSerial });
+    if (entrance) { human.room = entrance.room; human.shooRound = s.round; }
+    const tie = near.length > 1 ? " (as near as another: the Storyteller's pick)" : "";
+    ev.push({ type: "shoo", cat: cat.id, human: human.key, entrance: entrance?.key ?? null, from,
+      text: `Shoo! ${human.name} grabs the broom and chases ${cat.name} out through the ${entrance?.name ?? "nearest way out"}${tie}${entrance ? `, shuts it and stays in the ${roomName(s, entrance.room).toLowerCase()}` : ""}.${carried ? ` ${cat.name} drops the ${s.prize.name}, and ${human.name} puts it back where it was: every step to do again.` : ""}` });
   } else {
+    if (cat.heldBy && cat.heldBy !== human.key) { const old = humanByKey(s, cat.heldBy); if (old) old.holding = null; }
     human.holding = cat.id;
     human.room = cat.where;
     Object.assign(cat, { status: "held", heldBy: human.key, hidden: false, riding: null, carrying: false });
     ev.push({ type: "scooped", cat: cat.id, human: human.key,
-      text: `Scooped! ${human.name} picks ${cat.name} up: "Ooh, look at you!" ${cat.name} is Held.${carried ? ` The ${s.prize.name} goes back where it was.` : ""}` });
+      text: `Scooped! ${human.name} picks ${cat.name} up: "Ooh, look at you!" ${cat.name} is Held.${carried ? ` The ${s.prize.name} goes back where it was: every step to do again.` : ""}` });
   }
   const { ledger } = upsertEntry(s.moodLedger, { kind: "trigger", side, target: cat.id, by: human.key, entrance: entrance?.key ?? null,
     round: s.round, cause: `${side === "broom" ? "Shoo!" : "Scooped!"} ${cat.name}`, from: cause?.id ?? null, undo });
@@ -222,37 +282,44 @@ export function trigger(s, side, cat, human, cause, ev) {
 }
 
 /** The GM confirms a pending entry (autoMood "confirm"). */
-export function confirmMood(state, entryId, { accept = true } = {}) {
+export function confirmMood(state, entryId, { accept = true, mood = "auto" } = {}) {
   const s = clone(state);
   const ev = [];
   const e = s.moodLedger.find(x => x.id === entryId);
   if (!e) throw new Error(`No Mood entry ${entryId}`);
-  if (accept) { e.pending = false; settleMood(s, e, ev); } else { e.pending = false; e.rejected = true; ev.push({ type: "moodRejected", text: `Mood change dropped: ${e.cause ?? ""}.` }); }
+  if (accept) { e.pending = false; settleMood(s, e, ev, mood); } else { e.pending = false; e.rejected = true; ev.push({ type: "moodRejected", text: `Mood change dropped: ${e.cause ?? ""}.` }); }
+  look(s, ev, mood);
   pushLog(s, ev);
   return { state: s, events: ev };
 }
 
-/** The GM's ± on a meter (kind "manual"; no cat, so a fill waits for the next cat seen). */
-export function manualMood(state, side, steps) {
+/** The GM's ± on a meter (kind "manual"; no cat: a fill goes off on a cat a human with free hands can see, else waits). */
+export function manualMood(state, side, steps, ctx = {}) {
   const s = clone(state);
   const ev = [];
-  addMood(s, stepEntry({ side, steps, cause: `the Storyteller ${steps > 0 ? "adds" : "takes off"} ${Math.abs(steps)}`, kind: "manual" }), ev, "auto");
+  addMood(s, stepEntry({ side, steps, cause: `the Storyteller ${steps > 0 ? "adds" : "takes off"} ${Math.abs(steps)}`, kind: "manual" }), ev, "auto", { wait: ctx.mood ?? "auto" });
+  look(s, ev, ctx.mood);
   pushLog(s, ev);
   return { state: s, events: ev };
 }
 
-/** The GM sets a meter or Patience outright. */
-export function setMood(state, { broom, cuddle, patience }) {
+/** The GM sets a meter or Patience outright (a meter set full waits for a cat seen, like any other). */
+export function setMood(state, { broom, cuddle, patience }, ctx = {}) {
   const s = clone(state);
   const { ledger } = upsertEntry(s.moodLedger, { kind: "set", broom, cuddle, patience, round: s.round, cause: "set by the Storyteller" });
   s.moodLedger = ledger;
   const f = foldMood(s.moodLedger, s.patience0);
   const ev = [{ type: "moodSet", text: `The Storyteller sets the Mood: Broom ${f.broom}, Cuddle ${f.cuddle}, Patience ${f.patience}.` }];
+  look(s, ev, ctx.mood);
   pushLog(s, ev);
   return { state: s, events: ev };
 }
 
-/** Undo the latest ledger entry. A Shoo!/Scooped! puts the cat, the human, the entrance and the prize back. */
+/**
+ * Undo the latest ledger entry. A Shoo!/Scooped! puts the cat, the human, the
+ * entrance and the prize back. (Undo doesn't look round: a meter that is full
+ * again goes off on the next change to the robbery, if a human can see a cat.)
+ */
 export function undoMood(state) {
   const s = clone(state);
   const { ledger, removed } = undoLast(s.moodLedger);
@@ -300,6 +367,7 @@ export function beginRound(state, ctx = {}) {
   const left = s.clock.goneAt - s.round;
   if (!s.prize.gone && !prizeGot(s) && left > 0 && left <= 2) ev.push({ type: "clockWarning", text: `The ${s.prize.name} is gone at the start of round ${s.clock.goneAt}.` });
   if (s.round === s.clock.lightsOut) ev.push({ type: "lastRound", text: `Last round: Lights Out falls at the end of this round.` });
+  look(s, ev, ctx.mood ?? "auto");
   pushLog(s, ev);
   return { state: s, events: ev, tempt: temptationOptions(s) };
 }
@@ -385,6 +453,7 @@ export function answerTemptation(state, { choice, cattitude = 0, human = null },
     c.acted = true;
   }
   t.choice = final;
+  look(s, ev, ctx.mood ?? "auto");
   pushLog(s, ev);
   return { state: s, events: ev, cattitude: cat };
 }
@@ -420,11 +489,15 @@ function giveIn(s, c, instinct, ev, moodMode, pickHuman = null) {
 /* ------------------------------------------------------ the house's turn -- */
 
 /**
- * Ch 6 "The house's turn" (core rules v0.6): pets act (a sleeping dog woken by
- * noise acts at once; barks and squawks are noise), noise is answered, every
- * other human follows their routine (Searching humans hunt instead), holders
- * roll, then Finding it (spotted, the disturbed prize, messes); driven-off pets
- * count down and come back.
+ * Ch 6 "The house's turn" (core rules v0.8): Distracted humans look round again
+ * and cats that ended their turn by an unhandled dog are chased back; pets act
+ * (a sleeping dog woken by noise acts at once; barks and the squawk of a parrot
+ * that saw a cat this round are noise), noise is answered (not by the human the
+ * Prize Clock moved this round), every other human follows their routine
+ * (Searching humans hunt instead; sleepers stay put), holders roll, then
+ * Finding it (spotted, the disturbed prize, messes); driven-off pets count down
+ * and come back. Between the steps, a meter waiting full goes off as soon as a
+ * human with free hands can see a cat (look).
  * ctx: { d6: () => 1..6, routines: bool, holders: bool, mood: mode }
  * Returns { state, events, end: endCheck(state) }.
  */
@@ -445,13 +518,20 @@ export function endRound(state, ctx = {}) {
     pushLog(s, ev);
     return { state: s, events: ev, end };
   }
+  look(s, ev, mood); // Distraction ends as the house's turn starts: they look round again
   dogsChase(s, ev);
+  look(s, ev, mood);
   petsAct(s, ctx, ev);
+  look(s, ev, mood);
   const { answered } = resolveNoise(s, ev);
+  look(s, ev, mood);
   humanRoutines(s, ctx, answered, ev);
+  look(s, ev, mood);
   if (ctx.holders !== false) holdersRoll(s, ctx, ev, { shutInDen: (c, h) => shutInDen(s, c, h) });
+  look(s, ev, mood);
   const found = findingIt(s, ev, { disturbed: isDisturbed(s.prize), inPlay: prizePhase(s) === "get" && !s.prize.withHuman });
   for (const m of found) addMood(s, stepEntry({ ...m }), ev, mood);
+  look(s, ev, mood);
   petsReturn(s, ev);
   s.noise = []; s.help = {};
   s.stage = "between";
@@ -462,11 +542,12 @@ export function endRound(state, ctx = {}) {
 }
 
 /**
- * Ch 10 (v0.7): a cat that ends its turn in an awake dog's (or a guarding house
- * cat's) room without dealing with it — rolling, or helping the cat who rolls —
- * is chased back the way it came; a carrier drops the prize. A cat that came in
- * with no Action left (it climbed in) deals with it first thing next turn
- * instead. MUTATES s.
+ * Ch 10 (v0.7, v0.8): a cat that ends its turn in an awake dog's room — or a
+ * house cat's, which guards like a dog's charge (REVIEW #89) — without dealing
+ * with it (rolling, or helping the cat who rolls) is chased back the way it
+ * came, outside again if it came in this round; a carrier drops the prize. A
+ * cat that came in with no Action left (it climbed in) deals with it first
+ * thing next turn instead. MUTATES s.
  */
 export function dogsChase(s, ev) {
   for (const c of freeInside(s)) {
@@ -476,8 +557,19 @@ export function dogsChase(s, ev) {
   }
 }
 
-/** The pet chases the cat back the way it came (else the first open way it fits). MUTATES s. */
+/**
+ * The pet chases the cat back the way it came (else the first open way it
+ * fits); a cat that came in from outside this round goes back outside (REVIEW
+ * #74). A carrier drops the prize where it is. MUTATES s.
+ */
 export function chaseBack(s, c, p, ev) {
+  if (c.cameFrom === "outside" && c.enteredSerial === s.roundSerial) {
+    const e = s.entrances.find(x => x.key === c.enteredBy);
+    if (c.carrying) { dropPrize(s); ev.push({ type: "dropped", cat: c.id, text: `${c.name} drops the ${s.prize.name}.` }); }
+    Object.assign(c, { where: "outside", status: "outside", hidden: false, riding: null, outSerial: s.roundSerial });
+    ev.push({ type: "chased", pet: p.key, cat: c.id, outside: true, text: `${p.name} chases ${c.name} back out${e ? ` through the ${e.name}` : ""}: it only just came in!` });
+    return true;
+  }
   const open = waysFrom(s, c.where).filter(x => x.way.open && fits(x.way.size, { body: c.body }));
   const away = open.find(x => x.to === c.cameFrom) ?? open[0];
   if (!away) { ev.push({ type: "chased", pet: p.key, cat: c.id, text: `${p.name} won't let ${c.name} by.` }); return false; }
@@ -526,7 +618,7 @@ export function finishRobbery(state, reason = "manual") {
 /* ----------------------------------------------- the Storyteller's hands -- */
 
 /** Put a cat somewhere by hand (status follows: "outside", a room = free, or keep held/shut). */
-export function placeCat(state, catId, where, { status = null } = {}) {
+export function placeCat(state, catId, where, { status = null, mood = "auto" } = {}) {
   const s = clone(state);
   const c = catById(s, catId);
   if (!c) throw new Error(`No cat ${catId}`);
@@ -538,18 +630,20 @@ export function placeCat(state, catId, where, { status = null } = {}) {
   }
   if (c.status === "outside" && c.carrying) dropPrize(s, { putBack: true });
   const ev = [{ type: "placed", cat: c.id, text: `The Storyteller puts ${c.name} ${where === "outside" ? "outside" : `in the ${roomName(s, where).toLowerCase()}`}.` }];
+  look(s, ev, mood);
   pushLog(s, ev);
   return { state: s, events: ev };
 }
 
 /** Move a human or pet by hand. */
-export function placeResident(state, key, room) {
+export function placeResident(state, key, room, ctx = {}) {
   const s = clone(state);
   const r = humanByKey(s, key) ?? petByKey(s, key);
   if (!r) throw new Error(`No resident ${key}`);
   if (!s.rooms[room]) throw new Error(`No room ${room}`);
   r.room = room;
   const ev = [{ type: "placed", text: `The Storyteller moves ${r.name} to the ${roomName(s, room).toLowerCase()}.` }];
+  look(s, ev, ctx.mood);
   pushLog(s, ev);
   return { state: s, events: ev };
 }
@@ -568,12 +662,15 @@ export function setOpen(state, { way = null, entrance = null, open }) {
 }
 
 /** Patch a human, pet or cat by hand (e.g. { mode: "friendly" }, { asleepUntil }, { moved: false }). */
-export function patchResident(state, key, patch) {
+export function patchResident(state, key, patch, ctx = {}) {
   const s = clone(state);
   const r = humanByKey(s, key) ?? petByKey(s, key) ?? catById(s, key);
   if (!r) throw new Error(`No one called ${key}`);
   Object.assign(r, patch);
-  return { state: s, events: [] };
+  const ev = [];
+  look(s, ev, ctx.mood);
+  pushLog(s, ev);
+  return { state: s, events: ev };
 }
 
 /** Mark a noise by hand (the Storyteller heard something). */

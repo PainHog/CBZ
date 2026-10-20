@@ -21,11 +21,15 @@ import {
   watchers, catById, humanByKey, petByKey, roomName, hostilePet, highestAttention, kidAmong, addNoise
 } from "./residents.mjs";
 import { currentStep, canCarry, carryRule, dropPrize } from "./prize.mjs";
-import { clone, addMood, pushLog, markApplied, isApplied, chaseBack } from "./round.mjs";
+import { clone, addMood, pushLog, markApplied, isApplied, chaseBack, look } from "./round.mjs";
 import { rollEntry } from "./mood.mjs";
 
 const R = CATB.rules;
 const SIMPLE_IN_VIEW = tags => [["sneaky", 0, ...tags], ["savage", 0, ...tags]];
+/** Ch 8 "Hauling" (v0.8): Sneaky (quietly) or Savage (heave); plain unless the prize says (the cake: Tricky); pushing is a Knocker's Knack. */
+const HAUL = z => [["sneaky", z?.haulDiff ?? 0, "knock"], ["savage", z?.haulDiff ?? 0, "knock"]];
+/** Is this option a haul (the carriers move the prize, through a way or out of an entrance)? */
+const isHaul = (c, o) => !!c?.carrying && (o?.kind === "carry" || o?.kind === "exit");
 const low = s => String(s).toLowerCase();
 
 /** Can this cat act at all right now? (a robbery running, cats' part of a round) */
@@ -45,6 +49,8 @@ export function catOptions(state, catId) {
   const t = s.temptation && !s.temptation.choice ? s.temptation : null;
   const need = (uses, roll) => {
     if (!turnOpen(s)) return "wait for the round to begin";
+    // v0.8 (REVIEW #71): the Storyteller picks the cat a full meter falls on at once, before anyone goes on
+    if (s.pendingTrigger) return `the Storyteller first picks which cat ${humanByKey(s, s.pendingTrigger.human)?.name ?? "the human"} ${s.pendingTrigger.side === "broom" ? "chases out" : "picks up"}`;
     // Ch 7 (v0.6): the tempted cat answers first and takes its turn before any other cat
     if (t) return t.catId === c.id ? "answer the temptation first" : `${catById(s, t.catId)?.name ?? "the tempted cat"} is tempted and goes first`;
     if (uses.includes("move") && !moveLeft) return "already moved this round";
@@ -57,7 +63,9 @@ export function catOptions(state, catId) {
     for (const e of s.entrances) {
       const roll = e.opts.length ? { options: e.opts } : null;
       const uses = roll ? ["move", "action"] : ["move"];
-      const why = !e.open ? "it's shut" : (e.rounds && !e.rounds.includes(s.round)) ? `only in round ${e.rounds.join(" or ")}`
+      // v0.8 (REVIEW #88): a cat can't go out and come back in on the same turn
+      const why = c.outSerial === s.roundSerial ? "it went out this turn: back in next round"
+        : !e.open ? "it's shut" : (e.rounds && !e.rounds.includes(s.round)) ? `only in round ${e.rounds.join(" or ")}`
         : !fits(e.size, { body: c.body }) ? "too tight for a Chonky cat" : null;
       opt({ id: `enter:${e.key}`, kind: "enter", label: `In through the ${e.name}`, target: e.key, room: e.room, uses, roll,
         group: !!roll && !e.one, disabled: why ?? need(uses, roll) });
@@ -95,12 +103,14 @@ export function catOptions(state, catId) {
   const carriers = c.carrying ? z.carriers.map(id => catById(s, id)).filter(Boolean) : [];
   for (const { to, way } of waysFrom(s, room)) {
     if (c.carrying) {
-      // Ch 8 "Hauling" (v0.6): a Medium or Large prize is a roll every time, seen or not; a Small one
-      // only when a human in either room sees it. Every carrier's Action; one rolls, the others help.
+      // Ch 8 "Hauling" (v0.8): a Medium or Large prize is a roll every time, seen or not; a Small one
+      // only when a human in either room sees it (unseen, the carrier just walks: its Move, nothing more).
+      // Every carrier's Action; one rolls, the other carriers and any other cat in the room may help;
+      // humans in the room it leaves and the room it enters see it.
       const fit = carriers.every(x => fits(way.size, { body: x.body, carry: z.size }));
       const past = [...ws, ...watchers(s, to)];
       const haul = z.size !== "small" || past.length > 0;
-      const roll = haul ? { options: SIMPLE_IN_VIEW(["knock"]), seenRooms: [room, to], haul: true } : null; // v0.7: pushing is a Knocker's Knack
+      const roll = haul ? { options: HAUL(z), seenRooms: [room, to], haul: true } : null;
       const uses = roll ? ["move", "action"] : ["move"];
       const why = !way.open ? "the way is shut" : !fit ? `the ${z.name} won't fit through` : carriers.some(x => x.moved) ? "a carrier has already moved"
         : (roll && carriers.some(x => x.acted)) ? "a carrier has already acted (hauling is every carrier's Action)" : null;
@@ -125,7 +135,7 @@ export function catOptions(state, catId) {
     const fit = group.every(x => fits(e.size, { body: x.body, carry }));
     // If the entrance lists a roll, that's the roll; else hauling a Medium/Large prize out is a roll (Small: if seen)
     let roll = e.opts.length ? { options: e.opts } : null;
-    if (!roll && c.carrying && (z.size !== "small" || ws.length)) roll = { options: SIMPLE_IN_VIEW(["knock"]), haul: true };
+    if (!roll && c.carrying && (z.size !== "small" || ws.length)) roll = { options: HAUL(z), haul: true };
     // Ch 8 (v0.6): going out through an entrance that needs no roll can be the Move or the Action
     const uses = roll ? ["move", "action"] : (group.every(x => !x.moved) ? ["move"] : ["action"]);
     const why = !e.open ? (e.rounds ? "it's shut" : "it's shut (reopen it from inside first)")
@@ -135,7 +145,7 @@ export function catOptions(state, catId) {
       : roll ? (group.some(x => x.moved) ? "already moved this round" : group.some(x => x.acted) ? "already acted this round" : null)
       : (group.some(x => x.moved && x.acted) ? "no Move or Action left" : null);
     opt({ id: `exit:${e.key}`, kind: "exit", label: `Out through the ${e.name}${carry ? ` with the ${z.name}` : ""}${!roll && uses[0] === "action" ? " (as your Action)" : ""}`, target: e.key, uses, roll,
-      group: true, disabled: why ?? (t ? need(uses, roll) : (turnOpen(s) ? null : need(uses, roll))) });
+      group: true, disabled: why ?? ((t || s.pendingTrigger) ? need(uses, roll) : (turnOpen(s) ? null : need(uses, roll))) });
     if (e.letOut) {
       act({ id: `meow:${e.key}`, kind: "meow", label: `Meow at the ${e.name} to be let out`, target: e.key, uses: ["move", "action"],
         roll: { options: [["sweet", 0, "charm"]] }, allowBlocked: true,
@@ -155,6 +165,7 @@ export function catOptions(state, catId) {
         target: p.key, roll: { options, opposition: p.rating } }, { allowBlocked: true });
     }
     if (p.kind === "parrot" && p.mode !== "covered") act({ id: `cover:${p.key}`, kind: "cover", label: `Cover ${p.name}'s cage`, target: p.key, roll: { options: R.coverParrot } });
+    // Ch 10 (v0.8, REVIEW #89): a cat holding the prize can't ride
     if (p.kind === "vacuum" && c.riding !== p.key && !c.carrying) act({ id: `ride:${p.key}`, kind: "ride", label: `Hop on ${p.name}`, target: p.key }, { simple: true });
   }
   if (c.riding) opt({ id: "hopOff", kind: "hopOff", label: "Hop off the vacuum (free)", uses: [] });
@@ -165,9 +176,10 @@ export function catOptions(state, catId) {
       const n = z.spotSteps.length - z.stepsLeft + 1;
       act({ id: "step", kind: "step", label: `Get at the ${z.name}: step ${n} of ${z.spotSteps.length}`, roll: { options: currentStep(z) } });
     }
+    // v0.8 (REVIEW #82): nobody can pick it up or eat it until every step of its spot is done (`down`)
     if (z.down && !z.carriers.length && !c.carrying) {
       act({ id: "take", kind: "take", label: `Pick up the ${z.name} (${z.size}: ${carryRule(z.size)})`, group: true }, { simple: true });
-      // v0.7: eating a portion is always a roll, seen or not (Sneaky quietly, Savage wolfing it; Foodie's Knack)
+      // v0.7: eating a portion is always a roll, seen or not (Sneaky quietly, Savage wolfing it; a Foodie's Knack either way)
       if (z.kind === "delicious" && z.portionsLeft > 0) act({ id: "eat", kind: "eat", label: `Eat a portion (${z.portionsLeft} left)`, roll: { options: SIMPLE_IN_VIEW(["food"]) } });
     }
   } else if (z?.withHuman && z.room === room) {
@@ -175,13 +187,14 @@ export function catOptions(state, catId) {
   }
   if (c.carrying) act({ id: "drop", kind: "drop", label: `Put the ${z.name} down` }, { simple: true });
 
-  // Humans
-  for (const h of ws) {
+  // Humans (a holder's hands are full: they can't be Distracted, REVIEW #78)
+  for (const h of ws.filter(x => !x.holding)) {
     act({ id: `distract:${h.key}`, kind: "distract", label: `Distract ${h.name}${h.distractions ? ` (distracted ${h.distractions}× before: −${h.distractions})` : ""}`, target: h.key,
       roll: { options: [["sweet", h.distractions ?? 0, "charm"]], diffLabel: h.distractions ? `Distracted ${h.distractions}× before` : null },
       disabled: c.carrying ? "a cat with its mouth full can't be Sweet" : null });
   }
   if (!c.hidden && s.rooms[room]?.hide !== false && !c.carrying) act({ id: "hide", kind: "hide", label: "Hide", roll: ws.length ? { options: [["sneaky", 0, "hide"]] } : null }, { simple: true }); // Ch 5: a Sneaky roll if somebody sees
+  // v0.8 (REVIEW #88): a noise made on purpose is a noise whatever the roll, and leaves a mess (one per room)
   act({ id: "noise", kind: "noise", label: "Make a noise on purpose (a lure: leaves a mess)" }, { simple: true, tags: ["knock"] });
   act({ id: "free", kind: "free", label: "Something else (a free roll)", roll: { options: anyApproach(0) } });
   out.helpTargets = helpTargetsFor(s, c);
@@ -196,12 +209,26 @@ export function helpTargetsFor(s, c) {
   return s.cats.filter(x => x.id !== c.id && x.status === c.status && x.where === c.where).map(x => ({ id: x.id, name: x.name, queued: s.help?.[c.id] === x.id }));
 }
 
-/** Cats who could help this cat's roll now: same place, not acted (for enter/exit groups also not moved). */
+/**
+ * Cats who could help this cat's roll now: same place, not acted (for enter/exit
+ * groups also not moved). A haul (v0.8, REVIEW #80): the other carriers (it's
+ * their Action anyway), then any other free cat in the room that hasn't acted —
+ * it helps (+1 die, its Action) but stays behind: only the carriers move.
+ */
 export function eligibleHelpers(s, c, option = null) {
   if (!c) return [];
-  if (option?.kind === "carry" || (option?.kind === "exit" && c.carrying)) return s.prize.carriers.filter(id => id !== c.id).map(id => catById(s, id));
+  // Ch 10: a cat a dog (or house cat) is stopping deals with it before doing anything else — it can help only that roll
+  const free = x => {
+    const p = x.status === "free" ? hostilePet(s, x.where, x) : null;
+    return !p || (x.dealt ?? []).includes(p.key) || (option?.kind === "confront" && option.target === p.key);
+  };
+  if (isHaul(c, option)) {
+    const carriers = s.prize.carriers.filter(id => id !== c.id).map(id => catById(s, id)).filter(Boolean);
+    const others = s.cats.filter(x => x.id !== c.id && x.status === "free" && x.where === c.where && !x.acted && !s.prize.carriers.includes(x.id) && free(x));
+    return [...carriers, ...others];
+  }
   return s.cats.filter(x => x.id !== c.id && x.status === c.status && x.where === c.where && !x.acted
-    && (c.status === "free" || c.status === "outside")
+    && (c.status === "free" || c.status === "outside") && free(x)
     && !(option?.group && ["enter", "exit"].includes(option.kind) && x.moved));
 }
 
@@ -249,12 +276,16 @@ export function rollContext(state, catId, optionId = "free") {
     rating: c.r?.[approach] ?? 0,
     attention: attentionApplies(approach) ? highestAttention(seen) : 0
   }));
+  // a haul's other carriers are locked in (it's every carrier's Action); anyone else is ticked if they said they'd help
+  const haul = isHaul(c, o);
+  const locked = id => haul && s.prize.carriers.includes(id);
   return {
     option: o, cat: c, room: rollRoom(s, c, o), roomName: roomName(s, rollRoom(s, c, o)),
     options, opposition: o.roll?.opposition ?? 0, bodyDie: !!o.roll?.bodyDie, diffLabel: o.roll?.diffLabel ?? null,
     seenBy: seen.map(h => h.key), seenNames: seen.map(h => h.name), attention: highestAttention(seen), kid: kidAmong(seen),
-    helpers: helpers.map(x => ({ id: x.id, name: x.name, queued: queued.includes(x.id) || o.kind === "carry" || (o.kind === "exit" && c.carrying) })),
-    autoHelpers: o.kind === "carry" || (o.kind === "exit" && c.carrying)
+    helpers: helpers.map(x => ({ id: x.id, name: x.name, locked: locked(x.id), queued: queued.includes(x.id) || locked(x.id),
+      note: haul && !locked(x.id) ? "helps, but stays here" : null })),
+    autoHelpers: haul
   };
 }
 
@@ -275,6 +306,7 @@ export function doAction(state, catId, optionId, args = {}, ctx = {}) {
   if (o.roll && !args.force) throw new Error(`${o.label}: that needs a roll.`);
   const res = perform(s, c, o, { ...args, result: null, helpers: args.helpers ?? queuedHelpers(s, c) }, ev, ctx);
   for (const id of res.ok ? (args.helpers ?? queuedHelpers(s, c)) : []) delete s.help?.[id];
+  look(s, ev, ctx.mood ?? "auto");
   pushLog(s, ev);
   return { state: s, events: ev, ok: res.ok, cattitude: [] };
 }
@@ -300,6 +332,7 @@ export function applyRoll(state, card, ctx = {}) {
   markApplied(s, card.eventId);
   if (!c) {
     if (ctx.mood !== "manual") addMood(s, rollEntry(card, { round: s.round }), ev, ctx.mood ?? "auto");
+    look(s, ev, ctx.mood ?? "auto");
     pushLog(s, ev);
     return { state: s, events: ev, cattitude };
   }
@@ -330,21 +363,24 @@ export function applyRoll(state, card, ctx = {}) {
     ev.push({ type: "stopped", cat: c.id, text: `…but before ${c.name} goes anywhere:` });
     if (makesNoise(card.result) && !card.quiet && room) addNoise(s, room, `${c.name}'s ${card.result}`, c.id);
     addMood(s, entry, ev, ctx.mood ?? "auto");
+    look(s, ev, ctx.mood ?? "auto");
     pushLog(s, ev);
     return { state: s, events: ev, cattitude: card.result === "purrfect" ? [{ catId: c.id, delta: +1, why: "a Purrfect" }] : [], ok };
   }
-  if (o && ctx.effects !== false) {
+  const performed = !!o && ctx.effects !== false;
+  if (performed) {
     perform(s, c, o, { result: card.result, approach: card.approach, helpers: card.helpers ?? [] }, ev, ctx);
   } else {
     if (o?.uses?.includes("move")) c.moved = true;
     c.acted = true;
     if (o && ctx.effects === false) ev.push({ type: "noEffect", text: `(Effects are off: the Storyteller applies "${o.label}" by hand.)` });
   }
-  // v0.7: a haul's noise is in the room the prize ends up in
+  // v0.7: a haul's noise is in the room the prize ends up in; a noise made on purpose already made its own (v0.8)
   const noiseRoom = o?.kind === "carry" && ok && s.prize.room === o.target ? o.target : room;
-  if (makesNoise(card.result) && !card.quiet && noiseRoom) addNoise(s, noiseRoom, `${c.name}'s ${card.result}`, c.id);
+  if (makesNoise(card.result) && !card.quiet && noiseRoom && !(performed && o.kind === "noise")) addNoise(s, noiseRoom, `${c.name}'s ${card.result}`, c.id);
   if (card.result === "purrfect") cattitude.push({ catId: c.id, delta: +1, why: "a Purrfect" });
   addMood(s, entry, ev, ctx.mood ?? "auto");
+  look(s, ev, ctx.mood ?? "auto");
   pushLog(s, ev);
   return { state: s, events: ev, cattitude, ok };
 }
@@ -393,7 +429,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       if (e.one) e.open = false; // Ch 8: the front door lets in one cat, then it shuts
       if (!ok) { ev.push({ type: "enterFailed", cat: c.id, text: `${c.name} doesn't get in through the ${e.name}.` }); break; }
       if (e.jam && o.roll) { e.opts = []; ev.push({ type: "jammed", text: `The ${e.name} is jammed open now: no roll for anyone.` }); }
-      for (const x of group) Object.assign(x, { where: e.room, status: "free", hidden: false, cameFrom: "outside", arrivedSpent: o.roll ? s.roundSerial : null });
+      for (const x of group) Object.assign(x, { where: e.room, status: "free", hidden: false, cameFrom: "outside", enteredSerial: s.roundSerial, enteredBy: e.key, arrivedSpent: o.roll ? s.roundSerial : null });
       if (e.noisy) for (const x of group) addNoise(s, e.room, e.name, x.id); // v0.6: a noise for each cat
       ev.push({ type: "enter", cat: c.id, text: `${group.map(x => x.name).join(" and ")} ${group.length > 1 ? "come" : "comes"} in through the ${e.name}${e.noisy ? " (it clacks: noise)" : ""}.` });
       break;
@@ -410,8 +446,8 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
         break;
       }
       const withPrize = c.carrying;
-      for (const x of group) Object.assign(x, { where: "outside", status: "outside", hidden: false, riding: null, carrying: false });
-      if (withPrize) { z.out = true; z.carriers = []; z.room = null; }
+      for (const x of group) Object.assign(x, { where: "outside", status: "outside", hidden: false, riding: null, carrying: false, outSerial: s.roundSerial });
+      if (withPrize) { z.out = true; z.carriers = []; z.room = null; } // got, even part-eaten (v0.8)
       if (e.noisy) for (const x of group) addNoise(s, e.room, e.name, x.id);
       ev.push({ type: "exit", cat: c.id, text: `${group.map(x => x.name).join(" and ")} ${group.length > 1 ? "get" : "gets"} out through the ${e.name}${withPrize ? ` with the ${z.name}!` : "."}` });
       break;
@@ -419,7 +455,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
     case "meow": {
       mark(c, { move: ok, act: true });
       if (!ok) { ev.push({ type: "meowFailed", cat: c.id, text: `Nobody lets ${c.name} out.` }); break; }
-      Object.assign(c, { where: "outside", status: "outside", hidden: false, riding: null });
+      Object.assign(c, { where: "outside", status: "outside", hidden: false, riding: null, outSerial: s.roundSerial });
       ev.push({ type: "letOut", cat: c.id, text: `Somebody opens the door and lets ${c.name} out.` });
       break;
     }
@@ -455,7 +491,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       for (const x of group) mark(x);
       if (!ok) break;
       z.carriers = group.map(x => x.id);
-      for (const x of group) { x.carrying = true; x.hidden = false; }
+      for (const x of group) { x.carrying = true; x.hidden = false; x.riding = null; } // a cat holding the prize can't ride (v0.8)
       ev.push({ type: "take", text: `${group.map(x => x.name).join(" and ")} ${group.length > 1 ? "pick" : "picks"} up the ${z.name}.` });
       break;
     }
@@ -479,8 +515,10 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       break;
     }
     case "noise": {
+      // v0.8 (REVIEW #88): a noise made on purpose is a noise whatever the roll; the roll only decides who notices
       mark(c);
-      if (ok) { addNoise(s, c.where, `${c.name} on purpose`, c.id, { mess: true }); ev.push({ type: "lure", cat: c.id, text: `${c.name} knocks something over on purpose: noise, and a mess.` }); }
+      addNoise(s, c.where, `${c.name} on purpose`, c.id, { mess: true });
+      ev.push({ type: "lure", cat: c.id, text: `${c.name} knocks something over on purpose: noise, and a mess${ok ? "" : " (and they saw who did it)"}.` });
       break;
     }
     case "ride": {

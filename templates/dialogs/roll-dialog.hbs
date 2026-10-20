@@ -28,7 +28,7 @@
   <fieldset class="catb-helpers">
     <legend>Help (+1 die each, at most +2; their Action is used)</legend>
     {{#each helpers}}
-    <label class="checkbox"><input type="checkbox" name="help-{{this.id}}" {{#if this.queued}}checked{{/if}} {{#if this.locked}}disabled{{/if}}> {{this.name}}{{#if this.queued}} (said they'd help){{/if}}</label>
+    <label class="checkbox"><input type="checkbox" name="help-{{this.id}}" {{#if this.queued}}checked{{/if}} {{#if this.locked}}disabled{{/if}}> {{this.name}}{{#if this.locked}} (carrying it too){{else}}{{#if this.queued}} (said they'd help){{/if}}{{/if}}{{#if this.note}} — {{this.note}}{{/if}}</label>
     {{/each}}
   </fieldset>
   {{/if}}

@@ -3,9 +3,9 @@
  * --------------------------------------------
  * Who sees whom (Ch 5 "Who sees you"), pets in the way (Ch 10), and the house's
  * turn: pets, noise, routines, Searching and the holders' d6 (Ch 6 "The house's
- * turn", Ch 9, Ch 10; core rules v0.7): pets, noise, routines or Searching,
+ * turn", Ch 9, Ch 10; core rules v0.8): pets, noise, routines or Searching,
  * holders, then Finding it. Where the book leaves a choice the readings follow
- * the simulator's engine (sim/engine.mjs, package P9); the "Implementation
+ * the simulator's engine (sim/engine.mjs, package P10); the "Implementation
  * notes" in docs/AUTOMATION.md list them.
  *
  * Internal helpers MUTATE the robbery state they are given (the public
@@ -35,6 +35,16 @@ export const isDistracted = (s, h) => (h.distractedRound ?? -1) >= s.round && s.
  */
 export function watchers(s, room) {
   return (s.humans ?? []).filter(h => h.room === room && !isAsleep(s, h) && !isDistracted(s, h));
+}
+
+/**
+ * Ch 5 (v0.8): the free cats this human can see right now — awake, not
+ * Distracted, in their room and not hiding. A holder still sees (their hands
+ * are just full); the caller decides whether that matters.
+ */
+export function catsInSight(s, h) {
+  if (!h || isAsleep(s, h) || isDistracted(s, h)) return [];
+  return freeInside(s).filter(c => c.where === h.room && !c.hidden);
 }
 
 /** Ch 5: the humans who see this cat (none if it's hidden, outside, or shut in the Den). */
@@ -74,6 +84,19 @@ export function hostilePet(s, room, cat = null) {
 /* ------------------------------------------------------------------ pets -- */
 
 /**
+ * Ch 10 (v0.8): a parrot squawks in the Pets step if it saw a cat that wasn't
+ * hidden at any time this round. Called after every change to the robbery
+ * (round.mjs look): an uncovered parrot with an unhidden free cat in its room
+ * remembers the round. MUTATES s.
+ */
+export function parrotsLook(s) {
+  for (const p of s.pets ?? []) {
+    if (p.kind !== "parrot" || p.mode === "covered") continue;
+    if (catsHere(s, p.room).some(c => !c.hidden)) p.sawRound = s.round;
+  }
+}
+
+/**
  * Ch 10, each pet at the end of the round (the simulator's order: pets act
  * before noise is answered, and their barks and squawks join the noise list).
  */
@@ -100,9 +123,12 @@ function petActs(s, p, ctx, ev) {
     return;
   }
   if (p.kind === "parrot") {
-    if (p.mode !== "covered" && catsHere(s, p.room).some(c => !c.hidden)) {
+    // v0.8: it saw an unhidden cat at any time this round (covered: quiet for the rest of the robbery)
+    parrotsLook(s);
+    if (p.mode !== "covered" && p.sawRound === s.round) {
+      const now = catsHere(s, p.room).some(c => !c.hidden);
       addNoise(s, p.room, "squawk", null);
-      ev.push({ type: "squawk", pet: p.key, text: `${p.name} squawks: noise in the ${roomName(s, p.room).toLowerCase()}.` });
+      ev.push({ type: "squawk", pet: p.key, text: `${p.name} squawks${now ? "" : " (it saw a cat earlier this round)"}: noise in the ${roomName(s, p.room).toLowerCase()}.` });
     }
     return;
   }
@@ -141,26 +167,38 @@ export function addNoise(s, room, why, catId = null, { mess = false } = {}) {
 
 /* ----------------------------------------------------------------- noise -- */
 
+/** Ch 6 / Ch 8 (v0.8): the human the Prize Clock moved this round stays with the prize and answers no noise. */
+export const clockHeld = (s, h) => h.staysRound === s.round;
+
 /**
  * Ch 6 "Noise": each noise, in the order made, draws the closest awake human
- * within two rooms who isn't already in that room; each human answers only one;
- * the Storyteller breaks ties (here: house order, logged). A human who answers
- * goes straight there, sees only that room and stays (noise beats the Prize
- * Clock's hold). Several noises in one room count once (the simulator's reading).
- * Messes are found later, in Finding it. Returns the answered keys.
+ * within two rooms who isn't already in that room or holding a cat; each human
+ * answers only one; the Storyteller breaks ties (here: house order, logged). A
+ * human who answers goes straight there, sees only that room and stays.
+ * Several noises in one room count as one (REVIEW #75). The human the Prize
+ * Clock moved this round answers none (v0.8: the Clock's hold beats noise,
+ * REVIEW #79); a Searching human still answers noise first (#84). Messes are
+ * found later, in Finding it. Returns the answered keys.
  */
 export function resolveNoise(s, ev) {
   const answered = new Set();
   const mood = [];
   const rooms = [];
   for (const n of s.noise ?? []) if (!rooms.includes(n.room)) rooms.push(n.room);
+  const acting = s.pendingTrigger?.human ?? null; // busy chasing out or picking up a cat (the Storyteller's pick)
+  const hearing = h => !h.holding && !isAsleep(s, h) && !hasTrait(h, "headphones") && !hasTrait(h, "busy") && h.key !== acting;
   for (const room of rooms) {
-    const cands = (s.humans ?? [])
-      .filter(h => !h.holding && !isAsleep(s, h) && !hasTrait(h, "headphones") && !hasTrait(h, "busy") && !answered.has(h.key) && h.room !== room)
+    const inRange = (s.humans ?? [])
       .map((h, i) => ({ h, d: dist(s, h.room, room), i }))
-      .filter(x => x.d <= R.noiseRange)
-      .sort((a, b) => a.d - b.d || a.i - b.i);
+      .filter(x => hearing(x.h) && !answered.has(x.h.key) && x.h.room !== room && x.d <= R.noiseRange);
+    const cands = inRange.filter(x => !clockHeld(s, x.h)).sort((a, b) => a.d - b.d || a.i - b.i);
     const pick = cands[0];
+    for (const x of inRange.filter(y => clockHeld(s, y.h) && (!pick || y.d <= pick.d))) {
+      const z = s.prize;
+      const withIt = z && !z.out && !z.gone && !z.withHuman && z.room === x.h.room;
+      ev.push({ type: "holdIgnoresNoise", room, human: x.h.key,
+        text: `${x.h.name} stays ${withIt ? `with the ${z.name}` : "put"} (the Prize Clock's hold): the noise in the ${roomName(s, room).toLowerCase()} doesn't draw them this round.` });
+    }
     if (!pick) { ev.push({ type: "noiseUnanswered", room, text: `Nobody comes to see the noise in the ${roomName(s, room).toLowerCase()}.` }); continue; }
     const tie = cands.filter(x => x.d === pick.d).length > 1;
     const h = pick.h;
@@ -176,21 +214,33 @@ export function resolveNoise(s, ev) {
 /* -------------------------------------------------------------- routines -- */
 
 /**
- * Ch 6 / Ch 10: every other human's d6 routine. Holders don't follow it (Ch 9),
- * a human who answered a noise or who put the prize down this round stays, and
- * a Searching human hunts instead (v0.6): stays with the prize if it's in their
- * room, else steps into its room if it's next door; else stays with a cat in
- * sight, else steps into a next room with an unhidden cat (the Storyteller's
- * pick between rooms, by d6); else follows the routine. A dozing human rolls an
- * extra d6: 1–2, asleep until the end of the next round.
+ * Ch 6 / Ch 10: every other human's d6 routine. Holders don't follow it (Ch 9);
+ * a human who answered a noise, whom the Prize Clock moved this round, or who
+ * shooed a cat out this round (v0.8: they stay in that entrance's room) stays;
+ * a sleeping human stays put (v0.8, REVIEW #73); and a Searching human hunts
+ * instead (v0.6): stays with the prize if it's in their room, else steps into
+ * its room if it's next door; else stays with a cat in sight, else steps into
+ * a next room with an unhidden cat (the Storyteller's pick between rooms, by
+ * d6); else follows the routine. A dozing human rolls the doze die with their
+ * routine (REVIEW #90): 1–2, asleep until the end of the next round.
  */
 export function humanRoutines(s, ctx, answered, ev) {
   for (const h of s.humans ?? []) {
     if (h.holding) continue;
     if (answered.has(h.key)) continue;
-    if (h.staysRound === s.round) { ev.push({ type: "stays", human: h.key, text: `${h.name} stays with the prize.` }); continue; }
+    if (clockHeld(s, h)) {
+      const z = s.prize;
+      const withIt = z && !z.out && !z.gone && !z.withHuman && z.room === h.room;
+      ev.push({ type: "stays", human: h.key, text: `${h.name} stays ${withIt ? `with the ${z.name}` : "put"} (the Prize Clock).` });
+      continue;
+    }
+    if (h.shooRound === s.round || h.key === s.pendingTrigger?.human) {
+      ev.push({ type: "stays", human: h.key, text: `${h.name} stays in the ${roomName(s, h.room).toLowerCase()}.` });
+      continue;
+    }
+    if (isAsleep(s, h)) { ev.push({ type: "asleep", human: h.key, text: `${h.name} is asleep and stays put.` }); continue; }
     if (ctx.routines === false) continue; // autoRoutines off: the Storyteller moves them by hand
-    if (h.searching && !isAsleep(s, h)) {
+    if (h.searching) {
       const z = s.prize;
       if (z && !z.out && !z.gone && !z.withHuman && z.room) {
         if (z.room === h.room) { ev.push({ type: "searchStay", human: h.key, text: `${h.name} is Searching and stays with the ${z.name}.` }); continue; }
@@ -243,7 +293,7 @@ export function holdersRoll(s, ctx, ev, { shutInDen }) {
     } else {
       // v0.7: out through the nearest entrance, which stays open
       const e = nearestEntrances(s, h.room)[0];
-      c.status = "outside"; c.where = "outside"; c.hidden = false; c.riding = null;
+      Object.assign(c, { status: "outside", where: "outside", hidden: false, riding: null, outSerial: s.roundSerial });
       ev.push({ type: "putOut", human: h.key, cat: c.id, face, text: `${h.name} (d6 ${face}) puts ${c.name} out through the ${e?.name ?? "door"}: "Go on, home you go."` });
     }
   }

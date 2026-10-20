@@ -64,7 +64,7 @@ async function houseTurn(faces) {
   diceQueue.length = 0;
 }
 
-test("a GM and two players rob Number 12 (v0.6) from start to Clean Getaway", async () => {
+test("a GM and two players rob Number 12 (v0.8) from start to Clean Getaway", async () => {
   const tilly = await makeCat("Two-Bin Tilly", p1, { approaches: { streetwise: 3, sneaky: 2, sweet: 1, savage: 1 }, instinct1: "curious", instinct2: "climber", body: "lean" });
   const velvet = await makeCat("Velvet", p1, { approaches: { sweet: 3, sneaky: 2, savage: 1, streetwise: 1 }, instinct1: "lapCat", instinct2: "knocker", body: "lean" });
   const biscuit = await makeCat("Big Biscuit", p2, { approaches: { savage: 3, streetwise: 2, sweet: 1, sneaky: 1 }, instinct1: "scrapper", instinct2: "foodie", body: "chonky", cattitude: 4 });
@@ -142,61 +142,82 @@ test("a GM and two players rob Number 12 (v0.6) from start to Clean Getaway", as
   assert.equal(state().pets[0].mode, "friendly", "Pudding is befriended for the whole gang");
   assert.deepEqual(meters(), [3, 2, 4]);
 
-  m = await rollAs(p2, biscuit, "step", { approach: "savage" }, [5, 2, 1]); // 3 + Foodie − Tricky, seen
+  m = await rollAs(p2, biscuit, "free", { approach: "savage" }, [5, 2, 1]); // a free roll in view: Savage 3, a Scrape
   await click(m, p2, "Accept");
-  assert.equal(state().prize.stepsLeft, 1, "the step stays done");
   assert.equal(catOf(biscuit.id).status, "outside", "Broom filled: Shoo!");
-  assert.equal(state().entrances.find(e => e.key === "window").open, false, "out through the kitchen window, which is shut");
+  assert.equal(state().entrances.find(e => e.key === "window").open, false, "out through the kitchen window (the nearest that works this round), which is shut");
+  assert.equal(pell().room, "kitchen", "…and Mr Pell stays in that room");
   assert.deepEqual(meters(), [0, 2, 3], "Broom empties; Patience drops to 3");
-  assert.match(lastCard("mood").content, /Shoo! Mr Pell grabs the broom/);
+  assert.match(lastCard("mood").content, /Shoo! Mr Pell grabs the broom and chases Big Biscuit out through the Open kitchen window \(up the bins\), shuts it and stays in the kitchen/);
 
-  m = await rollAs(p1, tilly, "step", { approach: "streetwise" }, [6, 3, 1]); // 3 + Curious − Tricky
+  m = await rollAs(p1, tilly, "hide", { approach: "sneaky" }, [6]); // Sneaky 2 − Attention 1
   await click(m, gmU, "Not seen");
   assert.equal(flags(m).seen, false);
   await click(m, gmU, "Seen");
   assert.deepEqual(flags(m).seenBy, ["pell"]);
   await click(m, p1, "Accept");
-  assert.equal(state().prize.down, true);
-  assert.deepEqual(meters(), [1, 2, 3]);
+  assert.equal(catOf(tilly.id).hidden, true);
+  assert.deepEqual(meters(), [0, 2, 3], "a Sneaky Clean: he never noticed");
 
   m = await rollAs(p2, mags, "open:kitchen~utility", { approach: "streetwise" }, [5, 4]);
   await click(m, p2, "Accept");
   assert.equal(state().ways.find(w => w.id === "kitchen~utility").open, true);
-  await houseTurn([1, 1, 1, 1, 1, 1, 1]); // the utility room's noise draws Mr Pell away from the counter
-  assert.equal(pell().room, "utility", "noise beats the Prize Clock's hold");
-  assert.equal(pell().searching, false);
+  await houseTurn([1, 1, 1, 1, 1, 1, 1]); // the utility room's noise doesn't draw Mr Pell: he has just put the chicken down
+  assert.equal(pell().room, "kitchen", "v0.8: the Prize Clock's hold beats noise");
+  assert.match(lastCard("houseTurn").content, /Prize Clock(&#x27;|')s hold/);
+  assert.equal(pell().searching, false, "nobody touched the chicken in the put-down round");
 
-  // ---- Round 3: Biscuit comes back in, Tilly and Velvet pick the chicken up, Mags leaves
+  // ---- Round 3: Biscuit comes back in, Velvet keeps Mr Pell busy, the steps get done; the flap's clack lures him
   await asUser(gmU, () => api().robbery.beginRound());
   await settle();
   await trackerAction(p2, "act", { cat: biscuit.id, option: "enter:flap" });
   assert.equal(catOf(biscuit.id).where, "utility");
+  m = await rollAs(p1, velvet, "distract:pell", { approach: "sweet" }, [6, 6, 1]); // Sweet 3 + Lap Cat − Attention 1
+  await click(m, p1, "Accept");
+  assert.equal(flags(m).result, "purrfect");
+  assert.equal(velvet.system.cattitude, 3, "a Purrfect: +1 Cattitude, and no Mood step");
+  assert.deepEqual(meters(), [0, 2, 3]);
+  m = await rollAs(p1, tilly, "step", { approach: "sneaky" }, [6, 4]); // Sneaky 2 + Climber − Tricky; Mr Pell is Distracted
+  await click(m, p1, "Accept");
+  assert.equal(state().prize.stepsLeft, 1, "the step stays done");
+  await trackerAction(p2, "act", { cat: mags.id, option: "move:kitchen" });
+  m = await rollAs(p2, mags, "step", { approach: "savage" }, [5]); // Savage 2 − Tricky
+  await click(m, p2, "Accept");
+  assert.equal(state().prize.down, true);
+  await houseTurn([1, 1, 1, 1, 1, 1, 1]); // the flap's clack was the first noise: Mr Pell goes to the utility room
+  assert.equal(pell().room, "utility");
+  assert.equal(pell().searching, false, "he wasn't beside the chicken at the end of the house's turn");
+
+  // ---- Round 4: Tilly and Velvet pick the chicken up; Biscuit slips out past Mr Pell
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
   await trackerAction(p1, "help", { cat: velvet.id, target: tilly.id });
   await trackerAction(p1, "act", { cat: tilly.id, option: "take" });
   assert.deepEqual(state().prize.carriers.sort(), [tilly.id, velvet.id].sort(), "two Lean cats carry a Medium prize");
-  await trackerAction(p2, "act", { cat: mags.id, option: "exit:flap" });
-  assert.equal(catOf(mags.id).status, "outside");
-  await houseTurn([1, 1, 1, 1, 1, 1, 1]); // Mr Pell stays put
-  assert.equal(pell().room, "utility");
-
-  // ---- Round 4: hauling the chicken past Mr Pell
-  await asUser(gmU, () => api().robbery.beginRound());
-  await settle();
-  m = await rollAs(p1, tilly, "move:utility", { approach: "sneaky" }, [6, 4]); // Sneaky 2 + Velvet helping − Attention 1
-  assert.deepEqual(flags(m).helpers, [velvet.id], "the other carrier helps");
-  await click(m, p1, "Accept");
-  assert.equal(state().prize.room, "utility");
-  assert.deepEqual(meters(), [1, 2, 3], "a Sneaky Clean: they never noticed");
+  await trackerAction(p2, "act", { cat: biscuit.id, option: "exit:flap" });
+  assert.equal(catOf(biscuit.id).status, "outside");
   await houseTurn([5, 1, 1, 1, 1, 1, 1]); // Mr Pell wanders to the living room
   assert.equal(pell().room, "living");
 
-  // ---- Round 5: out through the cat flap
+  // ---- Round 5: hauling the chicken — Mags helps, but only the carriers move with it
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  m = await rollAs(p1, velvet, "move:utility", { approach: "sneaky", [`help-${mags.id}`]: true }, [6, 4, 2, 1, 1]); // Sneaky 2 + Knocker + Tilly + Mags
+  assert.deepEqual(flags(m).helpers, [tilly.id, mags.id], "the other carrier is locked in; Mags ticked to help");
+  await click(m, p1, "Accept");
+  assert.equal(state().prize.room, "utility");
+  assert.equal(catOf(mags.id).where, "kitchen", "a helper isn't a carrier: Mags stays behind");
+  assert.equal(catOf(mags.id).acted, true);
+  await trackerAction(p2, "act", { cat: mags.id, option: "move:utility" });
+  await houseTurn([1, 1, 1, 1, 1, 1, 1]); // Mr Pell stays in the living room
+
+  // ---- Round 6: out through the cat flap
   await asUser(gmU, () => api().robbery.beginRound());
   await settle();
   m = await rollAs(p1, tilly, "exit:flap", { approach: "sneaky" }, [6, 2, 2]); // hauling it out: a roll, seen or not
   await click(m, p1, "Accept");
   assert.equal(state().prize.out, true);
-  await trackerAction(p2, "act", { cat: biscuit.id, option: "exit:flap" });
+  await trackerAction(p2, "act", { cat: mags.id, option: "exit:flap" });
   await houseTurn([1, 1, 1, 1, 1, 1, 1]);
   assert.equal(state().phase, "ended");
   const out = lastCard("outcome");

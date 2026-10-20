@@ -7,10 +7,10 @@
  *
  * Prize state: { kind, name, size, portions, portionsLeft, eaten, room, spotRoom,
  *   spotSteps: [options per step], stepsLeft, down, withHuman, carriers: [catId],
- *   out, gone, script, by }
+ *   out, gone, script, by, haulDiff (v0.8: hauling's Difficulty, the cake's 1 = Tricky) }
  */
 import { CATB } from "../config.mjs";
-import { roomName, humanByKey, freeInside } from "./residents.mjs";
+import { roomName, humanByKey, freeInside, isAsleep } from "./residents.mjs";
 
 const R = CATB.rules;
 
@@ -35,7 +35,7 @@ export function newPrize(house, humans, gangSize, goneAt) {
   const owner = humans.find(h => h.key === first.by);
   const portions = portionsFor(z, gangSize);
   return {
-    kind: z.kind, name: z.name, size: z.size, perCat: z.perCat ?? 0, plus: z.plus ?? 0,
+    kind: z.kind, name: z.name, size: z.size, perCat: z.perCat ?? 0, plus: z.plus ?? 0, haulDiff: z.haulDiff ?? 0,
     portions, portionsLeft: portions, eaten: 0,
     room: owner?.room ?? null, spotRoom: null, spotSteps: [], stepsLeft: 0, down: false,
     withHuman: first.by, carriers: [], out: false, gone: false,
@@ -43,7 +43,7 @@ export function newPrize(house, humans, gangSize, goneAt) {
   };
 }
 
-/** Ch 8: the prize is got when it's outside, or (food) when every portion is eaten. */
+/** Ch 8: the prize is got when it's outside (even part-eaten, v0.8), or (food) when every portion is eaten. */
 export function prizeGot(s) {
   const z = s.prize;
   return !!z && (z.out || (z.kind === "delicious" && z.portions > 0 && z.portionsLeft === 0));
@@ -103,12 +103,14 @@ export function dropPrize(s, { putBack = false } = {}) {
 }
 
 /**
- * Ch 6 / Ch 8 "Where it goes" (v0.6): the Prize Clock acts at the start of its
- * round. The human puts it in its place and stays in that room this round
- * (unless a noise draws them away). If the prize isn't where the Clock last put
- * it, the human goes there instead, stays, and finds it gone: +1 Broom and they
- * start Searching (if they weren't already). At the start of the gone round
- * it's gone — unless a cat is holding it, and then it stays the gang's.
+ * Ch 6 / Ch 8 "Where it goes" (v0.8): the Prize Clock acts at the start of its
+ * round. The human puts it in its place and stays with it this round, answering
+ * no noise until the next round (residents.mjs clockHeld). If the prize isn't
+ * where the Clock last put it, the human goes there instead, stays, and finds
+ * it gone: +1 Broom and they start Searching (if they weren't already). A
+ * dozing human wakes for the job (REVIEW #90). At the start of the gone round
+ * it's gone — unless a cat is holding it, and then it stays the gang's. Only
+ * the Gone round (and Lights Out with it) moves with gang size (newRobbery).
  * Returns { events, mood: [{ side, steps, cause, kind }] }.
  */
 export function prizeClock(s) {
@@ -120,6 +122,10 @@ export function prizeClock(s) {
   for (const step of z.script) {
     if (step.round !== s.round) continue;
     const by = humanByKey(s, step.by);
+    if (by && !by.holding && isAsleep(s, by)) {
+      by.asleepUntil = -1;
+      events.push({ type: "wakes", human: by.key, text: `${by.name} wakes up: there's the ${z.name} to see to.` });
+    }
     if (z.spotRoom && (z.carriers.length || z.room !== z.spotRoom)) {
       if (by && !by.holding) {
         by.room = z.spotRoom;
@@ -136,7 +142,7 @@ export function prizeClock(s) {
     placePrize(z, step.room, step.steps);
     if (by && !by.holding) { by.room = step.room; by.staysRound = s.round; }
     events.push({ type: "prizePlaced", room: step.room, human: by?.key ?? null,
-      text: `${by?.name ?? "The human"} puts the ${z.name} in the ${roomName(s, step.room).toLowerCase()} and stays there this round${step.steps.length ? ` (${step.steps.length} step${step.steps.length > 1 ? "s" : ""} to get at it)` : ""}.` });
+      text: `${by?.name ?? "The human"} puts the ${z.name} in the ${roomName(s, step.room).toLowerCase()} and stays there this round, answering no noise${step.steps.length ? ` (${step.steps.length} step${step.steps.length > 1 ? "s" : ""} to get at it)` : ""}.` });
   }
   if (s.round >= s.clock.goneAt && !z.carriers.length && !z.out) {
     z.gone = true;

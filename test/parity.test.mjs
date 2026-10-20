@@ -20,6 +20,8 @@ test("the simulator's defaults are the adopted package (so parity means P10, cor
   assert.equal(ADOPTED, "P10");
   assert.equal(p.carrierRules, true, "v0.6: hauling, finding it, Searching for the prize");
   assert.equal(p.tableRules, true, "v0.7: holders see, eating is a roll, temptation rotates");
+  assert.equal(p.holdRules, true, "v0.8: the Clock's hold beats noise, any cat helps a haul, a house may make hauling Tricky (test/v08.test.mjs)");
+  assert.equal(p.searchHold, false, "declined: a Searching human beside the prize still answers noise");
   assert.equal(p.resetTo, "calm", "a trigger empties its meter");
   for (const [k, v] of Object.entries(PACKAGES[ADOPTED])) assert.deepEqual(p[k], v, k);
 });

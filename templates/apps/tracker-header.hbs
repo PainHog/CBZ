@@ -20,7 +20,7 @@
       <span class="catb-boxes">{{#each cuddle.boxes}}<span class="catb-box {{this.cls}}"></span>{{/each}}</span>
       {{#if isGM}}<button type="button" data-action="mood" data-side="cuddle" data-steps="1">+1</button><button type="button" data-action="mood" data-side="cuddle" data-steps="-1">−1</button>{{/if}}
     </div>
-    <p class="catb-patience">Patience {{patience}}{{#if broomFull}} · Broom is full: the next cat seen on that side gets Shoo!{{/if}}{{#if cuddleFull}} · Cuddle is full: the next cat seen on that side is Scooped!{{/if}}</p>
+    <p class="catb-patience">Patience {{patience}}{{#if broomFull}} · Broom is full: as soon as a human with free hands can see a cat, Shoo!{{/if}}{{#if cuddleFull}} · Cuddle is full: as soon as a human with free hands can see a cat, Scooped!{{/if}}</p>
   </div>
   {{#if pending.length}}
   <ul class="catb-pending">

@@ -54,7 +54,9 @@ function humanView(s, h, isGM) {
   if (isDistracted(s, h)) badges.push("Distracted");
   if (h.holding) badges.push(`Holding ${s.cats.find(c => c.id === h.holding)?.name ?? "a cat"}`);
   if (h.searching) badges.push("Searching");
-  if (h.staysRound === s.round) badges.push("Stays with the prize");
+  if (h.staysRound === s.round) badges.push("Stays with the prize: answers no noise this round");
+  if (h.shooRound === s.round && h.staysRound !== s.round) badges.push("Stays here this round (shut the entrance)");
+  if (s.pendingTrigger?.human === h.key) badges.push(`About to ${s.pendingTrigger.side === "broom" ? "chase a cat out" : "pick a cat up"}: the Storyteller's pick`);
   for (const t of h.traits ?? []) badges.push({ kid: "Kid", dozes: "Dozes", busy: "Busy", headphones: "Headphones" }[t] ?? t);
   return {
     key: h.key, name: h.name, attention: h.attention, badges: badges.join(" · "),
@@ -67,9 +69,12 @@ function petView(s, p, isGM) {
   const bits = [CATB.petKinds[p.kind] ?? p.kind];
   if (p.rating) bits.push(`rating ${p.rating}`);
   if (p.soft) bits.push("soft");
-  const mode = CATB.petModes[p.mode] ?? p.mode;
+  let mode = CATB.petModes[p.mode] ?? p.mode;
+  if (p.mode === "hiding") mode = `${mode} (back at the end of round ${p.until})`;
+  // v0.8: a parrot that saw an unhidden cat at any time this round squawks in the Pets step
+  if (p.kind === "parrot" && p.mode !== "covered" && p.sawRound === s.round && s.stage !== "between") mode = `${mode} · saw a cat this round: squawks in the Pets step`;
   return {
-    key: p.key, name: p.name, info: bits.join(", "), mode: p.mode === "hiding" ? `${mode} (back at the end of round ${p.until})` : mode,
+    key: p.key, name: p.name, info: bits.join(", "), mode,
     routine: isGM && p.routine ? p.routine.map((r, i) => `${i + 1}: ${r === "stay" ? "stay" : r === "sniff" ? "sniff" : roomName(s, r)}`).join(", ") : "",
     places: isGM ? Object.entries(s.rooms).map(([k, r]) => ({ value: k, label: r.name, selected: p.room === k })) : []
   };
