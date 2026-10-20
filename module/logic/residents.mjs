@@ -14,7 +14,7 @@
  */
 import { CATB } from "../config.mjs";
 import { holderOutcome } from "./rules.mjs";
-import { dist, waysFrom, neighbours, stepToward, nearestEntrances } from "./map.mjs";
+import { dist, waysFrom, neighbours, stepToward, nearestEntrances, shooEntrances } from "./map.mjs";
 
 const R = CATB.rules;
 
@@ -291,8 +291,8 @@ export function holdersRoll(s, ctx, ev, { shutInDen }) {
       shutInDen(c, h);
       ev.push({ type: "shutIn", human: h.key, cat: c.id, face, text: `${h.name} (d6 ${face}) shuts ${c.name} in the ${roomName(s, s.den).toLowerCase()}, "just until we find your owner".` });
     } else {
-      // v0.7: out through the nearest entrance, which stays open
-      const e = nearestEntrances(s, h.room)[0];
+      // v0.8 (REVIEW #102): out through the nearest entrance that works this round (as a Shoo!), which stays open
+      const e = shooEntrances(s, h.room)[0];
       Object.assign(c, { status: "outside", where: "outside", hidden: false, riding: null, outSerial: s.roundSerial });
       ev.push({ type: "putOut", human: h.key, cat: c.id, face, text: `${h.name} (d6 ${face}) puts ${c.name} out through the ${e?.name ?? "door"}: "Go on, home you go."` });
     }

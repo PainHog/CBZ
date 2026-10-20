@@ -1,4 +1,4 @@
-Now: Teaching the online version the last rule changes, then a report for Richard
+Now: Done for now: the game is built, and a report for Richard explains how it turned out
 Next: Richard reads the report, compares it with his own version, and tries the game at a real table
 Number: Design decisions made = 38
 Number: Open design questions = 0

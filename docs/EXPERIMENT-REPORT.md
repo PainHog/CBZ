@@ -1,6 +1,6 @@
 # Cat Burglars — Claude's version: experiment report
 
-*For Richard Moore. Branch `claude/cat-burglars-core-design-55iymx`, written 2026-10-20. Not merged into the main line (your call).*
+*For Richard Moore. Branch `claude/cat-burglars-core-design-55iymx`, 2026-10-20. Not merged into the main line (your call).*
 
 You chose the identity — instincts as the cats' heart, hiding in plain sight, starting at the door, choosing different entrances, a street gang rather than a heist crew — and asked Claude to make every other call and build the game to completion, so you can compare it with the version you direct. This is what came out, what it cost to get there, and what is still open.
 
@@ -10,11 +10,11 @@ You chose the identity — instincts as the cats' heart, hiding in plain sight, 
 |---|---|
 | Design | 38 decisions in `docs/DESIGN.md` (Claude's marked "Claude"); all 12 open questions settled. |
 | Core rules | `docs/CORE-RULES.md` v0.8 — a two-page summary of the book. |
-| Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Cat_Burglars_v0.8.pdf` (50 pages, draft). Every ruling is a row in `book/REVIEW.md` (93 rows). |
+| Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Cat_Burglars_v0.8.pdf` (50 pages, draft). Every ruling is a row in `book/REVIEW.md` (102 rows). |
 | Art | 49 pictures, all generated as code (`book/tools/art-gen/`): cover, part pages, 18 chapter pictures, 5 floor plans drawn from the same data the simulator plays, 5 cat portraits (plus a reference sheet per cat), 15 end-of-chapter spots and a back-cover picture. Each audited against `book/art/ART-CHECKLIST.md` (`book/art/AUDIT.md`). |
 | Simulator | `sim/`: every rule as a switchable parameter, ten rule packages compared on the same dice; package P10 adopted. `sim/BALANCE.md`. |
-| Playtests | 9 agent playtests with real dice (`sim/playtests/`), each followed by a fix round. |
-| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood ledger, the round and the house's turn, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 118 tests (pure logic + fake-Foundry smoke tests). Never run in a live Foundry: `TESTING.md` is a two-client script for you. |
+| Playtests | 9 agent playtests with real dice across all five houses (`sim/playtests/`), each followed by a fix round. The last (Number 12, v0.8) found only wording issues and judged it a good first robbery. |
+| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood ledger, the round and the house's turn, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 129 tests (pure logic, a seeded replay, 750-robbery fuzzing, fake-Foundry smoke tests with a Storyteller and two players). Never run in a live Foundry: `TESTING.md` is a two-client script for you. |
 | Portal | `PORTAL.md` current; the rulebook cover is the card's picture. |
 
 ## The game in one paragraph
@@ -33,6 +33,7 @@ The rules went through eight versions. Each playtest found a cheap line a smart 
 | v0.6 | The box again: won with **0 cat rolls**, hiding with the box and steering Searchers with a decoy. Number 12 (5 cats): every roll under one Distraction. | Hauling is always a roll; carriers can't hide; humans beside a disturbed prize notice it. |
 | v0.7 | The box: a dog's bark lured the Searcher away. The salmon: the chef's routine stranded her outside the kitchen; eating was free; a cuddled cat blinded its holder. | Eating is a roll; holders still see; loiterers in a dog's room are chased out; temptations rotate. |
 | v0.8 | Wendell (5 cats) and the cake: both won by a free round-1 noise that pulled the owner off the prize as it was put down. | The human who puts the prize down stays with it that round; owners' routines visit the prize; the cake wobbles. |
+| v0.8 check | Number 12 with the ready-made gang: a Clean Getaway on 7 rolls, "Easy without being a walkover"; 15 wording issues, no rule gaps. | Wording only. |
 
 Two proposals were simulated and declined because they made the game far too hard (a half-empty meter after a Shoo!; Searchers deaf to noise). Letting one cat take the broom on purpose stays legal: it's the cartoon decoy, and it still costs Patience and an entrance.
 

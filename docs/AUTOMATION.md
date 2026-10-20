@@ -204,7 +204,10 @@ ApplicationV2 + HandlebarsApplicationMixin (pattern from Heisty). Opens from a s
 10. *Distract "a human in your room":* a holder can't be Distracted (#78). Built (decision 22). The rest stays as built: any awake human there who isn't already Distracted, even if the cat is hidden (the distraction brings it out) — see question H.
 11. *The no-roll pick:* the Storyteller picks at once (#71). Built: every cat's buttons wait until the pick is made (decision 6).
 
-### Questions for the designer (v0.8)
+### Questions for the designer (v0.8), answered 2026-10-20 (REVIEW rows 101–102)
+Answers: **A** no — only the Prize Clock's hold beats noise; a human who has just Shooed a cat stays in that room but still answers noise. **B, C, D, E, F, H** confirmed as built. **G** yes — the holder's 6 uses the nearest entrance that works this round, like a Shoo! (built).
+
+#### The questions as asked
 A. **A Shoo! and noise.** "The human stays in that room": built as no routine and no Searching step that round, but a noise can still draw them — only the Prize Clock's hold says "answers no noise". Should the Shoo!'s stay beat noise too?
 B. **Chased out mid-turn.** A cat Shooed (or chased back outside by a dog) during its turn can't come back in that turn: built as "going out" for REVIEW #88. Otherwise a cat Shooed before its Move could walk straight back in through another open entrance. Confirm.
 C. **A meter made full by a Patience drop.** After a Shoo! or Scoop, Patience −1 can leave the other meter at Patience (say Cuddle 3 when Patience drops to 3). Built: that meter is full and waits like any other, so it goes off at once if a human with free hands can see a cat. The simulator only triggers on the next step on that side. Confirm, or should the other meter drop to one short of full?
