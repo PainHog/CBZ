@@ -126,9 +126,9 @@ export const HOUSES = [
     den: "bathroom",
     humans: [
       { key: "wendell", name: "Grandpa Wendell", kind: "grandparent", attention: 0, start: "hall",
-        routine: ["stay", "stay", "stay", "stay", "living", "kitchen"] },
+        routine: ["stay", "stay", "hall", "hall", "living", "kitchen"] },
       { key: "june", name: "June", kind: "grownup", attention: 1, start: "kitchen",
-        routine: ["stay", "stay", "stay", "living", "hall", "kitchen"] },
+        routine: ["stay", "stay", "stay", "living", "hall", "landing"] },
     ],
     pets: [
       { key: "pompom", name: "Pom-Pom", kind: "housecat", rating: 2, soft: true, start: "living" },

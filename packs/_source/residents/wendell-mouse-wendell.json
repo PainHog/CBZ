@@ -15,8 +15,8 @@
     "routine": {
       "r1": "stay",
       "r2": "stay",
-      "r3": "stay",
-      "r4": "stay",
+      "r3": "hall",
+      "r4": "hall",
       "r5": "living",
       "r6": "kitchen"
     },
