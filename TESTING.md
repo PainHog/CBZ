@@ -22,7 +22,7 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 ## 2. Start the robbery
 
 1. GM: click the **cat** button on the token controls (left toolbar) to open the **Robbery Tracker**. *See:* "No robbery yet" and **Start a robbery**.
-2. GM: **Start a robbery** → house **The Chicken at Number 12**, tick the four cats → **Start**. *See:* a chat card "The Chicken at Number 12" with Patience 4, the chicken gone at the start of round 8, Lights Out at the end of round 10, and all four cats outside. Every cat's Cattitude is 2.
+2. GM: **Start a robbery** → house **The Chicken at Number 12**, tick the four cats → **Start**. *See:* a chat card "The Chicken at Number 12" with Patience 4, the chicken gone at the start of round 9, Lights Out at the end of round 11, and all four cats outside. Every cat's Cattitude is 2.
 3. Lena: open the tracker from the card's **Open the Robbery Tracker** button. *See:* the same house, read-only for the residents, with buttons only under Velvet and Tilly.
 
 ## 3. Round 1: getting in
@@ -34,7 +34,8 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 5. Lena: under Tilly, click **Help Big Biscuit**. *See:* "Will help Big Biscuit" under Tilly.
 6. GM: under Biscuit, click **Roll: In through the Open kitchen window (up the bins)**. *See:* the dialog lists Tilly as a helper, already ticked. Roll **Savage**.
 7. GM: if it's a Flop, click **Push (1 Cattitude)**. *See:* the non-6 dice are rerolled, Biscuit's Cattitude drops to 1, and the card is final at once. On a success, both Biscuit **and Tilly** are in the kitchen.
-8. GM: **End round** → confirm. *See:* a "The house's turn" card: Pudding barks (a cat is in the kitchen), Mr Pell comes to see the noise in the utility room (the cat flap was the first noise), and the dice he rolled if any.
+8. GM: **End round** → confirm. *See:* a "The house's turn" card: Pudding barks (a cat is in the kitchen), Mr Pell comes to see the noise in the utility room (the cat flap was the first noise), and the dice he rolled if any. Pudding does **not** chase Biscuit and Tilly out: they climbed in, so they had no Action left, and they deal with him first thing next turn.
+9. GM (optional, the dog's chase): in a later round, move a cat that still has its Action into a room with an awake dog and **End round** without rolling against the dog. *See:* "… chases … back into the …" on the house-turn card, before the pets move.
 
 ## 4. Round 2: the Prize Clock, a temptation, the Mood
 
@@ -46,6 +47,8 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 6. GM: undo it: **Undo last Mood change**. *See:* Biscuit is back in the kitchen, the window open, Broom 4/4. Click **Undo** once more to remove the roll's own step too, if you like.
 7. Lena: under Tilly, **Roll: Get at the rotisserie chicken: step 1 of 2**. On the card, GM clicks **Not seen**, then **Seen** again. *See:* the badge flips each time; then Lena **Accept**s. *See:* "Step 1 of 2 done".
 8. GM: **End round**. *See:* noise answered, routines rolled with their d6 shown, and at the end "Finding it": anyone beside the chicken now that a step is done finds it disturbed: +1 Broom, and starts **Searching** (the badge appears on Mr Pell).
+9. GM: **Begin round**. *See:* the whispered Temptation card doesn't offer the cat you tempted last round.
+10. GM (the Storyteller's pick): with Mr Pell Searching beside the chicken, leave two cats unhidden in his room, bring Broom to one short of full with **+1**, and **End round**. *See:* "Finding it" adds +1 Broom (a Searching human can see a cat), and because two cats are in sight a **whispered** card "Broom is full — The Storyteller's pick" offers **Mr Pell chases out …** for each of them; the tracker header shows the same buttons (Lena sees only the sentence). Click one. *See:* the Shoo! card for that cat; the other stays. **Undo last Mood change** brings the cat back and the buttons return.
 
 ## 5. Rounds 3+: carrying it out
 

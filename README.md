@@ -2,7 +2,7 @@
 
 A tabletop roleplaying game by **Richard Moore**. The players are a gang of street cats. They've just watched a human carry something into a house: something delicious, something fun, or a box. They must get it at all costs, without getting caught.
 
-**Status:** core rules v0.6 (`docs/CORE-RULES.md`), rulebook drafted (`book/`), simulated (`sim/`), and a Foundry VTT system (0.5.0) that runs a whole robbery. See `docs/DESIGN.md`.
+**Status:** core rules v0.7 (`docs/CORE-RULES.md`), rulebook drafted (`book/`), simulated (`sim/`), and a Foundry VTT system (0.5.0) that runs a whole robbery. See `docs/DESIGN.md`.
 
 ## What's in here
 | Folder | What it is |
@@ -18,7 +18,7 @@ Automation-first (`docs/AUTOMATION.md`): nobody tracks rules by hand.
 - **Cat sheets** with a Roll button per approach; Human and Pet sheets for the residents.
 - **The roll dialog** builds the pool from the robbery: Knack, help, the Cattitude die, Difficulty, the pet in the way, the watching human's Attention, Seen and kids — all changeable.
 - **Roll cards** with **Push** (1 Cattitude or +1 Mood), **Accept**, and the Storyteller's **Seen / Not seen**. The Storyteller's client applies each final roll to the robbery: the step, the door, the entrance, the dog, the distraction, the noise, and the two-meter **Mood** (a ledger: one roll, one change), with **Shoo!** and **Scooped!**.
-- **The Robbery Tracker**: the house room by room, the Prize Clock, Broom and Cuddle with Patience, each cat's Moves and Actions as buttons, **Begin round** (the Prize Clock, a one-click temptation prompt) and **End round** (the house's turn rolled in the open: pets, noise, routines and Searching, holders, Finding it), the outcome, and the Storyteller's overrides.
+- **The Robbery Tracker**: the house room by room, the Prize Clock, Broom and Cuddle with Patience, each cat's Moves and Actions as buttons, **Begin round** (the Prize Clock, a one-click temptation prompt) and **End round** (the house's turn rolled in the open: dogs chase cats that didn't deal with them, pets, noise, routines and Searching, holders, Finding it), the Storyteller's pick when a meter fills with no roll, the outcome, and the Storyteller's overrides.
 - **Compendia**: the five houses (journals), the ready-made gang, and every house's residents.
 - Every automation can be switched off in the settings. Players write only their own cats and chat messages; everything else goes to the Storyteller's client (`User#query`, with a socket fallback).
 - `TESTING.md` is the two-client script for checking it in real Foundry v13.

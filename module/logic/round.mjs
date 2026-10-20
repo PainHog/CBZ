@@ -182,7 +182,8 @@ export function resolvePendingTrigger(state, catId) {
   const cat = catById(s, catId);
   const human = humanByKey(s, p.human);
   const ev = [];
-  if (!cat || cat.status !== "free" || !human) { s.pendingTrigger = null; ev.push({ type: "moodFull", text: "That cat isn't there any more: the meter stays full for the next cat seen." }); }
+  if (!foldMood(s.moodLedger, s.patience0).full[p.side]) { s.pendingTrigger = null; ev.push({ type: "moodFull", text: "That meter isn't full any more: nobody is chased out or picked up." }); }
+  else if (!cat || cat.status !== "free" || !human) { s.pendingTrigger = null; ev.push({ type: "moodFull", text: "That cat isn't there any more: the meter stays full for the next cat seen." }); }
   else trigger(s, p.side, cat, human, s.moodLedger.find(e => e.id === p.entry) ?? null, ev);
   pushLog(s, ev);
   return { state: s, events: ev };
@@ -192,7 +193,8 @@ export function resolvePendingTrigger(state, catId) {
 export function trigger(s, side, cat, human, cause, ev) {
   const undo = {
     cat: clone(cat), prize: clone(s.prize), cats: clone(s.cats.filter(c => c.carrying || c.id === cat.id)),
-    human: clone(human), holder: cat.heldBy ? clone(humanByKey(s, cat.heldBy)) : null, entrance: null
+    human: clone(human), holder: cat.heldBy ? clone(humanByKey(s, cat.heldBy)) : null, entrance: null,
+    pending: s.pendingTrigger ? clone(s.pendingTrigger) : null
   };
   const carried = cat.carrying;
   if (s.pendingTrigger?.side === side) s.pendingTrigger = null;
@@ -264,7 +266,10 @@ export function undoMood(state) {
     if (u.prize) s.prize = u.prize;
     for (const h of [u.human, u.holder].filter(Boolean)) { const i = s.humans.findIndex(x => x.key === h.key); if (i >= 0) s.humans[i] = h; }
     if (u.entrance) { const e = s.entrances.find(x => x.key === u.entrance.key); if (e) e.open = u.entrance.open; }
+    if (u.pending) s.pendingTrigger = u.pending;
   }
+  // a pick waiting on a meter that is no longer full (its cause was undone) is dropped
+  if (s.pendingTrigger && !foldMood(s.moodLedger, s.patience0).full[s.pendingTrigger.side]) s.pendingTrigger = null;
   ev.push({ type: "moodUndo", text: `Undone: ${removed.cause ?? removed.kind}.` });
   pushLog(s, ev);
   return { state: s, events: ev };

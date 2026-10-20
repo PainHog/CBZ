@@ -7,7 +7,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { beginRound, endRound, moodNow, setMood, resolvePendingTrigger, tempt, answerTemptation, temptationOptions, addMood } from "../module/logic/round.mjs";
+import { beginRound, endRound, moodNow, setMood, undoMood, resolvePendingTrigger, tempt, answerTemptation, temptationOptions, addMood } from "../module/logic/round.mjs";
 import { rollContext, applyRoll, findOption, doAction } from "../module/logic/actions.mjs";
 import { watchers } from "../module/logic/residents.mjs";
 import { stepEntry } from "../module/logic/mood.mjs";
@@ -50,6 +50,12 @@ test("a meter filled with no roll falls on a cat that human can see: one cat at 
   assert.equal(p.state.pendingTrigger, null);
   assert.equal(moodNow(p.state).patience, 3);
   assert.throws(() => resolvePendingTrigger(p.state, "mags"), /No meter is waiting/);
+  const u = undoMood(p.state).state;
+  assert.equal(cat(u, "tilly").status, "free", "Undo brings Tilly back…");
+  assert.deepEqual(u.pendingTrigger?.candidates.sort(), ["mags", "tilly"], "…and the pick waits again");
+  const u2 = undoMood(u).state;
+  assert.equal(moodNow(u2).full.broom, false);
+  assert.equal(u2.pendingTrigger, null, "undoing what filled the meter drops the pick");
   s = base({ cats: { mags: "living" }, humans: { pell: { room: "living", searching: true } } });
   s = setMood(s, { broom: 3 }).state;
   r = endRound(s, { d6: dice() });
