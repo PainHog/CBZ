@@ -124,9 +124,10 @@ export function moodNow(state) {
  * saw it acts on the cat (Shoo! or Scooped!); with nobody with free hands in
  * sight the meter stays full until someone can see a cat (settleWaiting).
  * `mode`: "auto" applies; "confirm" adds it pending (the GM clicks ✓); "manual" only reports it.
+ * `wait`: the autoMood setting for a meter left waiting ("manual": it never goes off by itself).
  * MUTATES s. Returns the entry (or null in manual mode).
  */
-export function addMood(s, raw, ev, mode = "auto") {
+export function addMood(s, raw, ev, mode = "auto", { wait = mode } = {}) {
   if (mode === "manual") {
     ev.push({ type: "moodAdvice", text: `Mood (by hand): ${raw.cause ?? "a roll"}.` });
     return null;
@@ -138,12 +139,12 @@ export function addMood(s, raw, ev, mode = "auto") {
     ev.push({ type: "moodProposed", entry: entry.id, text: `Mood change waiting for the Storyteller: ${entry.cause ?? ""}.` });
     return entry;
   }
-  settleMood(s, entry, ev);
+  settleMood(s, entry, ev, wait);
   return entry;
 }
 
 /** Fold, report the change, and fire Shoo!/Scooped! if this entry filled a meter on a cat in sight. MUTATES s. */
-export function settleMood(s, entry, ev) {
+export function settleMood(s, entry, ev, wait = "auto") {
   const fold = foldMood(s.moodLedger, s.patience0);
   const r = fold.resolved[entry.id];
   if (!r || !r.side) return;
@@ -154,7 +155,7 @@ export function settleMood(s, entry, ev) {
   if (r.steps <= 0 || !fold.full[r.side]) return;
   // v0.8 (REVIEW #83): with nobody to act on this entry's cat, the meter waits — unless a human with free hands can see a cat right now
   const full = () => {
-    if (!s.pendingTrigger && settleWaiting(s, ev)) return;
+    if (!s.pendingTrigger && settleWaiting(s, ev, wait)) return;
     ev.push({ type: "moodFull", side: r.side,
       text: `${METER[r.side]} is full, but nobody with free hands can see a cat: it stays full, and as soon as someone can, they act at once.` });
   };
@@ -286,7 +287,7 @@ export function confirmMood(state, entryId, { accept = true, mood = "auto" } = {
   const ev = [];
   const e = s.moodLedger.find(x => x.id === entryId);
   if (!e) throw new Error(`No Mood entry ${entryId}`);
-  if (accept) { e.pending = false; settleMood(s, e, ev); } else { e.pending = false; e.rejected = true; ev.push({ type: "moodRejected", text: `Mood change dropped: ${e.cause ?? ""}.` }); }
+  if (accept) { e.pending = false; settleMood(s, e, ev, mood); } else { e.pending = false; e.rejected = true; ev.push({ type: "moodRejected", text: `Mood change dropped: ${e.cause ?? ""}.` }); }
   look(s, ev, mood);
   pushLog(s, ev);
   return { state: s, events: ev };
@@ -296,7 +297,7 @@ export function confirmMood(state, entryId, { accept = true, mood = "auto" } = {
 export function manualMood(state, side, steps, ctx = {}) {
   const s = clone(state);
   const ev = [];
-  addMood(s, stepEntry({ side, steps, cause: `the Storyteller ${steps > 0 ? "adds" : "takes off"} ${Math.abs(steps)}`, kind: "manual" }), ev, "auto");
+  addMood(s, stepEntry({ side, steps, cause: `the Storyteller ${steps > 0 ? "adds" : "takes off"} ${Math.abs(steps)}`, kind: "manual" }), ev, "auto", { wait: ctx.mood ?? "auto" });
   look(s, ev, ctx.mood);
   pushLog(s, ev);
   return { state: s, events: ev };
