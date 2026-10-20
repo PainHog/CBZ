@@ -16,9 +16,13 @@ export function rng(seed = 1) {
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
 }
 
-/** A complete SVG document: viewBox only (no fixed width/height), with a title for accessibility. */
-export function svg(vb, title, body) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" role="img" aria-label="${title}">\n<title>${title}</title>\n${body}\n</svg>\n`;
+/**
+ * A complete SVG document: viewBox only (no fixed width/height), with a title for accessibility.
+ * bleed: the piece's backdrop runs past its side edges (kit.mjs BLEED), shown with overflow visible
+ * where the book's box is wider than the art (chapter heads).
+ */
+export function svg(vb, title, body, { bleed = false } = {}) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"${bleed ? ` overflow="visible"` : ""} role="img" aria-label="${title}">\n<title>${title}</title>\n${body}\n</svg>\n`;
 }
 
 // Straight hatch lines inside a clip shape.

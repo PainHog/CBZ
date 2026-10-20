@@ -4,7 +4,7 @@
 // modules to `mods` (a module that doesn't exist yet is skipped).
 import { writeFileSync } from "node:fs";
 import { ART } from "./lib.mjs";
-const mods = ["./placeholders.mjs", "./gang.mjs", "./maps.mjs", "./vignettes.mjs"];
+const mods = ["./placeholders.mjs", "./gang.mjs", "./maps.mjs", "./vignettes.mjs", "./houses.mjs", "./pages.mjs"];
 const map = {};
 const PIECE = /^(placeholder|cover|part_|ch_|map_|diagram_|orn_|spot_|ref_|portrait_)/;
 for (const m of mods) {
