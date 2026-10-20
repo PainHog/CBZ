@@ -5,7 +5,7 @@
 import { C, svg } from "./lib.mjs";
 import { setPrefix } from "../lib.mjs";
 import { catSide, catSit } from "../cats.mjs";
-import { room, windowWall, door, counter, table, fridge, bin, chicken, legs, plant } from "../kit.mjs";
+import { room, windowWall, door, counter, table, fridge, bin, chicken, legs, plant, shadowAt } from "../kit.mjs";
 import { strokes, path } from "../lib.mjs";
 
 const FLOOR = 262;
@@ -81,11 +81,12 @@ export function ch_your_cat() {
   b += `<rect x="${-BLEED}" y="30" width="${900 + 2 * BLEED}" height="12" fill="${C.dark}"/>`;
   const cats = [[RANDOM.tort, 150, 0.36], [RANDOM.bw, 330, 0.38], [RANDOM.cream, 510, 0.34], [{ ...LOOKS.mags }, 690, 0.36]];
   cats.forEach(([L, x, s], i) => {
-    b += `<rect x="${x - 26}" y="${FLOOR - 4}" width="52" height="22" rx="4" fill="${C.light}" stroke="${C.ink}" stroke-width="2.4"/>` +
-      `<text x="${x}" y="${FLOOR + 13}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="${C.ink}">${i + 1}</text>`;
-    b += catSit({ look: L, x, y: FLOOR - 4, s, id: `yc${i}`, headTilt: [6, 0, -8, 4][i] });
+    b += catSit({ look: L, x, y: FLOOR, s, id: `yc${i}`, headTilt: [6, 0, -8, 4][i] });
+    // a numbered wooden block standing on the floor just in front of the cat
+    b += shadowAt(x, FLOOR + 26, 30) + `<rect x="${x - 24}" y="${FLOOR + 2}" width="48" height="24" rx="3" fill="${C.wood}" stroke="${C.ink}" stroke-width="2.4"/>` +
+      `<text x="${x}" y="${FLOOR + 20}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="16" fill="${C.light}">${i + 1}</text>`;
   });
-  return svg("0 0 900 300", "Four cats in a line-up against a height chart, each standing on a numbered card", b, { bleed: true });
+  return svg("0 0 900 300", "Four cats in a line-up against a height chart, each sitting behind a numbered wooden block", b, { bleed: true });
 }
 
 /** Chapter 3: the gang walking along the top of a garden fence at night, in single file. */

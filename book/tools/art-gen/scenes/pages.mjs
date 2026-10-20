@@ -7,7 +7,7 @@ import { C, svg, stage } from "./lib.mjs";
 import { setPrefix, path, circ, ell, r1 } from "../lib.mjs";
 import { catSide, catSit, catCurl } from "../cats.mjs";
 import { dogLie } from "../residents.mjs";
-import { nightSky, moon, bricks, litWindow, streetLamp, wheelieBin, door, fence, box, cushion, table, die, dogBed, shadowAt, balloon, broom } from "../kit.mjs";
+import { nightSky, moon, bricks, litWindow, streetLamp, wheelieBin, door, fence, box, cushion, table, die, dogBed, shadowAt, balloon, broom, windowWall } from "../kit.mjs";
 import { vacuum, parrotStand } from "../residents.mjs";
 
 /**
@@ -172,20 +172,23 @@ function spot(id, title, scene, { k = 1.6, cx = 200, gy = 250 } = {}) {
   return svg("0 0 400 300", title, body);
 }
 
-/** Back cover: Big Biscuit asleep, curled up and full, beside a plate of picked-clean chicken bones. */
+/** Back cover: home again — Big Biscuit asleep on a cushion under the window, beside a plate of picked-clean chicken bones. */
 export function spot_back() {
-  const px = 250;
-  let s = ell(px, FL - 4, 58, 9, C.light, C.ink, 2.6); // the plate, lying flat on the floor
+  const px = 292;
+  // a corner of the gang's den: a patch of wall with its skirting, and a night window
+  let s = path(`M54 ${FL}V${FL - 222}Q54 ${FL - 240} 72 ${FL - 240}H338Q356 ${FL - 240} 356 ${FL - 222}V${FL}Z`, C.wall, C.ink, 0) + `<rect x="54" y="${FL - 14}" width="302" height="14" fill="${C.light}"/>` + path(`M54 ${FL - 14}H356`, "none", C.ink, 2);
+  s += windowWall(110, FL - 214, 120, 90, { night: true });
+  s += cushion(158, FL, 156) + catCurl({ look: "biscuit", x: 152, y: FL - 36, s: 0.42, id: "bk" });
+  s += ell(px, FL - 4, 50, 8, C.light, C.ink, 2.6); // the plate, lying flat on the floor
   // cartoon bones (a shaft with two knobs at each end), picked clean
   const bone = (x1, y1, x2, y2) => {
     const a = Math.atan2(y2 - y1, x2 - x1), nx = -Math.sin(a) * 4.5, ny = Math.cos(a) * 4.5;
     const knobs = [[x1, y1], [x2, y2]].map(([x, y]) => circ(x + nx, y + ny, 5.5, C.paper2, C.ink, 2.6) + circ(x - nx, y - ny, 5.5, C.paper2, C.ink, 2.6)).join("");
     return knobs + path(`M${r1(x1)} ${r1(y1)}L${r1(x2)} ${r1(y2)}`, "none", C.ink, 10) + path(`M${r1(x1)} ${r1(y1)}L${r1(x2)} ${r1(y2)}`, "none", C.paper2, 5);
   };
-  s += bone(px - 40, FL - 9, px + 4, FL - 8) + bone(px + 2, FL - 7, px + 42, FL - 9); // two lying on the plate
-  s += bone(px - 22, FL - 19, px + 24, FL - 20);                                      // one lying across both of them
-  s += catCurl({ look: "biscuit", x: 124, y: FL, s: 0.42, id: "bk" });
-  return spot("spot-back", "Big Biscuit asleep and full, curled up beside a plate of picked-clean chicken bones", s, { k: 1.55, cx: 196 });
+  s += bone(px - 34, FL - 9, px + 2, FL - 8) + bone(px + 2, FL - 7, px + 36, FL - 9); // two lying on the plate
+  s += bone(px - 18, FL - 19, px + 20, FL - 20);                                      // one lying across both of them
+  return spot("spot-back", "Home again: Big Biscuit asleep on a cushion under the window, beside a plate of picked-clean chicken bones", s, { k: 1.0, cx: 205 });
 }
 
 /** Pip asleep, curled up on a pink cushion. */

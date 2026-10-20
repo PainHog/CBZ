@@ -375,7 +375,7 @@ export function balloon(ax, ay, bx, by, col = C.accent, r = 22) {
 
 /** Bunting: a string hung between two nails in the wall, sagging, with triangle flags hanging from it. */
 export function bunting(x1, y1, x2, y2, sagBy = 26, n = 9) {
-  const cols = [C.accent, C.leaf, C.cuddle, C.eyeBlue, C.accentB];
+  const cols = [C.accent, C.leaf, C.eyeBlue, C.accentB, C.cream];
   const qx = (x1 + x2) / 2, qy = (y1 + y2) / 2 + sagBy * 2;
   const at = t => [(1 - t) ** 2 * x1 + 2 * (1 - t) * t * qx + t * t * x2, (1 - t) ** 2 * y1 + 2 * (1 - t) * t * qy + t * t * y2];
   let s = "";
@@ -400,14 +400,14 @@ export function cake(x, top, s = 1) {
     y -= k(h);
   }
   for (const dx of [-14, -5, 4, 13]) g += rect(x + k(dx) - k(2.4), y - k(16), k(4.8), k(16), C.light, 2, 1) + path(`M${r1(x + k(dx))} ${r1(y - k(16))}v${r1(-k(5))}`, "none", C.ink, 1.6) +
-    path(`M${r1(x + k(dx) - k(2.4))} ${r1(y - k(11))}l${r1(k(4.8))} ${r1(-k(3))}M${r1(x + k(dx) - k(2.4))} ${r1(y - k(5))}l${r1(k(4.8))} ${r1(-k(3))}`, "none", C.cuddle, 1.4);
+    path(`M${r1(x + k(dx) - k(2.4))} ${r1(y - k(11))}l${r1(k(4.8))} ${r1(-k(3))}M${r1(x + k(dx) - k(2.4))} ${r1(y - k(5))}l${r1(k(4.8))} ${r1(-k(3))}`, "none", C.eyeBlue, 1.4);
   return g;
 }
 
 /** Two wrapped presents on the floor, the smaller one sitting wholly on top of the bigger one. */
 export function presents(x, floorY) {
   let s = shadowAt(x + 40, floorY, 50);
-  s += rect(x, floorY - 56, 80, 56, C.cuddle, 3) + rect(x + 34, floorY - 56, 12, 56, C.accentB, 2) + rect(x, floorY - 34, 80, 10, C.accentB, 2);
+  s += rect(x, floorY - 56, 80, 56, C.leaf, 3) + rect(x + 34, floorY - 56, 12, 56, C.accentB, 2) + rect(x, floorY - 34, 80, 10, C.accentB, 2);
   s += rect(x + 16, floorY - 92, 48, 36, C.eyeBlue, 3) + rect(x + 34, floorY - 92, 12, 36, C.light, 2);
   s += path(`M${x + 40} ${floorY - 92}q-16 -16 -22 -2q6 6 22 2q16 -16 22 -2q-6 6 -22 2`, C.light, C.ink, 2.2); // the bow, tied on top
   return s;

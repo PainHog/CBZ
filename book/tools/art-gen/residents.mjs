@@ -11,7 +11,7 @@ export const DOGS = {
   brutus: { name: "Brutus", coat: C.greyDeep, deep: C.ink, patch: C.white, ears: "folded", len: 1.25, leg: 1.2, muzzle: 0.8, tail: "stub", big: true }, // a mastiff
 };
 LOOKS.pompom = { name: "Pom-Pom", coat: C.grey, deep: C.greyDeep, stripe: null, belly: C.whiteDeep, eye: C.eyeAmber, tabby: false,
-  body: "chonky", ears: "small", notch: null, tail: "fluffy", collar: { col: C.cuddle, tag: true } };
+  body: "chonky", ears: "small", notch: null, tail: "fluffy", collar: { col: C.eyeBlue, tag: true } };
 
 const tube = (d, w, col, sw = 3.2) =>
   `<path d="${d}" fill="none" stroke="${C.ink}" stroke-width="${r1(w + sw * 2)}" stroke-linecap="round" stroke-linejoin="round"/>` +
