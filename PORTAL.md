@@ -7,6 +7,8 @@ Number: Robberies simulated per balance check = 45000
 Number: Pictures in the rulebook = 49
 
 Screenshot: docs/portal/cover.png = The rulebook cover: the gang outside a lit house at night
+Download: book/dist/Cat_Burglars_v0.8.pdf = The rulebook, version 0.8, a draft (PDF)
+Download: downloads/Cat_Burglars_Foundry_v0.5.0-test.zip = The online version for Foundry VTT, a test build, not yet released (unzip into Foundry's Data/systems folder)
 
 # Cat Burglars plan
 
