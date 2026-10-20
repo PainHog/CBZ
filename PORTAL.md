@@ -1,9 +1,12 @@
-Now: Finishing the rulebook pictures and the online version for the table
+Now: The online version for the table, and a last check of the newest rules with two more playtests
 Next: A final playtest of the finished rulebook, then a full read-through
 Number: Design decisions made = 36
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
+Number: Pictures in the rulebook = 48
+
+Screenshot: docs/portal/cover.png = The rulebook cover: the gang outside a lit house at night
 
 # Cat Burglars plan
 
@@ -39,5 +42,5 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Fix what they found: dragging a big prize is now a risk, and humans notice when it's been touched
 - [x] First full rulebook draft (all eighteen chapters, the sheets and the five houses)
 - [ ] Final playtest of the finished rulebook
-- [ ] Pictures for the rulebook
+- [x] Pictures for the rulebook (cover, chapter pictures, maps, the gang, and little end-of-chapter drawings)
 - [ ] Online version that runs the rules for the table
