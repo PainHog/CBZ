@@ -95,3 +95,23 @@ test("labels roughly match play (gang of 4, quick run)", () => {
   assert.ok(win("number-12") > 80);
   assert.ok(win("marchetti-salmon") < 80);
 });
+
+test("v0.6: hauling is rolled unseen, humans beside the prize find it, and Searching humans spot cats", () => {
+  const box = HOUSES.find(h => h.key === "okafor-box");
+  const v5 = runHouse(box, makeParams(PACKAGES.P7), 300, 3);
+  const v6 = runHouse(box, makeParams(PACKAGES.P8), 300, 3);
+  const per = (s, k) => (s.rollsBy[k] ?? 0) / 300;
+  assert.ok(per(v6, "why:haul") > per(v5, "why:haul") * 1.5, "a Large box needs a roll for every room it moves");
+  assert.equal(v5.events.spotted ?? 0, 0);
+  assert.ok((v6.events.spotted ?? 0) > 0, "a Searching human who can see a cat adds Broom");
+  assert.ok((v6.events.discovered ?? 0) > 0, "humans find the disturbed prize");
+});
+
+test("v0.6: gang-size scaling shifts Patience, the Clock and starting Cattitude", () => {
+  const h = HOUSES.find(x => x.key === "number-12");
+  const trace = n => playRobbery(h, makeGang(makeRng(2, "gang", n, 0), n, p), makeParams({ trace: true }), makeRng(2, "dice", h.key, 0)).trace;
+  const patience = t => Number(/\/(\d+) \|/.exec(t[0])[1]);
+  assert.equal(patience(trace(3)), h.patience + 1);
+  assert.equal(patience(trace(4)), h.patience);
+  assert.equal(patience(trace(5)), h.patience - 1);
+});
