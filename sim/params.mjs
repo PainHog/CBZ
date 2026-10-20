@@ -22,8 +22,8 @@ export const PARAMS = {
   patienceShift: { def: 0, alt: [-1, 1], title: "Shift every house's Patience", ref: "houses.mjs", pkg: true, doc: "" },
   patienceDrop: { def: 1, alt: [0], title: "Patience lost per trigger", ref: "CORE-RULES Shoo!/Scooped!", pkg: true, doc: "" },
   minPatience: { def: 2, alt: [1, 3], title: "Lowest Patience", ref: "CORE-RULES Shoo!/Scooped!", pkg: true, doc: "" },
-  resetTo: { def: "calm", alt: ["stay"], title: "Mood after a trigger", ref: "CORE-RULES Shoo!/Scooped!", pkg: true,
-    doc: "calm: back to 0. stay: one step back from the end it hit." },
+  resetTo: { def: "calm", alt: ["half"], title: "Mood after a trigger", ref: "CORE-RULES Shoo!/Scooped!", pkg: true,
+    doc: "calm: back to 0. half (v0.7): half the new Patience, rounded down." },
   shutOnShoo: { def: true, alt: [false], title: "Shoo! shuts the entrance", ref: "CORE-RULES Shoo!", pkg: true, doc: "" },
   // ---- noise and humans ----
   noiseRange: { def: 2, alt: [1, 3], title: "How far noise carries (rooms)", ref: "CORE-RULES A round",
@@ -45,6 +45,10 @@ export const PARAMS = {
     doc: "The owner goes to its spot, finds it gone (+1 Broom) and starts Searching." },
   carrierRules: { def: true, alt: [false], title: "v0.6 fix round: hauling, finding it, Searching for the prize", ref: "CORE-RULES v0.6", pkg: true,
     doc: "Moving a Medium/Large prize is always a roll; carriers can't hide; a human in the prize's room at the end of the House phase finds it disturbed (+1 Broom, Searching); Searching goes for the prize first; messes wait to be found; a driven-off dog hides 3 rounds counting this one; a failed pet roll chases the cat back." },
+  tableRules: { def: true, alt: [false], title: "v0.7 fix round: holders see, eating is a roll, temptation rotates", ref: "CORE-RULES v0.7", pkg: true,
+    doc: "A human holding a cat still sees their room; eating a portion is a roll every time (Sneaky quietly, Savage wolfing); the Storyteller never tempts the same cat two rounds running (was: never the same cat with the same thing twice); a haul's noise is in the room the prize ends up in; hauling out of a dog's room counts as leaving it, and a failed haul there is chased back and drops the prize; a Knocker's knack helps hauling." },
+  searchHold: { def: false, alt: [true], title: "A Searching human with the prize in their room ignores noise", ref: "playtest V6-02 (declined)", pkg: false,
+    doc: "Tried for v0.7 and declined: Easy fell to 69% and Hard to 38% (sim/BALANCE.md)." },
   dogOnEntry: { def: true, alt: [false], title: "An awake dog confronts a cat as soon as it enters", ref: "CORE-RULES v0.5 Residents", pkg: true, doc: "" },
   reopenEntrance: { def: true, alt: [false], title: "A shut entrance can be reopened from inside (Streetwise, Hard)", ref: "CORE-RULES v0.5 In and out", pkg: true, doc: "" },
   lifeEffect: { def: "bolt", alt: ["hide"], title: "Where a cat ends up after spending a Life", ref: "CORE-RULES Lives", pkg: true,
@@ -76,6 +80,8 @@ export const PARAMS = {
   scale3Cat: { def: 1, alt: [0, 2], title: "3 cats: extra starting Cattitude each", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
   scale5: { def: [-1, -1], alt: [[0, -1], [-1, 0]], title: "5 cats: [Patience, Prize Clock] shift", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
   gangSize: { def: 4, alt: [3, 5], title: "Cats in the gang", ref: "CORE-RULES table (3–5 players)", doc: "" },
+  foodPolicy: { def: "eat", alt: ["smart", "carry"], title: "Eat food on the spot or carry it out", ref: "policy",
+    doc: "eat: always eat where it is. carry: carry it out whenever the cats there can. smart: carry while more than 2 portions are left and a way out fits it." },
   pushPolicy: { def: "sensible", alt: ["never", "always"], title: "When players Push", ref: "policy",
     doc: "sensible: push a Flop that matters if Cattitude or safe Mood allows." },
   resistPolicy: { def: "sensible", alt: ["never", "always"], title: "When players resist a temptation", ref: "policy", doc: "" },
@@ -100,10 +106,11 @@ export const PRESETS = {
  *      one-round distraction, Lives bolt outside, front door lets one cat in, meow to be let out).
  * P6 = adopted for core rules v0.3/v0.4. P7 = core rules v0.5 (searching, the owner fetching the prize, dogs on entry,
  * reopening entrances). P8 = core rules v0.6 (hauling, finding it, Searching for the prize: the playtest fix round);
- * the defaults above equal the ADOPTED package.
+ * P9 = core rules v0.7 (holders still see, eating is a roll, temptation rotates: the third playtest round).
+ * The defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false,
+  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, resetTo: "calm",
   scale3: [1, 1], scale3Cat: 0, scale5: [0, -1] }; // the v0.5 gang scaling (used once gangScaling is on)
 export const PACKAGES = {
   P1: { ...OFF },
@@ -116,8 +123,10 @@ export const PACKAGES = {
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true },
   P8: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
+  P9: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
 };
-export const ADOPTED = "P8";
+export const ADOPTED = "P9";
 
 export function makeParams(overrides = {}) {
   return { ...defaults(), ...overrides };

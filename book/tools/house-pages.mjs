@@ -98,7 +98,10 @@ function rooms(h) {
     const notes = [k === h.den ? "<strong>the Den</strong>" : null, ...doors].filter(Boolean).join("; ");
     return `<tr><td>${esc(r.name)}</td><td>${tempt}</td><td>${notes || "—"}</td></tr>`;
   });
-  return `<table class="tbl"><thead><tr><th>Room</th><th>Tempts</th><th>Notes</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  const SIZE = { tight: "Tight", normal: "Normal", big: "Big" };
+  const ways = h.ways.map(w => `${roomName(h, w[0])}–${roomName(h, w[1])} ${SIZE[w[2]]}${w[3] ? " (door)" : ""}`).join(" · ");
+  return `<table class="tbl"><thead><tr><th>Room</th><th>Tempts</th><th>Notes</th></tr></thead><tbody>${rows.join("")}</tbody></table>
+  <p class="ways"><strong>Ways between rooms:</strong> ${ways}.</p>`;
 }
 
 const LABEL = { easy: "Easy", standard: "Standard", hard: "Hard" };

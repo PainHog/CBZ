@@ -48,9 +48,12 @@ test("Mood: a meter that reaches Patience triggers; afterwards it empties and Pa
   assert.equal(applyMood({ broom: 2, cuddle: 0 }, 3, { side: "broom", steps: 1 }).trigger, "shoo");
   assert.equal(applyMood({ broom: 0, cuddle: 3 }, 4, { side: "cuddle", steps: 1 }).trigger, "scoop");
   assert.equal(applyMood({ broom: 1, cuddle: 0 }, 4, { side: "broom", steps: 1 }).trigger, null);
-  const a = afterTrigger({ broom: 3, cuddle: 1 }, 3, "broom", p);
-  assert.deepEqual(a, { mood: { broom: 0, cuddle: 1 }, patience: 2 });
-  assert.equal(afterTrigger({ broom: 2, cuddle: 0 }, 2, "broom", p).patience, 2);
+  const calm = makeParams({ resetTo: "calm" });
+  assert.deepEqual(afterTrigger({ broom: 3, cuddle: 1 }, 3, "broom", calm), { mood: { broom: 0, cuddle: 1 }, patience: 2 });
+  assert.equal(afterTrigger({ broom: 2, cuddle: 0 }, 2, "broom", calm).patience, 2);
+    const half = makeParams({ resetTo: "half" }); // studied for v0.7 and declined (sim/BALANCE.md)
+  assert.deepEqual(afterTrigger({ broom: 8, cuddle: 1 }, 8, "broom", half), { mood: { broom: 3, cuddle: 1 }, patience: 7 });
+  assert.deepEqual(afterTrigger({ broom: 3, cuddle: 0 }, 3, "broom", half), { mood: { broom: 1, cuddle: 0 }, patience: 2 });
 });
 
 test("holder's d6 and exact chances", () => {

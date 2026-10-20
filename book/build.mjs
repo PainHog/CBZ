@@ -34,7 +34,7 @@ const DIST = join(BOOK, "dist");
 const BOOK_TITLE = "Cat Burglars";             // curly apostrophe, as in the chapters
 const BOOK_DESCRIPTION = "A tabletop roleplaying game of street cats, sticky paws and getting away with it";
 const AUTHOR = "Richard Moore";
-const VERSION = "0.6";
+const VERSION = "0.7";
 const FILE_STEM = "Cat_Burglars";        // → Cat_Burglars_v0.1.pdf
 const HTML_NAME = "cat-burglars.html";   // the self-contained print HTML (digital build only)
 // An ornament anchored in the top-left corner of the Table of Contents page
@@ -113,7 +113,7 @@ body = body.replace(/<table class="tbl([^"]*)">([\s\S]*?)<\/table>/g, (m, cls, i
 // columns (so it doesn't leave a column-high hole beside it), class "nosplit" keeps a
 // longer table whole with its heading (so it never strands a row or two on its own).
 body = body.replace(
-  /(<h[34]\b[^>]*>[\s\S]*?<\/h[34]>)(\s*)(<(p|table|aside|ul|ol)\b([^>]*)>[\s\S]*?<\/\4>)/g,
+  /(<h[34]\b[^>]*>[\s\S]*?<\/h[34]>)(\s*)(<(p|table|aside|ul|ol|article)\b([^>]*)>[\s\S]*?<\/\4>)/g,
   (m, head, ws, block, tag, attrs) => {
     if (tag === "table" && /\bnosplit\b/.test(attrs)) return `<div class="keep">${head}${ws}${block}</div>`;
     if (tag === "table" && (/\b(wide|flow)\b/.test(attrs) || (block.match(/<tr\b/g) ?? []).length > 9)) return m;
@@ -187,11 +187,13 @@ const FOOTER_CSS = `@page { @bottom-center { content: ${cssString(BOOK_TITLE + "
  *   e.g.  "ch-01": ["spot-something", "spot-spare"],
  * Empty until the art exists (the build then warns about large unfilled gaps).
  */
+// Spots placed by hand in a chapter's own HTML; the planner never hands these out again.
+const HAND_SPOTS = [];
 const SPOTS = {
   "ch-01": ["spot-paws"], "ch-02": ["spot-curl"], "ch-03": ["spot-bin"], "ch-04": ["spot-purrfect"],
   "ch-05": ["spot-mug"], "ch-06": ["spot-wool"], "ch-07": ["spot-box"], "ch-08": ["spot-fish"],
-  "ch-09": [], "ch-10": ["spot-vacuum"], "ch-11": ["spot-broom"], "ch-12": ["spot-pompom"], "ch-13": [],
-  "ch-14": ["spot-pudding"], "ch-15": ["spot-noodle"], "ch-16": ["spot-vacuum"], "ch-17": ["spot-parrot"], "ch-18": [],
+  "ch-09": [], "ch-10": ["spot-vacuum"], "ch-11": ["spot-broom"], "ch-12": ["spot-door"], "ch-13": [],
+  "ch-14": ["spot-pudding"], "ch-15": ["spot-noodle"], "ch-16": ["spot-pompom"], "ch-17": ["spot-parrot"], "ch-18": [],
 };
 const PT_PER_IN = 72;
 const BOTTOM_LIMIT_PT = (0.78 + BLEED_IN) * PT_PER_IN;   // @page bottom margin: content must end above this
@@ -210,7 +212,7 @@ function planSpots(ends) {
     if (freeIn > TEXT_H_IN - 0.3) continue;
     // preferred spots first, then any spot not used yet; never a repeat (the same
     // illustration twice in one book reads as a mistake)
-    const all = [...new Set(Object.values(SPOTS).flat())];
+    const all = [...new Set(Object.values(SPOTS).flat())].filter(a => !HAND_SPOTS.includes(a));
     const have = a => existsSync(join(ART, `${a}.svg`));
     // don't take a spot a later chapter prefers
     const later = new Set(order.slice(idx + 1).flatMap(k => SPOTS[k] ?? []));

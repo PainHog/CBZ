@@ -96,7 +96,9 @@ export function applyMood(mood, patience, { side, steps }) {
 
 /** After Shoo! or Scooped!: that meter empties, Patience −1 (min 2). */
 export function afterTrigger(mood, patience, side, p) {
-  return { mood: { ...mood, [side]: 0 }, patience: Math.max(p.minPatience, patience - p.patienceDrop) };
+  const left = Math.max(p.minPatience, patience - p.patienceDrop);
+  // calm: the meter empties; half (v0.7): it drops to half the new Patience, rounded down (the house stays cross)
+  return { mood: { ...mood, [side]: p.resetTo === "half" ? Math.floor(left / 2) : 0 }, patience: left };
 }
 
 /** The holder's end-of-round roll for a Held cat (CORE-RULES "Caught"). */
