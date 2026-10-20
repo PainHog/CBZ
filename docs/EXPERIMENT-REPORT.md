@@ -8,13 +8,13 @@ You chose the identity — instincts as the cats' heart, hiding in plain sight, 
 
 | Part | State |
 |---|---|
-| Design | 38 decisions in `docs/DESIGN.md` (Claude's marked "Claude"); all 12 open questions settled. |
+| Design | 39 decisions in `docs/DESIGN.md` (Claude's marked "Claude"); all 12 open questions settled. |
 | Core rules | `docs/CORE-RULES.md` v0.8 — a two-page summary of the book. |
-| Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Cat_Burglars_v0.8.pdf` (50 pages, draft). Every ruling is a row in `book/REVIEW.md` (102 rows). |
+| Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Cat_Burglars_v0.8.pdf` (50 pages, every picture final; the cover says "draft" until you approve it), plus a print edition with bleed (`…_print-interior.pdf`, 48 pages, and front and back covers). Every ruling is a row in `book/REVIEW.md` (103 rows). |
 | Art | 49 pictures, all generated as code (`book/tools/art-gen/`): cover, part pages, 18 chapter pictures, 5 floor plans drawn from the same data the simulator plays, 5 cat portraits (plus a reference sheet per cat), 15 end-of-chapter spots and a back-cover picture. Each audited against `book/art/ART-CHECKLIST.md` (`book/art/AUDIT.md`). |
 | Simulator | `sim/`: every rule as a switchable parameter, ten rule packages compared on the same dice; package P10 adopted. `sim/BALANCE.md`. |
 | Playtests | 9 agent playtests with real dice across all five houses (`sim/playtests/`), each followed by a fix round. The last (Number 12, v0.8) found only wording issues and judged it a good first robbery. |
-| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood ledger, the round and the house's turn, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 129 tests (pure logic, a seeded replay, 750-robbery fuzzing, fake-Foundry smoke tests with a Storyteller and two players). Never run in a live Foundry: `TESTING.md` is a two-client script for you. |
+| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood ledger, the round and the house's turn, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 129 tests (pure logic, a seeded replay, 750-robbery fuzzing, fake-Foundry smoke tests with a Storyteller and two players). Never run in a live Foundry: `TESTING.md` is a two-client script for you. A zip for manual install (`Cat_Burglars_Foundry_v0.8.0.zip`) is attached to the hand-off; nothing is released. |
 | Portal | `PORTAL.md` current; the rulebook cover is the card's picture. |
 
 ## The game in one paragraph
@@ -44,16 +44,15 @@ Two proposals were simulated and declined because they made the game far too har
 | Target | ~90 | ~75 | 55–60 |
 | 4 cats | 90.3 | 75.3 | 57.9 |
 | 3 cats | 87.9 | 68.6 | 55.8 |
-| 5 cats | 95.5 | 75.6 | 50.7 |
+| 5 cats | 96.8 | 75.8 | 53.0 |
 
 About 12 rolls a robbery; Flops 15%, Purrfects 6%; temptations given in to 82% of the time; a cat is left behind (adopted) in 4% of Easy and 15% of Hard robberies.
+
+Two late fixes: a gang of **five** now gets Patience −1 only (with the Prize Clock a round sooner as well, five cats ran 7 points behind four at Hard). And **clean wins at Hard** turned out to be a choice the players make, not a wall: eating half and running wins most often (15% of those wins are clean), while playing for the whole prize gets a third of its wins clean but wins 11–16 points less often. The target now says "when the gang plays for it".
 
 ## Open issues
 
 - **Sharp players beat the simulator.** Every playtest found a line the simulated gang doesn't take (lures from noisy flaps, parrots, barking dogs). The houses are tuned to the simulator, so a clever table will win more than these numbers say. The last fix round closed the round-1 lure; the next real playtests will show what's left.
-- **Clean wins at Hard houses are rare** (15% of Hard wins; target a third). The simulated gang eats food where it sits; players carry more out.
-- **Five cats at Hard** run 7 points behind four.
-- **Last page of some house chapters** is only partly filled (the PDF engine won't balance the final columns after full-width statblocks); each carries a small picture.
 - **Foundry** has only been tested on a pretend table.
 - **Not modelled anywhere yet:** a shut-in cat meowing to lure a human, persuading a human to open a door, toddlers, a campaign beyond Reputation and Lives.
 

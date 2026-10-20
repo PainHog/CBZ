@@ -1,10 +1,10 @@
 Now: Done for now: the game is built, and a report for Richard explains how it turned out
 Next: Richard reads the report, compares it with his own version, and tries the game at a real table
-Number: Design decisions made = 38
+Number: Design decisions made = 39
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
-Number: Pictures in the rulebook = 48
+Number: Pictures in the rulebook = 49
 
 Screenshot: docs/portal/cover.png = The rulebook cover: the gang outside a lit house at night
 
@@ -45,4 +45,5 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Final playtests of the finished rulebook (Grandpa Wendell's house with five cats, and the birthday cake) and their fixes: the human who puts the prize down now stays with it
 - [x] Pictures for the rulebook (cover, chapter pictures, maps, the gang, and little end-of-chapter drawings)
 - [x] Online version that runs the rules for the table (built and tested on a pretend table)
+- [x] Last fixes: games with five cats evened out, the house pages tidied, and a print-ready edition of the rulebook
 - [ ] Richard tries the online version at a real table
