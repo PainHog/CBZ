@@ -12,6 +12,7 @@ Thumbs.db
 # Build / packaging output (root only: a bare `dist/` would also hide book/dist/ and its PDFs)
 /dist/
 *.zip
+!downloads/*.zip
 
 # Foundry LevelDB runtime noise ONLY — the numbered *.log files are the write-
 # ahead log and DO contain pack data, so they must be committed. Ignore just the
