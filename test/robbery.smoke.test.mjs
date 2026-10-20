@@ -325,5 +325,13 @@ test("the sheet's Roll buttons: what am I doing (in a robbery), or a free roll (
   const m = game.messages.at(-1);
   assert.equal(flags(m).optionId, "enter:window");
   assert.equal(flags(m).result, "purrfect", "Sneaky 3 + Climber − Tricky = 3 dice, two 6s");
+  // an open tracker follows every change to the robbery
+  const app = asUser(p1, () => api().openTracker());
+  await settle();
+  const before = app._renders;
+  await asUser(gmU, () => api().robbery.overrides.placeResident("pell", "living"));
+  await settle();
+  assert.ok(app._renders > before, "the tracker re-rendered when the robbery changed");
+  assert.equal(api().tracker, app);
   assert.deepEqual(log.errors, []);
 });

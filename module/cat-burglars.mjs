@@ -53,9 +53,10 @@ Hooks.once("init", function () {
     dice: { rollFor, push, accept, toggleSeen },
     logic: { ...logic, ...actions, rules },
     openTracker,
-    get tracker() { return currentTracker(); },
     state: getState, flush, finalizePending
   });
+  // a live getter (Object.assign would copy its value once): the setting's onChange refreshes the open tracker
+  Object.defineProperty(game.catBurglars, "tracker", { get: currentTracker, configurable: true, enumerable: true });
 
   foundry.applications.handlebars?.loadTemplates?.([
     "templates/chat/event-card.hbs", "templates/chat/roll-card.hbs", "templates/dialogs/roll-dialog.hbs", "templates/dialogs/start-robbery.hbs",
