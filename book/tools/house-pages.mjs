@@ -39,14 +39,23 @@ function sheet(h, label) {
   let s = `<aside class="box list house-sheet"><h4>At a glance</h4>
   <p class="statline"><strong>Difficulty</strong> ${label} <span class="sep">·</span> <strong>Patience</strong> ${h.patience} <span class="sep">·</span> <strong>The prize</strong> ${esc(z.name)} (${PSIZE[z.size]}${portions ? `, ${portions}` : ""}) <span class="sep">·</span> <strong>Gone</strong> at the start of round ${z.goneAt} <span class="sep">·</span> <strong>Den</strong> ${roomName(h, h.den)}</p>
   <p class="statline"><strong>Who lives here</strong> ${h.humans.map(x => esc(x.name)).concat(h.pets.map(x => esc(x.name))).join(", ")}</p>
+  <p class="statline"><strong>Three cats</strong> Patience ${h.patience + 1}, gone at the start of round ${z.goneAt + 2}, 3 Cattitude each <span class="sep">·</span> <strong>Five cats</strong> Patience ${Math.max(2, h.patience - 1)}, gone at the start of round ${z.goneAt - 1}</p>
 </aside>`;
   return s;
+}
+
+/** What a step on the way to the prize is, from its options (the house data names none). */
+function stepName(st) {
+  if (st.some(o => o.includes("climb"))) return "climb up to it";
+  if (st[0][0] === "streetwise" && st.some(o => o[0] === "sneaky")) return "get it out of the bag";
+  if (st[0][0] === "streetwise") return "get the wrapping off";
+  return "get at it";
 }
 
 function clock(h) {
   const z = h.prize;
   const rows = z.script.map(sc => {
-    const steps = sc.steps.length ? sc.steps.map((st, i) => `step ${i + 1}: ${optText(st)}`).join("; then ") : "no roll to get at it";
+    const steps = sc.steps.length ? sc.steps.map((st, i) => `step ${i + 1}: ${stepName(st)} (${optText(st)})`).join("; then ") : "no roll to get at it";
     const who = h.humans.find(x => x.key === sc.by)?.name ?? sc.by;
     return `<tr><td>Start of ${ordinal(sc.round)}</td><td>${esc(who)} puts it in the ${roomName(h, sc.room).toLowerCase()} and stays there this round. ${steps[0].toUpperCase() + steps.slice(1)}.</td></tr>`;
   });
@@ -99,7 +108,7 @@ function rooms(h) {
     return `<tr><td>${esc(r.name)}</td><td>${tempt}</td><td>${notes || "—"}</td></tr>`;
   });
   const SIZE = { tight: "Tight", normal: "Normal", big: "Big" };
-  const ways = h.ways.map(w => `${roomName(h, w[0])}–${roomName(h, w[1])} ${SIZE[w[2]]}${w[3] ? " (door)" : ""}`).join(" · ");
+  const ways = h.ways.map(w => `${roomName(h, w[0])}–${roomName(h, w[1])} ${SIZE[w[2]]}${w[3] ? " (door)" : (w[0] === h.den || w[1] === h.den) ? " (the Den’s door: open, shut while a cat is in)" : ""}`).join(" · ");
   return `<table class="tbl"><thead><tr><th>Room</th><th>Tempts</th><th>Notes</th></tr></thead><tbody>${rows.join("")}</tbody></table>
   <p class="ways"><strong>Ways between rooms:</strong> ${ways}.</p>`;
 }
