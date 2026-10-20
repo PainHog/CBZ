@@ -133,6 +133,10 @@ export function trackerView(state, { isGM = false, canControl = () => false, hou
     broom: meter(f.broom, f.patience, "broom"), cuddle: meter(f.cuddle, f.patience, "cuddle"), patience: f.patience,
     broomFull: f.full.broom, cuddleFull: f.full.cuddle,
     pending: isGM ? s.moodLedger.filter(e => e.pending && !e.rejected).map(e => ({ id: e.id, cause: e.cause ?? e.kind })) : [],
+    pick: s.pendingTrigger ? {
+      text: `${s.pendingTrigger.side === "broom" ? "Broom" : "Cuddle"} is full: the Storyteller picks which cat ${humanByKey(s, s.pendingTrigger.human)?.name ?? "the human"} ${s.pendingTrigger.side === "broom" ? "chases out" : "picks up"}.`,
+      cats: isGM ? s.pendingTrigger.candidates.map(id => ({ id, name: s.cats.find(c => c.id === id)?.name ?? id })) : []
+    } : null,
     temptation: t ? `${s.cats.find(c => c.id === t.catId)?.name} was tempted (${CATB.instincts[t.instinct]?.label})${t.choice ? (t.choice === "gaveIn" ? ": gave in." : ": resisted.") : ": waiting for an answer."}` : "",
     temptOpts: temptOpts.map(o => ({ ...o, text: `Tempt ${o.catName}: ${o.label} (${o.roomName})` })), canTempt: temptOpts.length > 0,
     endDue: end.due ? end.text : "",

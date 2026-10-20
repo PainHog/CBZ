@@ -7,8 +7,8 @@
  * `game`, `ui`, `foundry` or DOM, so `module/logic/` can import it under plain Node.
  *
  * Source of truth: the rulebook (book/src/chapters/, summarised in
- * docs/CORE-RULES.md v0.6). The numbers in CATB.rules are the simulator's adopted
- * package P8 (sim/params.mjs); test/parity.test.mjs keeps the two in step.
+ * docs/CORE-RULES.md v0.7). The numbers in CATB.rules are the simulator's adopted
+ * package P9 (sim/params.mjs); test/parity.test.mjs keeps the two in step.
  */
 
 export const CATB = {};
@@ -98,7 +98,7 @@ CATB.petModes = Object.freeze({
 });
 
 /**
- * The adopted rules numbers (core rules v0.6 = simulator package P8). Every
+ * The adopted rules numbers (core rules v0.7 = simulator package P9). Every
  * number the automation uses comes from here, so one place follows the book.
  */
 CATB.rules = Object.freeze({

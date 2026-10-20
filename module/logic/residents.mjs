@@ -3,9 +3,9 @@
  * --------------------------------------------
  * Who sees whom (Ch 5 "Who sees you"), pets in the way (Ch 10), and the house's
  * turn: pets, noise, routines, Searching and the holders' d6 (Ch 6 "The house's
- * turn", Ch 9, Ch 10; core rules v0.6): pets, noise, routines or Searching,
+ * turn", Ch 9, Ch 10; core rules v0.7): pets, noise, routines or Searching,
  * holders, then Finding it. Where the book leaves a choice the readings follow
- * the simulator's engine (sim/engine.mjs, package P8); the "Implementation
+ * the simulator's engine (sim/engine.mjs, package P9); the "Implementation
  * notes" in docs/AUTOMATION.md list them.
  *
  * Internal helpers MUTATE the robbery state they are given (the public
@@ -14,7 +14,7 @@
  */
 import { CATB } from "../config.mjs";
 import { holderOutcome } from "./rules.mjs";
-import { dist, waysFrom, neighbours, stepToward } from "./map.mjs";
+import { dist, waysFrom, neighbours, stepToward, nearestEntrances } from "./map.mjs";
 
 const R = CATB.rules;
 
@@ -28,9 +28,13 @@ export const isAsleep = (s, h) => (h.asleepUntil ?? -1) >= s.round;
 /** Ch 6 "Distract": Distracted until the house's turn begins (v0.6). */
 export const isDistracted = (s, h) => (h.distractedRound ?? -1) >= s.round && s.stage === "cats";
 
-/** Ch 5: humans who can see cats in this room — awake, not Distracted, not holding a cat. */
+/**
+ * Ch 5: humans who can see cats in this room — awake and not Distracted. A
+ * human holding a cat still sees their room (v0.7, Ch 9); they just don't move,
+ * answer noise, Search or find things.
+ */
 export function watchers(s, room) {
-  return (s.humans ?? []).filter(h => h.room === room && !isAsleep(s, h) && !isDistracted(s, h) && !h.holding);
+  return (s.humans ?? []).filter(h => h.room === room && !isAsleep(s, h) && !isDistracted(s, h));
 }
 
 /** Ch 5: the humans who see this cat (none if it's hidden, outside, or shut in the Den). */
@@ -82,8 +86,8 @@ function catsHere(s, room) { return freeInside(s).filter(c => c.where === room);
 function petActs(s, p, ctx, ev) {
   if (p.kind === "vacuum") {
     if (ctx.routines === false) return;
-    // Wanders: a random next room among the ones it goes to.
-    const opts = waysFrom(s, p.room).filter(x => x.way.open).map(x => x.to).filter(r => !p.roam?.length || p.roam.includes(r));
+    // Wanders (the Pets step): a random next room on its list; pets pass closed doors (v0.7)
+    const opts = waysFrom(s, p.room).map(x => x.to).filter(r => !p.roam?.length || p.roam.includes(r));
     if (!opts.length) return;
     const face = ctx.d6();
     const to = opts[(face - 1) % opts.length];
@@ -116,7 +120,7 @@ function petActs(s, p, ctx, ev) {
   const face = ctx.d6();
   const r = p.routine?.[face - 1] ?? "stay";
   let to = p.room;
-  if (r === "sniff") to = stepToward(s, p.room, freeInside(s).map(c => c.where)) ?? p.room;
+  if (r === "sniff") to = stepToward(s, p.room, freeInside(s).map(c => c.where), { doors: true }) ?? p.room; // ties: the Storyteller's pick (house order)
   else if (r !== "stay") to = r;
   const what = r === "sniff" ? "sniffs" : r === "stay" ? "stays put" : "goes";
   if (to !== p.room) p.room = to;
@@ -237,8 +241,10 @@ export function holdersRoll(s, ctx, ev, { shutInDen }) {
       shutInDen(c, h);
       ev.push({ type: "shutIn", human: h.key, cat: c.id, face, text: `${h.name} (d6 ${face}) shuts ${c.name} in the ${roomName(s, s.den).toLowerCase()}, "just until we find your owner".` });
     } else {
+      // v0.7: out through the nearest entrance, which stays open
+      const e = nearestEntrances(s, h.room)[0];
       c.status = "outside"; c.where = "outside"; c.hidden = false; c.riding = null;
-      ev.push({ type: "putOut", human: h.key, cat: c.id, face, text: `${h.name} (d6 ${face}) puts ${c.name} outside: "Go on, home you go."` });
+      ev.push({ type: "putOut", human: h.key, cat: c.id, face, text: `${h.name} (d6 ${face}) puts ${c.name} out through the ${e?.name ?? "door"}: "Go on, home you go."` });
     }
   }
 }
@@ -255,20 +261,22 @@ export function holdersRoll(s, ctx, ev, { shutInDen }) {
 export function findingIt(s, ev, { disturbed, inPlay }) {
   const mood = [];
   const awake = h => !h.holding && !isAsleep(s, h);
-  const inSight = h => freeInside(s).find(c => c.where === h.room && !c.hidden) ?? null;
-  const spotter = (s.humans ?? []).find(h => h.searching && awake(h) && inSight(h));
+  // the cats this human can see; a meter these steps fill falls on one of them, the Storyteller's pick (v0.7)
+  const visibleTo = h => freeInside(s).filter(c => c.where === h.room && !c.hidden).map(c => c.id);
+  const spotter = (s.humans ?? []).find(h => h.searching && awake(h) && visibleTo(h).length);
   if (spotter) {
-    const c = inSight(spotter);
-    mood.push({ side: "broom", steps: 1, kind: "spotted", catId: c.id, seenBy: [spotter.key], cause: `${spotter.name} is Searching and spots ${c.name}` });
-    ev.push({ type: "spotted", human: spotter.key, cat: c.id, text: `${spotter.name} is Searching and can see ${c.name}: +1 Broom.` });
+    const seen = visibleTo(spotter);
+    const names = seen.map(id => catById(s, id)?.name).join(" and ");
+    mood.push({ side: "broom", steps: 1, kind: "spotted", catId: null, candidates: seen, seenBy: [spotter.key], cause: `${spotter.name} is Searching and spots ${names}` });
+    ev.push({ type: "spotted", human: spotter.key, cats: seen, text: `${spotter.name} is Searching and can see ${names}: +1 Broom.` });
   }
   const z = s.prize;
   if (inPlay && disturbed) {
     const finders = (s.humans ?? []).filter(h => !h.searching && awake(h) && (h.room === z.room || h.room === z.spotRoom));
     if (finders.length) {
       for (const h of finders) h.searching = true;
-      const seen = finders.map(h => ({ h, c: inSight(h) })).find(x => x.c) ?? null;
-      mood.push({ side: "broom", steps: 1, kind: "discovery", catId: seen?.c.id ?? null, seenBy: seen ? [seen.h.key] : [],
+      const looker = finders.find(h => visibleTo(h).length) ?? finders[0];
+      mood.push({ side: "broom", steps: 1, kind: "discovery", catId: null, candidates: visibleTo(looker), seenBy: [looker.key],
         cause: `${finders.map(h => h.name).join(" and ")} ${finders.length > 1 ? "find" : "finds"} the ${z.name} disturbed` });
       ev.push({ type: "discovery", humans: finders.map(h => h.key),
         text: `${finders.map(h => h.name).join(" and ")} ${finders.length > 1 ? "find" : "finds"} the ${z.name} disturbed: +1 Broom, and ${finders.length > 1 ? "they start" : "starts"} Searching.` });
@@ -278,7 +286,7 @@ export function findingIt(s, ev, { disturbed, inPlay }) {
     const h = (s.humans ?? []).find(x => x.room === room && awake(x));
     if (!h) continue;
     s.messes = s.messes.filter(m => m !== room);
-    mood.push({ side: "broom", steps: 1, kind: "mess", catId: null, seenBy: [h.key], cause: `${h.name} finds the mess in the ${roomName(s, room).toLowerCase()}` });
+    mood.push({ side: "broom", steps: 1, kind: "mess", catId: null, candidates: visibleTo(h), seenBy: [h.key], cause: `${h.name} finds the mess in the ${roomName(s, room).toLowerCase()}` });
     ev.push({ type: "messFound", room, human: h.key, text: `${h.name} finds the mess in the ${roomName(s, room).toLowerCase()}: +1 Broom.` });
   }
   return mood;

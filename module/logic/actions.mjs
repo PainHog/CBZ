@@ -21,7 +21,7 @@ import {
   watchers, catById, humanByKey, petByKey, roomName, hostilePet, highestAttention, kidAmong, addNoise
 } from "./residents.mjs";
 import { currentStep, canCarry, carryRule, dropPrize } from "./prize.mjs";
-import { clone, addMood, pushLog, markApplied, isApplied } from "./round.mjs";
+import { clone, addMood, pushLog, markApplied, isApplied, chaseBack } from "./round.mjs";
 import { rollEntry } from "./mood.mjs";
 
 const R = CATB.rules;
@@ -100,7 +100,7 @@ export function catOptions(state, catId) {
       const fit = carriers.every(x => fits(way.size, { body: x.body, carry: z.size }));
       const past = [...ws, ...watchers(s, to)];
       const haul = z.size !== "small" || past.length > 0;
-      const roll = haul ? { options: SIMPLE_IN_VIEW([]), seenRooms: [room, to], haul: true } : null;
+      const roll = haul ? { options: SIMPLE_IN_VIEW(["knock"]), seenRooms: [room, to], haul: true } : null; // v0.7: pushing is a Knocker's Knack
       const uses = roll ? ["move", "action"] : ["move"];
       const why = !way.open ? "the way is shut" : !fit ? `the ${z.name} won't fit through` : carriers.some(x => x.moved) ? "a carrier has already moved"
         : (roll && carriers.some(x => x.acted)) ? "a carrier has already acted (hauling is every carrier's Action)" : null;
@@ -125,7 +125,7 @@ export function catOptions(state, catId) {
     const fit = group.every(x => fits(e.size, { body: x.body, carry }));
     // If the entrance lists a roll, that's the roll; else hauling a Medium/Large prize out is a roll (Small: if seen)
     let roll = e.opts.length ? { options: e.opts } : null;
-    if (!roll && c.carrying && (z.size !== "small" || ws.length)) roll = { options: SIMPLE_IN_VIEW([]), haul: true };
+    if (!roll && c.carrying && (z.size !== "small" || ws.length)) roll = { options: SIMPLE_IN_VIEW(["knock"]), haul: true };
     // Ch 8 (v0.6): going out through an entrance that needs no roll can be the Move or the Action
     const uses = roll ? ["move", "action"] : (group.every(x => !x.moved) ? ["move"] : ["action"]);
     const why = !e.open ? (e.rounds ? "it's shut" : "it's shut (reopen it from inside first)")
@@ -167,7 +167,8 @@ export function catOptions(state, catId) {
     }
     if (z.down && !z.carriers.length && !c.carrying) {
       act({ id: "take", kind: "take", label: `Pick up the ${z.name} (${z.size}: ${carryRule(z.size)})`, group: true }, { simple: true });
-      if (z.kind === "delicious" && z.portionsLeft > 0) act({ id: "eat", kind: "eat", label: `Eat a portion (${z.portionsLeft} left)` }, { simple: true, tags: ["food"] });
+      // v0.7: eating a portion is always a roll, seen or not (Sneaky quietly, Savage wolfing it; Foodie's Knack)
+      if (z.kind === "delicious" && z.portionsLeft > 0) act({ id: "eat", kind: "eat", label: `Eat a portion (${z.portionsLeft} left)`, roll: { options: SIMPLE_IN_VIEW(["food"]) } });
     }
   } else if (z?.withHuman && z.room === room) {
     out.notes = [`The ${z.name} is still in ${humanByKey(s, z.withHuman)?.name ?? "the human"}'s arms.`];
@@ -339,7 +340,9 @@ export function applyRoll(state, card, ctx = {}) {
     c.acted = true;
     if (o && ctx.effects === false) ev.push({ type: "noEffect", text: `(Effects are off: the Storyteller applies "${o.label}" by hand.)` });
   }
-  if (makesNoise(card.result) && !card.quiet && room) addNoise(s, room, `${c.name}'s ${card.result}`, c.id);
+  // v0.7: a haul's noise is in the room the prize ends up in
+  const noiseRoom = o?.kind === "carry" && ok && s.prize.room === o.target ? o.target : room;
+  if (makesNoise(card.result) && !card.quiet && noiseRoom) addNoise(s, noiseRoom, `${c.name}'s ${card.result}`, c.id);
   if (card.result === "purrfect") cattitude.push({ catId: c.id, delta: +1, why: "a Purrfect" });
   addMood(s, entry, ev, ctx.mood ?? "auto");
   pushLog(s, ev);
@@ -377,8 +380,8 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
     case "carry": {
       const group = z.carriers.map(id => catById(s, id)).filter(Boolean);
       for (const x of group) { if (o.roll) x.acted = true; }
-      if (!ok) { ev.push({ type: "carryFailed", text: `The carriers can't get the ${z.name} past.` }); break; }
-      for (const x of group) Object.assign(x, { cameFrom: x.where, where: o.target, moved: true, hidden: false, riding: null });
+      if (!ok) { ev.push({ type: "carryFailed", text: `The ${z.name} doesn't budge.` }); failedHaulChase(s, group, ev); break; }
+      for (const x of group) Object.assign(x, { cameFrom: x.where, where: o.target, moved: true, hidden: false, riding: null, arrivedSpent: o.roll ? s.roundSerial : x.arrivedSpent });
       z.room = o.target;
       ev.push({ type: "carry", to: o.target, text: `${group.map(x => x.name).join(" and ")} carry the ${z.name} to the ${low(roomName(s, o.target))}.` });
       break;
@@ -390,7 +393,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       if (e.one) e.open = false; // Ch 8: the front door lets in one cat, then it shuts
       if (!ok) { ev.push({ type: "enterFailed", cat: c.id, text: `${c.name} doesn't get in through the ${e.name}.` }); break; }
       if (e.jam && o.roll) { e.opts = []; ev.push({ type: "jammed", text: `The ${e.name} is jammed open now: no roll for anyone.` }); }
-      for (const x of group) Object.assign(x, { where: e.room, status: "free", hidden: false, cameFrom: "outside" });
+      for (const x of group) Object.assign(x, { where: e.room, status: "free", hidden: false, cameFrom: "outside", arrivedSpent: o.roll ? s.roundSerial : null });
       if (e.noisy) for (const x of group) addNoise(s, e.room, e.name, x.id); // v0.6: a noise for each cat
       ev.push({ type: "enter", cat: c.id, text: `${group.map(x => x.name).join(" and ")} ${group.length > 1 ? "come" : "comes"} in through the ${e.name}${e.noisy ? " (it clacks: noise)" : ""}.` });
       break;
@@ -401,7 +404,11 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
         : [c, ...helpCats.filter(x => x.status === "free" && x.where === c.where && !x.moved && fits(e.size, { body: x.body }))];
       if (o.roll) for (const x of group) mark(x, { move: ok, act: true });
       else for (const x of group) { if (!x.moved) x.moved = true; else x.acted = true; } // the Move, or else the Action
-      if (!ok) { ev.push({ type: "exitFailed", cat: c.id, text: `${c.name} doesn't get out through the ${e.name}.` }); break; }
+      if (!ok) {
+        ev.push({ type: "exitFailed", cat: c.id, text: `${c.name} doesn't get out through the ${e.name}.` });
+        if (c.carrying) failedHaulChase(s, group, ev);
+        break;
+      }
       const withPrize = c.carrying;
       for (const x of group) Object.assign(x, { where: "outside", status: "outside", hidden: false, riding: null, carrying: false });
       if (withPrize) { z.out = true; z.carriers = []; z.room = null; }
@@ -498,6 +505,8 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
     case "confront": {
       mark(c);
       const p = petByKey(s, o.target);
+      // v0.7: rolling against it, or helping the cat who rolls, is dealing with it (no end-of-turn chase)
+      for (const x of [c, ...helpCats]) x.dealt = [...(x.dealt ?? []), p.key];
       if (ok) {
         // Ch 10 (v0.6): driven off = hides for 3 rounds counting this one (back at the end of the third)
         if (approach === "savage") { p.mode = "hiding"; p.until = s.round + R.petHideRounds - 1; ev.push({ type: "drivenOff", pet: p.key, text: `${c.name} drives ${p.name} off: it hides for ${R.petHideRounds} rounds, counting this one.` }); }
@@ -505,13 +514,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
         else { c.slipped = [...(c.slipped ?? []), p.key]; ev.push({ type: "slipped", pet: p.key, text: `${c.name} slips past ${p.name} this turn.` }); }
       } else {
         // a failed roll: it chases you back the way you came (not your Move; a carrier drops the prize)
-        const open = waysFrom(s, c.where).filter(x => x.way.open && fits(x.way.size, { body: c.body }));
-        const away = open.find(x => x.to === c.cameFrom) ?? open[0];
-        if (away) {
-          if (c.carrying) { dropPrize(s); ev.push({ type: "dropped", cat: c.id, text: `${c.name} drops the ${z.name}.` }); }
-          Object.assign(c, { cameFrom: c.where, where: away.to, hidden: false, riding: null });
-          ev.push({ type: "chased", pet: p.key, text: `${p.name} chases ${c.name} back into the ${low(roomName(s, away.to))}!` });
-        } else ev.push({ type: "chased", pet: p.key, text: `${p.name} won't let ${c.name} by.` });
+        chaseBack(s, c, p, ev);
       }
       break;
     }
@@ -542,6 +545,14 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       mark(c);
   }
   return { ok };
+}
+
+/** v0.7: hauling out of an awake dog's room is leaving it; a haul that fails there is chased back and drops the prize. MUTATES s. */
+function failedHaulChase(s, group, ev) {
+  const room = group[0]?.where;
+  const p = room ? hostilePet(s, room) : null;
+  if (!p) return;
+  for (const x of group) if (x.status === "free" && x.where === room) chaseBack(s, x, p, ev);
 }
 
 function freeShutCats(s, ev) {

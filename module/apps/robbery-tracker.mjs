@@ -47,6 +47,7 @@ export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {
       mood: guard((event, target) => R.overrides.moodAdjust(target.dataset.side, Number(target.dataset.steps))),
       undo: guard(() => R.overrides.moodUndo()),
       confirm: guard((event, target) => R.overrides.moodConfirm(target.dataset.entry, target.dataset.accept !== "false")),
+      pickTarget: guard((event, target) => R.overrides.pickTarget(target.dataset.cat)),
       place: guard(RobberyTracker.#place),
       toggleWay: guard((event, target) => R.overrides.setOpen({ way: target.dataset.way, open: target.dataset.open !== "true" })),
       toggleEntrance: guard((event, target) => R.overrides.setOpen({ entrance: target.dataset.entrance, open: target.dataset.open !== "true" })),

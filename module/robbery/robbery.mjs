@@ -197,6 +197,8 @@ export const overrides = {
   setOpen: args => gmMutate(s => Round.setOpen(s, args)),
   markNoise: (room, opts) => gmMutate(s => Round.markNoise(s, room, opts)),
   patch: (key, patch) => gmMutate(s => Round.patchResident(s, key, patch)),
+  /** v0.7: the Storyteller picks the cat a meter filled with no roll falls on. */
+  pickTarget: catId => gmMutate(s => Round.resolvePendingTrigger(s, catId)),
   /** The Storyteller does a cat's option by hand, even when it's normally refused. */
   force: (catId, optionId, args = {}) => gmMutate(s => doAction(s, catId, optionId, { ...args, force: true }, { mood: automation().mood }))
 };
@@ -341,6 +343,16 @@ export function registerRobberyButtons() {
       const a = game.actors.get(id);
       if (!a || (card.escaped ?? []).includes(id) || !(a.isOwner)) continue;
       box.appendChild(button(`${a.name}: spend a Life to escape`, () => spendLife(id)));
+    }
+  });
+  registerButtons(CARD.moodPick, (message, card, box) => {
+    const s = getState();
+    const p = s?.pendingTrigger;
+    if (!game.user.isGM || !p || s.id !== card.robberyId || p.side !== card.side) return;
+    const human = s.humans.find(h => h.key === p.human);
+    for (const id of p.candidates) {
+      const c = catById(s, id);
+      if (c) box.appendChild(button(`${human?.name ?? "The human"} ${p.side === "broom" ? "chases out" : "picks up"} ${c.name}`, () => overrides.pickTarget(id)));
     }
   });
   const openBtn = (message, card, box) => {

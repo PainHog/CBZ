@@ -15,10 +15,10 @@
  */
 import { CATB } from "../config.mjs";
 import { foldMood, upsertEntry, stepEntry, undoLast, liveEntries } from "./mood.mjs";
-import { nearestEntrances, wayId } from "./map.mjs";
+import { nearestEntrances, wayId, waysFrom, fits } from "./map.mjs";
 import {
   watchers, catById, humanByKey, petByKey, roomName, freeInside, leadWatcher, isAsleep,
-  petsAct, resolveNoise, humanRoutines, holdersRoll, petsReturn, addNoise, hasTrait, findingIt
+  petsAct, resolveNoise, humanRoutines, holdersRoll, petsReturn, addNoise, hasTrait, findingIt, hostilePet
 } from "./residents.mjs";
 import { newPrize, gangScaling, prizeClock, prizePhase, isDisturbed, dropPrize, robberyOutcome, OUTCOME_LABEL, prizeGot } from "./prize.mjs";
 import { humanTraits } from "./house-catalog.mjs";
@@ -152,15 +152,40 @@ export function settleMood(s, entry, ev) {
       text: `${METER[r.side]} ${r.steps > 0 ? "+" : ""}${r.steps} (${fold[r.side]}/${fold.patience})${entry.cause ? `: ${entry.cause}` : ""}.` });
   }
   if (r.steps <= 0 || !fold.full[r.side]) return;
-  const cat = entry.catId ? catById(s, entry.catId) : null;
-  const inside = cat && (cat.status === "free" || cat.status === "held");
-  const who = inside ? (entry.seenBy ?? []).map(k => humanByKey(s, k)).filter(h => h && !isAsleep(s, h)) : [];
-  if (!inside || !who.length) {
-    ev.push({ type: "moodFull", side: r.side,
-      text: `${METER[r.side]} is full, but no human can see a cat: it stays full, and the next cat seen on that side gets it.` });
+  const full = () => ev.push({ type: "moodFull", side: r.side,
+    text: `${METER[r.side]} is full, but no human can see a cat: it stays full, and the next cat seen on that side gets it.` });
+  // v0.7: a meter filled with no roll (spotted, a find, a mess) falls on a cat that human can see — the Storyteller's pick
+  if (!entry.catId && entry.candidates) {
+    const cats = entry.candidates.map(id => catById(s, id)).filter(c => c && c.status === "free");
+    const human = (entry.seenBy ?? []).map(k => humanByKey(s, k)).find(h => h && !isAsleep(s, h));
+    if (!cats.length || !human) return full();
+    if (cats.length === 1) return trigger(s, r.side, cats[0], human, entry, ev);
+    s.pendingTrigger = { side: r.side, human: human.key, candidates: cats.map(c => c.id), entry: entry.id, round: s.round };
+    ev.push({ type: "pickTarget", side: r.side, human: human.key, cats: cats.map(c => c.id),
+      text: `${METER[r.side]} is full: the Storyteller picks which cat ${human.name} ${r.side === "broom" ? "chases out" : "picks up"} (${cats.map(c => c.name).join(" or ")}).` });
     return;
   }
+  const cat = entry.catId ? catById(s, entry.catId) : null;
+  const inside = cat && (cat.status === "free" || cat.status === "held");
+  // the human who acts saw the roll; a human holding a cat still sees, but only acts on the cat they hold
+  const who = inside ? (entry.seenBy ?? []).map(k => humanByKey(s, k)).filter(h => h && !isAsleep(s, h) && (!h.holding || h.holding === cat.id)) : [];
+  if (!inside || !who.length) return full();
   trigger(s, r.side, cat, leadWatcher(who), entry, ev);
+}
+
+/** The Storyteller picks the cat for a meter that filled with no roll (v0.7). */
+export function resolvePendingTrigger(state, catId) {
+  const s = clone(state);
+  const p = s.pendingTrigger;
+  if (!p) throw new Error("No meter is waiting for the Storyteller's pick.");
+  if (!p.candidates.includes(catId)) throw new Error("That cat wasn't in sight.");
+  const cat = catById(s, catId);
+  const human = humanByKey(s, p.human);
+  const ev = [];
+  if (!cat || cat.status !== "free" || !human) { s.pendingTrigger = null; ev.push({ type: "moodFull", text: "That cat isn't there any more: the meter stays full for the next cat seen." }); }
+  else trigger(s, p.side, cat, human, s.moodLedger.find(e => e.id === p.entry) ?? null, ev);
+  pushLog(s, ev);
+  return { state: s, events: ev };
 }
 
 /** Ch 5 "Shoo!" / "Scooped!" and "After a Shoo! or a Scoop". MUTATES s. */
@@ -170,6 +195,7 @@ export function trigger(s, side, cat, human, cause, ev) {
     human: clone(human), holder: cat.heldBy ? clone(humanByKey(s, cat.heldBy)) : null, entrance: null
   };
   const carried = cat.carrying;
+  if (s.pendingTrigger?.side === side) s.pendingTrigger = null;
   if (carried) dropPrize(s, { putBack: true });
   let entrance = null;
   if (side === "broom") {
@@ -257,7 +283,8 @@ export function beginRound(state, ctx = {}) {
   s.round += 1;
   s.roundSerial += 1;
   s.stage = "cats";
-  for (const c of s.cats) { c.moved = false; c.acted = false; c.slipped = []; }
+  for (const c of s.cats) { c.moved = false; c.acted = false; c.slipped = []; c.dealt = []; }
+  s.temptedLast = s.temptation?.catId ?? null; // v0.7: never the same cat two rounds running
   s.noise = []; s.help = {}; s.temptation = null; // messes stay until a human finds them (v0.6)
   ev.push({ type: "round", text: `Round ${s.round} begins.` });
   if (ctx.prizeClock !== false) {
@@ -288,19 +315,20 @@ export function roomTemptations(s, room) {
 
 /**
  * Ch 7 "Temptation": the cats the Storyteller may tempt this round — free cats in
- * a room with a temptation for one of their instincts, never the same cat with
- * the same thing twice, who haven't moved or acted yet. One per round; the
- * tempted cat takes its turn first (actions.mjs holds the others back).
+ * a room with a temptation for one of their instincts, never the cat tempted
+ * last round (v0.7), who haven't moved or acted yet. One per round; the tempted
+ * cat decides at once (actions.mjs holds the others back until it answers), and
+ * a cat that gives in has acted first.
  */
 export function temptationOptions(state) {
   if (state.phase !== "robbery" || state.stage !== "cats" || state.temptation) return [];
   const out = [];
   for (const c of freeInside(state)) {
-    if (c.moved || c.acted) continue;
+    if (c.moved || c.acted || c.id === state.temptedLast) continue;
     const here = roomTemptations(state, c.where);
     for (const i of c.instincts) {
       const key = `${c.where}:${i}`;
-      if (here.includes(i) && !c.temptUsed.includes(key)) {
+      if (here.includes(i)) {
         out.push({ catId: c.id, catName: c.name, instinct: i, label: CATB.instincts[i]?.label ?? i, room: c.where, roomName: roomName(state, c.where), key,
           tempt: CATB.instincts[i]?.tempt ?? "" });
       }
@@ -412,6 +440,7 @@ export function endRound(state, ctx = {}) {
     pushLog(s, ev);
     return { state: s, events: ev, end };
   }
+  dogsChase(s, ev);
   petsAct(s, ctx, ev);
   const { answered } = resolveNoise(s, ev);
   humanRoutines(s, ctx, answered, ev);
@@ -425,6 +454,32 @@ export function endRound(state, ctx = {}) {
   if (end.due) ev.push({ type: "endDue", reason: end.reason, text: end.text });
   pushLog(s, ev);
   return { state: s, events: ev, end };
+}
+
+/**
+ * Ch 10 (v0.7): a cat that ends its turn in an awake dog's (or a guarding house
+ * cat's) room without dealing with it — rolling, or helping the cat who rolls —
+ * is chased back the way it came; a carrier drops the prize. A cat that came in
+ * with no Action left (it climbed in) deals with it first thing next turn
+ * instead. MUTATES s.
+ */
+export function dogsChase(s, ev) {
+  for (const c of freeInside(s)) {
+    const p = hostilePet(s, c.where, c);
+    if (!p || (c.dealt ?? []).includes(p.key) || c.arrivedSpent === s.roundSerial) continue;
+    chaseBack(s, c, p, ev);
+  }
+}
+
+/** The pet chases the cat back the way it came (else the first open way it fits). MUTATES s. */
+export function chaseBack(s, c, p, ev) {
+  const open = waysFrom(s, c.where).filter(x => x.way.open && fits(x.way.size, { body: c.body }));
+  const away = open.find(x => x.to === c.cameFrom) ?? open[0];
+  if (!away) { ev.push({ type: "chased", pet: p.key, cat: c.id, text: `${p.name} won't let ${c.name} by.` }); return false; }
+  if (c.carrying) { dropPrize(s); ev.push({ type: "dropped", cat: c.id, text: `${c.name} drops the ${s.prize.name}.` }); }
+  Object.assign(c, { cameFrom: c.where, where: away.to, hidden: false, riding: null });
+  ev.push({ type: "chased", pet: p.key, cat: c.id, text: `${p.name} chases ${c.name} back into the ${roomName(s, away.to).toLowerCase()}!` });
+  return true;
 }
 
 /** Ch 9 "Shut in": the cat goes in the Den and its door is shut while a cat is in it. MUTATES s. */

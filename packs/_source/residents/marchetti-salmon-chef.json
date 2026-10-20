@@ -13,11 +13,11 @@
       "headphones": false
     },
     "routine": {
-      "r1": "stay",
-      "r2": "stay",
-      "r3": "stay",
-      "r4": "stay",
-      "r5": "stay",
+      "r1": "kitchen",
+      "r2": "kitchen",
+      "r3": "kitchen",
+      "r4": "kitchen",
+      "r5": "kitchen",
       "r6": "hall"
     },
     "house": "marchetti-salmon",

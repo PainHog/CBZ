@@ -13,8 +13,12 @@ export function metersOf(state) {
   return { broom: f.broom, cuddle: f.cuddle, patience: f.patience };
 }
 
-/** Post a card for every Shoo!/Scooped! in these events, and fire HOOKS.moodTriggered. */
+/** Post a card for every Shoo!/Scooped! in these events, and fire HOOKS.moodTriggered; ask the Storyteller to pick when needed. */
 export async function postMoodCards(events = [], state = null) {
+  for (const e of events.filter(x => x.type === "pickTarget")) {
+    await postEventCard({ kind: CARD.moodPick, robberyId: state?.id ?? null, side: e.side, human: e.human, candidates: e.cats },
+      { title: e.side === "broom" ? "Broom is full" : "Cuddle is full", subtitle: "The Storyteller's pick", lines: [e.text] }, { whisperGM: true });
+  }
   for (const e of events.filter(x => x.type === "shoo" || x.type === "scooped")) {
     const after = events.slice(events.indexOf(e) + 1).find(x => x.type === "patience");
     await postEventCard({ kind: CARD.mood, robberyId: state?.id ?? null, side: e.type === "shoo" ? "broom" : "cuddle", catId: e.cat, human: e.human },

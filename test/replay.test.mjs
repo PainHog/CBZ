@@ -1,6 +1,6 @@
 /**
  * A whole robbery at The Chicken at Number 12, replayed through the pure logic
- * with fixed dice (AUTOMATION.md §9), under core rules v0.6: every roll is built
+ * with fixed dice (AUTOMATION.md §9), under core rules v0.7: every roll is built
  * with the roll plan from the robbery state (approach, Knack, help, Difficulty,
  * pet, Attention), read from scripted faces, and applied as a final roll card
  * would be; the house's turns use scripted d6s.
@@ -27,11 +27,11 @@ function rollWith(s, id, optionId, approach, faces, { helpers = null, cattitudeD
   return applyRoll(s, { eventId: `r${++ev}`, catId: id, optionId, approach, result, seen: ctx.seenBy.length > 0, seenBy: ctx.seenBy, kid: ctx.kid, helpers: help });
 }
 
-test("a whole robbery at Number 12 (v0.6) ends in a Clean Getaway, with every rule applied on the way", () => {
+test("a whole robbery at Number 12 (v0.7) ends in a Clean Getaway, with every rule applied on the way", () => {
   const log = [];
   const keep = r => { log.push(...r.events.map(e => e.text)); return r.state; };
   let s = robbery("number-12");
-  assert.deepEqual(s.clock, { goneAt: 8, lightsOut: 10 });
+  assert.deepEqual(s.clock, { goneAt: 9, lightsOut: 11 });
 
   // ---- Round 1: Mr Pell comes in with the chicken; the gang gets in three ways.
   s = keep(beginRound(s));
@@ -85,24 +85,29 @@ test("a whole robbery at Number 12 (v0.6) ends in a Clean Getaway, with every ru
   assert.equal(human(s, "pell").room, "utility");
   assert.equal(moodNow(s).broom, 1, "nobody beside the chicken at the end of the house's turn");
 
-  // ---- Round 4: Biscuit hauls it into the utility room under Mr Pell's nose; Velvet and Tilly leave.
+  // ---- Round 4: Velvet and Tilly slip out; Biscuit waits with the chicken while Mr Pell is in the utility room.
   s = keep(beginRound(s));
-  s = keep(rollWith(s, "biscuit", "move:utility", "savage", [5, 2, 1], { expectDice: 3 })); // hauling a Medium prize: always a roll
-  assert.equal(s.prize.room, "utility");
-  assert.equal(moodNow(s).broom, 2, "a seen Scrape");
-  s = keep(doAction(s, "velvet", "exit:flap"));
+  s = keep(doAction(s, "velvet", "exit:flap")); // going out through an entrance with no roll: free in view
   s = keep(rollWith(s, "tilly", "exit:window", "sneaky", [6, 4], { expectDice: 2 }));
-  s = keep(endRound(s, { d6: dice() })); // Mr Pell answers the Scrape in the kitchen — and finds the chicken gone
-  assert.equal(human(s, "pell").room, "kitchen");
-  assert.equal(human(s, "pell").searching, true, "where the Clock put it: Finding it");
-  assert.equal(moodNow(s).broom, 3);
-  assert.equal(pet(s, "pudding").mode, "awake", "Pudding is back after three rounds");
+  s = keep(endRound(s, { d6: dice(5) })); // the flap's clack is in Mr Pell's own room; his routine takes him to the living room
+  assert.equal(human(s, "pell").room, "living");
+  assert.equal(human(s, "pell").searching, false, "nobody beside the chicken or where the Clock put it");
+  assert.equal(pet(s, "pudding").mode, "awake", "Pudding is back after three rounds, counting the first");
 
-  // ---- Round 5: out through the flap — a haul, unseen.
+  // ---- Round 5: hauling it out of Pudding's kitchen counts as leaving it.
+  s = keep(beginRound(s));
+  assert.equal(findOption(s, "biscuit", "move:utility").disabled, null);
+  s = keep(rollWith(s, "biscuit", "move:utility", "savage", [5, 2, 1], { expectDice: 3 })); // a Medium prize: a roll, seen or not
+  assert.equal(s.prize.room, "utility");
+  assert.deepEqual(s.noise.map(x => x.room), ["utility"], "a haul's noise is in the room it ends up in");
+  assert.equal(moodNow(s).broom, 1, "nobody saw it");
+  s = keep(endRound(s, { d6: dice(1, 1) })); // Pudding and Mr Pell stay put; the living room is three rooms from the noise
+
+  // ---- Round 6: out through the flap.
   s = keep(beginRound(s));
   s = keep(rollWith(s, "biscuit", "exit:flap", "savage", [6, 2, 2], { expectDice: 3 }));
   assert.equal(s.prize.out, true);
-  const end = endRound(s, { d6: dice(1) }); // Pudding stays put; Mr Pell answers the flap
+  const end = endRound(s, { d6: dice(1, 1) });
   s = keep(end);
   assert.deepEqual([end.end.due, end.end.reason], [true, "allOut"]);
   const fin = finishRobbery(s, end.end.reason);
@@ -110,7 +115,7 @@ test("a whole robbery at Number 12 (v0.6) ends in a Clean Getaway, with every ru
   assert.equal(fin.outcome.result, "clean");
   assert.equal(fin.outcome.label, "Clean Getaway");
   const f = moodNow(fin.state);
-  assert.deepEqual([f.broom, f.cuddle, f.patience], [3, 3, 4]);
+  assert.deepEqual([f.broom, f.cuddle, f.patience], [1, 3, 4]);
   assert.match(log.join("\n"), /Clean Getaway! Nobody was left behind/);
   assert.equal(fin.state.log.length, log.length + 1, "the robbery log has every event (plus the start line)");
 });

@@ -10,7 +10,7 @@
  *   out, gone, script, by }
  */
 import { CATB } from "../config.mjs";
-import { roomName, humanByKey } from "./residents.mjs";
+import { roomName, humanByKey, freeInside } from "./residents.mjs";
 
 const R = CATB.rules;
 
@@ -126,7 +126,8 @@ export function prizeClock(s) {
         by.staysRound = s.round;
         if (!by.searching) {
           by.searching = true;
-          mood.push({ side: "broom", steps: 1, cause: `${by.name} comes for the ${z.name} and finds it gone`, kind: "discovery", seenBy: [by.key] });
+          const inSight = freeInside(s).filter(c => c.where === by.room && !c.hidden).map(c => c.id);
+          mood.push({ side: "broom", steps: 1, cause: `${by.name} comes for the ${z.name} and finds it gone`, kind: "discovery", seenBy: [by.key], candidates: inSight });
           events.push({ type: "ownerFindsItGone", human: by.key, text: `${by.name} goes to fetch the ${z.name} from the ${roomName(s, z.spotRoom).toLowerCase()} and finds it gone: +1 Broom, and starts Searching.` });
         } else events.push({ type: "ownerFindsItGone", human: by.key, text: `${by.name} goes to the ${roomName(s, z.spotRoom).toLowerCase()} for the ${z.name}: still gone.` });
       }

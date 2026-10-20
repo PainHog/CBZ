@@ -187,11 +187,13 @@ test("going out through an entrance with no roll can be the Move or the Action; 
 
 test("simple things are free unseen and a roll in view; a hidden cat that acts comes out and is seen", () => {
   let s = kitchen12({ cats: { biscuit: "kitchen", mags: { where: "kitchen", status: "free", hidden: true } } });
-  assert.equal(opt(s, "biscuit", "eat").roll, null);
-  let r = doAction(s, "biscuit", "eat");
+  assert.deepEqual(opt(s, "biscuit", "eat").roll.options, [["sneaky", 0, "food"], ["savage", 0, "food"]], "v0.7: eating is always a roll");
+  assert.throws(() => doAction(s, "biscuit", "eat"), /needs a roll/);
+  let r = roll(s, "biscuit", "eat", "savage", "scrape");
   assert.deepEqual([r.state.prize.portionsLeft, r.state.prize.eaten], [4, 1]);
+  assert.equal(opt(s, "biscuit", "take").roll, null, "picking it up unseen is a simple thing");
   s = arrange(s, { humans: { pell: "kitchen" } });
-  assert.deepEqual(opt(s, "biscuit", "eat").roll.options, [["sneaky", 0, "food"], ["savage", 0, "food"]]);
+  assert.ok(opt(s, "biscuit", "take").roll, "…a roll in view");
   assert.deepEqual(rollContext(s, "mags", "eat").seenBy, ["pell"], "hidden, but eating brings it out");
   assert.deepEqual(opt(s, "biscuit", "hide").roll.options, [["sneaky", 0, "hide"]]);
   r = roll(s, "mags", "free", "sneaky", "clean");
@@ -210,7 +212,7 @@ test("distract: a Sweet roll at a watching human; each earlier distraction takes
   const r = roll(s, "velvet", "distract:pell", "sweet", "clean");
   assert.equal(human(r.state, "pell").distractedRound, 3);
   assert.equal(human(r.state, "pell").distractions, 3);
-  assert.equal(opt(r.state, "biscuit", "eat").roll, null, "a Distracted human sees nobody");
+  assert.equal(opt(r.state, "biscuit", "hide").roll, null, "a Distracted human sees nobody");
   s = arrange(s, { cats: { biscuit: { where: "kitchen", status: "free", carrying: true } } });
   s.prize.carriers = ["biscuit"];
   assert.match(opt(s, "biscuit", "distract:pell").disabled, /mouth full/);

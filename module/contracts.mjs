@@ -40,6 +40,7 @@ export const CARD = Object.freeze({
   round: "round",           // a round begins: the Prize Clock
   houseTurn: "houseTurn",   // the house's turn: pets, noise, routines, discovery, holders
   mood: "mood",             // Shoo! / Scooped!
+  moodPick: "moodPick",     // whispered to the Storyteller: a meter filled with no roll — which cat in sight gets it
   robbery: "robbery",       // a robbery starts
   outcome: "outcome"        // Clean Getaway / Messy / Busted, with the campaign buttons
 });

@@ -16,7 +16,7 @@
  *
  * Entry kinds:
  *   roll       { approach, result, seen, kid, pushedWithMood }      → moodDelta
- *   step       { side, steps }   temptation / mess / discovery / owner finds it gone / manual
+ *   step       { side, steps, candidates? }   temptation / mess / discovery / spotted / owner finds it gone / manual
  *   trigger    { side, target }  Shoo! or Scooped!: that meter empties, Patience −1 (min 2)
  *   set        { broom?, cuddle?, patience? }  the GM sets a value outright
  * Every entry: { id, eventId, seq, round, kind, cause, catId?, seenBy?, pending?, rejected? }.
@@ -116,9 +116,11 @@ export function rollEntry(card, { round = 0, pending = false } = {}) {
 }
 
 /** A fixed step (temptation, mess, discovery, owner finds it gone, manual ±). */
-export function stepEntry({ side, steps, cause, catId = null, seenBy = [], eventId = null, round = 0, kind = "step", pending = false }) {
+export function stepEntry({ side, steps, cause, catId = null, candidates = null, seenBy = [], eventId = null, round = 0, kind = "step", pending = false }) {
   if (!SIDES.includes(side)) throw new Error(`stepEntry: bad side ${side}`);
-  return { kind, side, steps, cause, catId, seenBy: [...seenBy], eventId, round, pending };
+  const e = { kind, side, steps, cause, catId, seenBy: [...seenBy], eventId, round, pending };
+  if (candidates) e.candidates = [...candidates]; // v0.7: the cats the human can see, for a meter filled with no roll
+  return e;
 }
 
 /** Remove the latest entry (the GM's undo). Returns { ledger, removed }. */

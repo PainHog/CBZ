@@ -63,11 +63,14 @@ export function nearestEntrances(state, room) {
   return out;
 }
 
-/** One room toward the nearest of `targets` through open ways (a pet's "sniff"). Null when there's none. */
-export function stepToward(state, from, targets) {
+/**
+ * One room toward the nearest of `targets` (a pet's "sniff"). Pets pass closed doors (v0.7: `doors: true`);
+ * otherwise only open ways count. Ties: the first in house order. Null when there's none.
+ */
+export function stepToward(state, from, targets, { doors = false } = {}) {
   let bd = Infinity, to = null;
   for (const { to: o, way } of waysFrom(state, from)) {
-    if (!way.open) continue;
+    if (!way.open && !doors) continue;
     for (const t of targets) { const d = dist(state, o, t); if (d < bd) { bd = d; to = o; } }
   }
   return to;

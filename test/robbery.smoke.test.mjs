@@ -335,3 +335,28 @@ test("the sheet's Roll buttons: what am I doing (in a robbery), or a free roll (
   assert.equal(api().tracker, app);
   assert.deepEqual(log.errors, []);
 });
+
+test("v0.7: a meter filled with no roll — the Storyteller picks the cat from a whispered card", async () => {
+  const a = await makeCat("Alley Pearl", p1, { approaches: { sneaky: 3, sweet: 2, savage: 1, streetwise: 1 }, instinct1: "curious", instinct2: "hunter", body: "lean" });
+  const b = await makeCat("Lamppost Sully", p2, { approaches: { savage: 3, sneaky: 2, sweet: 1, streetwise: 1 }, instinct1: "scrapper", instinct2: "climber", body: "chonky" });
+  await asUser(gmU, () => api().robbery.startRobbery("number-12", { actorIds: [a.id, b.id] }));
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  for (const c of [a, b]) await trackerAction(gmU, "place", { cat: c.id, to: "living" });
+  await asUser(gmU, () => api().robbery.overrides.patch("pell", { room: "living", searching: true }));
+  for (let i = 0; i < 4; i++) await trackerAction(gmU, "mood", { side: "broom", steps: "1" });
+  assert.deepEqual(meters(), [4, 0, 5], "two cats: Patience 5");
+  await houseTurn([1, 1, 1, 1, 1, 1, 1]); // Mr Pell is Searching and sees both cats: Broom +1 fills it
+  assert.ok(state().pendingTrigger, "the meter waits for the Storyteller's pick");
+  const pick = lastCard("moodPick");
+  assert.deepEqual(pick.whisper, [gmU.id]);
+  assert.deepEqual(buttonLabels(pick, p1), []);
+  assert.deepEqual(buttonLabels(pick, gmU), ["Mr Pell chases out Alley Pearl", "Mr Pell chases out Lamppost Sully"]);
+  await click(pick, gmU, "Mr Pell chases out Lamppost Sully");
+  assert.equal(catOf(b.id).status, "outside");
+  assert.equal(catOf(a.id).status, "free");
+  assert.equal(state().pendingTrigger, null);
+  assert.match(lastCard("mood").content, /Shoo! Mr Pell grabs the broom and chases Lamppost Sully out/);
+  assert.deepEqual(meters(), [0, 0, 4]);
+  assert.deepEqual(log.errors, []);
+});

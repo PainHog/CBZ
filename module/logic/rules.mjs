@@ -9,9 +9,9 @@
  * plumbing around them, so the rules are unit-tested with `node --test`.
  *
  * Each function cites the rulebook passage it implements (book/src/chapters/,
- * summarised in docs/CORE-RULES.md v0.6). The simulator keeps its own copy of
+ * summarised in docs/CORE-RULES.md v0.7). The simulator keeps its own copy of
  * these rules (sim/rules.mjs); test/parity.test.mjs checks the two agree under
- * the adopted package (P8).
+ * the adopted package (P9).
  */
 import { CATB } from "../config.mjs";
 
@@ -139,7 +139,7 @@ export const canPush = faces => pushIndices(faces).length > 0;
  * - a kid who saw it doubles its Cuddle steps (once);
  * - a Push paid with the Mood adds 1 step to that roll's meter, seen or not;
  * - one roll, one change.
- * `mood` is the meters before this roll. Mirrors sim/rules.mjs moodDelta (P8).
+ * `mood` is the meters before this roll. Mirrors sim/rules.mjs moodDelta (P9).
  */
 export function moodDelta({ result, approach, seen, mood = { broom: 0, cuddle: 0 }, pushedWithMood = false, kidDoubles = false }) {
   const lean = fillsMeter(approach);
