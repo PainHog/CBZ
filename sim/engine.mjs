@@ -49,7 +49,7 @@ class Robbery {
       ...pz, spotRoom: null, spotSteps: [], stepsLeft: 0, room: this.humans.find(hu => hu.key === first.by).start,
       withHuman: first.by, down: false,
       // food portions scale with the gang: perCat × cats + plus (CORE-RULES "The prize")
-      carriers: [], portionsLeft: pz.kind === "delicious" ? Math.max(1, Math.round(((pz.perCat ?? 0) * gang.length + (pz.plus ?? pz.portions ?? 0)) * p.portionScale)) : 0,
+      carriers: [], portionsLeft: pz.kind === "delicious" ? Math.max(1, Math.round(((pz.perCat ?? 0) * Math.min(gang.length, p.portionCats ?? 99) + (pz.plus ?? pz.portions ?? 0)) * p.portionScale)) : 0,
       eaten: 0, out: false, gone: false,
     };
     this.prize.portions = this.prize.portionsLeft;

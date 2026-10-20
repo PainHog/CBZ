@@ -39,7 +39,7 @@ function sheet(h, label) {
   let s = `<aside class="box list house-sheet"><h4>At a glance</h4>
   <p class="statline"><strong>Difficulty</strong> ${label} <span class="sep">·</span> <strong>Patience</strong> ${h.patience} <span class="sep">·</span> <strong>The prize</strong> ${esc(z.name)} (${PSIZE[z.size]}${portions ? `, ${portions}` : ""}${z.haulDiff ? `; hauling it is ${z.haulDiff >= 2 ? "Hard" : "Tricky"}` : ""}) <span class="sep">·</span> <strong>Gone</strong> at the start of round ${z.goneAt} <span class="sep">·</span> <strong>Den</strong> ${roomName(h, h.den)}</p>
   <p class="statline"><strong>Who lives here</strong> ${h.humans.map(x => esc(x.name)).concat(h.pets.map(x => esc(x.name))).join(", ")}</p>
-  <p class="statline"><strong>Three cats</strong> Patience ${h.patience + 1}, gone at the start of round ${z.goneAt + 2}, 3 Cattitude each <span class="sep">·</span> <strong>Five cats</strong> Patience ${Math.max(2, h.patience - 1)}, gone at the start of round ${z.goneAt - 1}</p>
+  <p class="statline"><strong>Three cats</strong> Patience ${h.patience + 1}, gone at the start of round ${z.goneAt + 2}, 3 Cattitude each <span class="sep">·</span> <strong>Five cats</strong> Patience ${Math.max(2, h.patience - 1)}</p>
 </aside>`;
   return s;
 }

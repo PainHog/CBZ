@@ -80,7 +80,7 @@ export const PARAMS = {
     doc: "Shifts by gang size: scale3, scale3Cat, scale5 (v0.5 was 3 cats: Patience +1, Clock +1; 5 cats: Clock −1)." },
   scale3: { def: [1, 2], alt: [[1, 1], [2, 2]], title: "3 cats: [Patience, Prize Clock] shift", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
   scale3Cat: { def: 1, alt: [0, 2], title: "3 cats: extra starting Cattitude each", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
-  scale5: { def: [-1, -1], alt: [[0, -1], [-1, 0]], title: "5 cats: [Patience, Prize Clock] shift", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
+  scale5: { def: [-1, 0], alt: [[-1, -1], [0, -1]], title: "5 cats: [Patience, Prize Clock] shift", ref: "CORE-RULES v0.8 Ending", pkg: true, doc: "v0.8: Patience −1 only (the Clock shift put five cats 7 points behind at Hard)." },
   gangSize: { def: 4, alt: [3, 5], title: "Cats in the gang", ref: "CORE-RULES table (3–5 players)", doc: "" },
   foodPolicy: { def: "eat", alt: ["smart", "carry"], title: "Eat food on the spot or carry it out", ref: "policy",
     doc: "eat: always eat where it is. carry: carry it out whenever the cats there can. smart: carry while more than 2 portions are left and a way out fits it." },
@@ -129,7 +129,7 @@ export const PACKAGES = {
   P9: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
   P10: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
-    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0] },
 };
 export const ADOPTED = "P10";
 

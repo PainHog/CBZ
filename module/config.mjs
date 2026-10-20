@@ -121,8 +121,8 @@ CATB.rules = Object.freeze({
   petHideRounds: 3,      // Ch 10: a driven-off pet hides for 3 rounds, counting this one
   dozeOn: 2,             // Ch 10: dozes on a 1–2
   // Ch 8 "Gang size": the houses are written for four cats. 3 cats: Patience +1, the prize 2 rounds
-  // later, 3 starting Cattitude each; 5 cats: Patience −1, the prize 1 round sooner.
-  gangScaling: { 3: { patience: 1, clock: 2, cattitude: 1 }, 4: { patience: 0, clock: 0, cattitude: 0 }, 5: { patience: -1, clock: -1, cattitude: 0 } },
+  // later, 3 starting Cattitude each; 5 cats: Patience −1 (v0.8 final: the Clock no longer moves for five).
+  gangScaling: { 3: { patience: 1, clock: 2, cattitude: 1 }, 4: { patience: 0, clock: 0, cattitude: 0 }, 5: { patience: -1, clock: 0, cattitude: 0 } },
   // Ch 9 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
   denDoor: [["streetwise", 1, "open"], ["savage", 2]],   // a friend in the next room
   denInside: [["streetwise", 2, "open"]],               // the cat on its own

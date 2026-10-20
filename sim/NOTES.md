@@ -16,7 +16,7 @@
 - **Haul (v0.6):** the lead carrier rolls Sneaky or Savage, whichever has the better chance; the other carriers help.
 - **Long shots:** a cat doesn't try a roll under 45% if a better cat is around, or under 30% at all, unless time is short.
 - **Pets:** confront only with at least a 40% chance; otherwise leave the room.
-- **Eat or carry:** food is always eaten on the spot (`foodPolicy: eat`). v0.7 made every bite a roll, so carrying food out is often fewer rolls at the table; a `smart` policy (carry while more than 2 portions are left and nobody watches) was tried, but the simulated carriers stall behind closed doors under a Searcher's eye and score far worse than playtesters do, so it stays off. This is the main reason the Clean share of Hard wins reads low.
+- **Eat or carry:** food is always eaten on the spot (`foodPolicy: eat`). v0.7 made every bite a roll, so carrying food out is often fewer rolls at the table; a `smart` policy (carry while more than 2 portions are left and nobody watches) was tried, but the simulated carriers stall behind closed doors under a Searcher's eye and score far worse than playtesters do, so it stays off for the headline numbers. This is the main reason the Clean share of Hard wins reads low (15%); with `smart` it is 34–35% at both Hard houses, for 11–16 points of win rate (sim/BALANCE.md).
 - **Push:** a Flop on an important roll, paid with Cattitude if any, else with the Mood only if no meter could fill.
 - **Cattitude die:** spent on an important roll whenever the cat has 2+.
 - **Resist a temptation:** when giving in would drop the prize, fill a meter, or happen at the prize with 3+ Cattitude.

@@ -309,18 +309,19 @@ test("10. the Foundry rulings: holders, a held cat's own Broom, dozing, chased b
   assert.deepEqual(rollContext(s, "biscuit", "step").options.map(o => [o.approach, o.knackFrom]), [["streetwise", ["Foodie"]], ["savage", ["Foodie"]]]);
 });
 
-test("11. five cats: only the Gone row of the Prize Clock moves (and Lights Out with it)", () => {
+test("11. five cats: Patience −1 and the Prize Clock unchanged (v0.8 final, REVIEW #103)", () => {
   const five = ["tilly", "biscuit", "velvet", "mags", "pip"];
   for (const key of ["number-12", "wendell-mouse", "birthday-cake", "okafor-box", "marchetti-salmon"]) {
     const four = robbery(key);
     const s = robbery(key, five);
-    assert.equal(s.clock.goneAt, four.clock.goneAt - 1, `${key}: gone a round sooner`);
+    assert.equal(s.clock.goneAt, four.clock.goneAt, `${key}: the Clock doesn't move`);
+    assert.equal(s.patience0, Math.max(2, four.patience0 - 1), `${key}: Patience −1`);
     assert.equal(s.clock.lightsOut, s.clock.goneAt + 2, `${key}: Lights Out with it`);
     assert.deepEqual(s.prize.script.map(x => x.round), four.prize.script.map(x => x.round), `${key}: the put-downs don't move`);
   }
-  // Wendell with five: the mouse still moves to the living room at the start of round 4, and is gone at the start of 8
+  // Wendell with five: the mouse still moves to the living room at the start of round 4, and is gone at the start of 9
   let w = robbery("wendell-mouse", five);
   for (let i = 0; i < 4; i++) w = beginRound(w).state;
   assert.equal(w.prize.spotRoom, "living");
-  assert.equal(w.clock.goneAt, 8);
+  assert.equal(w.clock.goneAt, 9);
 });

@@ -20,7 +20,7 @@ export function portionsFor(prize, gangSize) {
   return Math.max(1, Math.round((prize.perCat ?? 0) * gangSize + (prize.plus ?? 0)));
 }
 
-/** Ch 8 "Gang size": 3 cats — Patience +1 and the prize goes 1 round later; 5 — it goes 1 round sooner. */
+/** Ch 11 "Gang size": 3 cats — Patience +1, the prize 2 rounds later, 3 Cattitude each; 5 — Patience −1. */
 export function gangScaling(gangSize) {
   const t = R.gangScaling;
   if (gangSize <= 3) return t[3];

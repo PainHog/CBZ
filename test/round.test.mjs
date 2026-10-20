@@ -32,7 +32,7 @@ test("a new robbery: cats outside, Patience and Clock scaled for gang size, port
   assert.equal(s3.prize.portions, 4);
   const s5 = robbery("number-12", ["tilly", "biscuit", "velvet", "mags", "pip"]);
   assert.equal(s5.patience0, 3, "5 cats: Patience −1");
-  assert.deepEqual(s5.clock, { goneAt: 9, lightsOut: 11 }, "…and 1 round sooner");
+  assert.deepEqual(s5.clock, { goneAt: 10, lightsOut: 12 }, "…and the Clock unchanged");
   assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet"]).patience0, 8);
   assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet", "mags", "pip"]).patience0, 6);
   assert.equal(robbery("birthday-cake").prize.portions, 8, "a cake is 2 per cat");
