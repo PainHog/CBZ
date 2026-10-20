@@ -1,4 +1,4 @@
-# Simulator notes — policies, abstractions and gaps (core rules v0.7)
+# Simulator notes — policies, abstractions and gaps (core rules v0.8)
 
 ## Abstractions
 - **Rooms are nodes.** No grid inside a room; a cat is in a room or outside. Humans walk to any room in one round.
@@ -10,7 +10,7 @@
 ## Gang policies (players' choices, not rules)
 - **Entrance:** best chance of getting in, minus 0.15 per room from the prize; avoid an angry dog.
 - **Distract:** each round, if the prize room (or the carriers' next room) has watchers, the best Sweet cat (2+) in or next to that room distracts one of them, unless that would fill Cuddle.
-- **Lure:** if one watcher can't be distracted, a free cat in a neighbouring empty room knocks something over to pull them away.
+- **Lure:** if one watcher can't be distracted, a free cat in a neighbouring empty room knocks something over to pull them away. The policy lures only from a neighbouring room, one watcher at a time, and never uses a noisy entrance, a parrot or a dog's bark as a lure; four playtests found such lures to be the sharpest line at the table, so real players beat the simulated gang wherever a free noise sits next to the prize.
 - **Wait:** while time allows, cats don't act in view of a watcher when the Broom meter is close to full (`boldness: mixed`). Carriers wait for the next room to clear until 3 rounds before Lights Out — but not when a Searching human is watching them (v0.6: waiting there costs +1 Broom a round).
 - **Hide (v0.6):** a cat that ends the cats' turn with its Action unused, not carrying and not seen, hides (a free simple Action). Searching humans then walk past it and "spotted" doesn't fire.
 - **Haul (v0.6):** the lead carrier rolls Sneaky or Savage, whichever has the better chance; the other carriers help.

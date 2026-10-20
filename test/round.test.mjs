@@ -17,7 +17,7 @@ import { robbery, dice, arrange, cat, human, pet, texts } from "./fixtures.mjs";
 test("a new robbery: cats outside, Patience and Clock scaled for gang size, portions per cat", () => {
   const s4 = robbery("number-12");
   assert.equal(s4.patience0, 4);
-  assert.deepEqual(s4.clock, { goneAt: 9, lightsOut: 11 });
+  assert.deepEqual(s4.clock, { goneAt: 10, lightsOut: 12 });
   assert.equal(s4.cattitudeStart, 2);
   assert.equal(s4.prize.portions, 5, "1 per cat + 1");
   assert.ok(s4.cats.every(c => c.status === "outside" && c.where === "outside"));
@@ -27,12 +27,12 @@ test("a new robbery: cats outside, Patience and Clock scaled for gang size, port
   assert.equal(s4.ways.find(w => w.id === "kitchen~utility").open, false, "the utility door is shut");
   const s3 = robbery("number-12", ["tilly", "biscuit", "velvet"]);
   assert.equal(s3.patience0, 5, "3 cats: Patience +1");
-  assert.deepEqual(s3.clock, { goneAt: 11, lightsOut: 13 }, "…the prize goes 2 rounds later");
+  assert.deepEqual(s3.clock, { goneAt: 12, lightsOut: 14 }, "…the prize goes 2 rounds later");
   assert.equal(s3.cattitudeStart, 3, "…and each cat starts with 3 Cattitude");
   assert.equal(s3.prize.portions, 4);
   const s5 = robbery("number-12", ["tilly", "biscuit", "velvet", "mags", "pip"]);
   assert.equal(s5.patience0, 3, "5 cats: Patience −1");
-  assert.deepEqual(s5.clock, { goneAt: 8, lightsOut: 10 }, "…and 1 round sooner");
+  assert.deepEqual(s5.clock, { goneAt: 9, lightsOut: 11 }, "…and 1 round sooner");
   assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet"]).patience0, 8);
   assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet", "mags", "pip"]).patience0, 6);
   assert.equal(robbery("birthday-cake").prize.portions, 8, "a cake is 2 per cat");
@@ -63,7 +63,7 @@ test("the Prize Clock puts the prize down at the start of its round; the human s
 });
 
 test("the prize is gone at the start of its Clock's last round — unless the gang is carrying it", () => {
-  let s = arrange(robbery("number-12"), { round: 8 });
+  let s = arrange(robbery("number-12"), { round: 9 });
   s.prize.withHuman = null;
   let r = beginRound(s);
   assert.equal(r.state.prize.gone, true);
@@ -469,7 +469,7 @@ test("holders roll a d6: keep, the Den (its door shut), or outside; driven-off p
 /* ------------------------------------------------------------ the end -- */
 
 test("the end: Lights Out at the end of the second round after the prize goes; or when no free cat is inside", () => {
-  let s = arrange(beginRound(robbery("number-12")).state, { round: 11, humans: { pell: "loo" }, pets: { pudding: { mode: "hiding", until: 99 } } });
+  let s = arrange(beginRound(robbery("number-12")).state, { round: 12, humans: { pell: "loo" }, pets: { pudding: { mode: "hiding", until: 99 } } });
   let r = endRound(s, { d6: dice(1) });
   assert.deepEqual([r.end.due, r.end.reason], [true, "lightsOut"]);
   s = arrange(s, { round: 4 });

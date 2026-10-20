@@ -47,7 +47,7 @@ export const HOUSES = [
       roam: ["kitchen", "hall", "living", "utility"], routine: ["stay", "stay", "living", "kitchen", "hall", "sniff"] }],
     prize: {
       kind: "delicious", name: "rotisserie chicken", size: "medium", perCat: 1, plus: 1,
-      script: [{ round: 2, room: "kitchen", steps: [climb, wrapped], by: "pell" }], goneAt: 9,
+      script: [{ round: 2, room: "kitchen", steps: [climb, wrapped], by: "pell" }], goneAt: 10,
     },
   },
   {
@@ -134,7 +134,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 5,
+    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 6,
     map: {
       floors: [{ name: "Ground floor", rooms: { dining: [0, 0, 3, 3], kitchen: [3, 0, 3, 2], utility: [6, 0, 2, 2], loo: [0, 3, 3, 2], hall: [3, 2, 2, 3], living: [5, 2, 3, 3] } }],
       entrances: { front: "bottom", patio: "left", utilwin: "top" },
@@ -157,7 +157,7 @@ export const HOUSES = [
     den: "loo",
     humans: [
       { key: "dad", name: "Dad", kind: "grownup", attention: 1, start: "kitchen",
-        routine: ["stay", "stay", "stay", "dining", "hall", "living"] },
+        routine: ["stay", "kitchen", "kitchen", "dining", "dining", "living"] },
       { key: "rosalind", name: "Aunt Rosalind", kind: "grownup", attention: 2, start: "dining",
         routine: ["stay", "stay", "stay", "stay", "kitchen", "living"] },
       { key: "mia", name: "Mia", kind: "kid", attention: 1, start: "living",
@@ -167,7 +167,7 @@ export const HOUSES = [
     ],
     pets: [{ key: "captain", name: "Captain the parrot", kind: "parrot", start: "dining" }],
     prize: {
-      kind: "delicious", name: "birthday cake", size: "medium", perCat: 2, plus: 0,
+      kind: "delicious", name: "birthday cake", size: "medium", perCat: 2, plus: 0, haulDiff: 1, // it wobbles: hauling it is Tricky
       script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "dad" }, { round: 5, room: "dining", steps: [climb], by: "dad" }], goneAt: 8,
     },
   },
@@ -211,7 +211,7 @@ export const HOUSES = [
     ],
     prize: {
       kind: "delicious", name: "whole salmon", size: "medium", perCat: 1, plus: 2,
-      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 7,
+      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 8,
     },
   },
 ];

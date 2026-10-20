@@ -1,6 +1,6 @@
-Now: Two final playtests of the finished rulebook (Grandpa Wendell's house with five cats, and the birthday cake)
-Next: A full read-through of the rulebook, then a report for Richard comparing the two versions
-Number: Design decisions made = 37
+Now: Teaching the online version the last rule changes, and a last check of the newest rules
+Next: A report for Richard on how this version turned out
+Number: Design decisions made = 38
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
@@ -42,7 +42,7 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Fix what they found: dragging a big prize is now a risk, and humans notice when it's been touched
 - [x] Two more playtests (the box house again, and the salmon house with three cats) and their fixes: eating the prize is a risk too, and a cat being cuddled no longer blinds the human holding it
 - [x] First full rulebook draft (all eighteen chapters, the sheets and the five houses)
-- [ ] Final playtest of the finished rulebook
+- [x] Final playtests of the finished rulebook (Grandpa Wendell's house with five cats, and the birthday cake) and their fixes: the human who puts the prize down now stays with it
 - [x] Pictures for the rulebook (cover, chapter pictures, maps, the gang, and little end-of-chapter drawings)
 - [x] Online version that runs the rules for the table (built and tested on a pretend table)
 - [ ] Richard tries the online version at a real table

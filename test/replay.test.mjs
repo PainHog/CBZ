@@ -31,7 +31,7 @@ test("a whole robbery at Number 12 (v0.7) ends in a Clean Getaway, with every ru
   const log = [];
   const keep = r => { log.push(...r.events.map(e => e.text)); return r.state; };
   let s = robbery("number-12");
-  assert.deepEqual(s.clock, { goneAt: 9, lightsOut: 11 });
+  assert.deepEqual(s.clock, { goneAt: 10, lightsOut: 12 });
 
   // ---- Round 1: Mr Pell comes in with the chicken; the gang gets in three ways.
   s = keep(beginRound(s));

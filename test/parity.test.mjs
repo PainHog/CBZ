@@ -1,6 +1,6 @@
 /**
  * Parity: the table's rules (module/logic/) and the simulator's (sim/) must
- * agree under the adopted package (sim/params.mjs ADOPTED, P9 = core rules v0.7), and the house
+ * agree under the adopted package (sim/params.mjs ADOPTED, P10 = core rules v0.8), and the house
  * catalog must be an exact copy of sim/houses.mjs (AUTOMATION.md §9).
  * module/ never imports from sim/; this test is the only bridge.
  */
@@ -16,8 +16,8 @@ import { CATB } from "../module/config.mjs";
 
 const p = makeParams();
 
-test("the simulator's defaults are the adopted package (so parity means P9, core rules v0.7)", () => {
-  assert.equal(ADOPTED, "P9");
+test("the simulator's defaults are the adopted package (so parity means P10, core rules v0.8)", () => {
+  assert.equal(ADOPTED, "P10");
   assert.equal(p.carrierRules, true, "v0.6: hauling, finding it, Searching for the prize");
   assert.equal(p.tableRules, true, "v0.7: holders see, eating is a roll, temptation rotates");
   assert.equal(p.resetTo, "calm", "a trigger empties its meter");

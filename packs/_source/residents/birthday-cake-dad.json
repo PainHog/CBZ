@@ -14,10 +14,10 @@
     },
     "routine": {
       "r1": "stay",
-      "r2": "stay",
-      "r3": "stay",
+      "r2": "kitchen",
+      "r3": "kitchen",
       "r4": "dining",
-      "r5": "hall",
+      "r5": "dining",
       "r6": "living"
     },
     "house": "birthday-cake",

@@ -22,7 +22,7 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 ## 2. Start the robbery
 
 1. GM: click the **cat** button on the token controls (left toolbar) to open the **Robbery Tracker**. *See:* "No robbery yet" and **Start a robbery**.
-2. GM: **Start a robbery** → house **The Chicken at Number 12**, tick the four cats → **Start**. *See:* a chat card "The Chicken at Number 12" with Patience 4, the chicken gone at the start of round 9, Lights Out at the end of round 11, and all four cats outside. Every cat's Cattitude is 2.
+2. GM: **Start a robbery** → house **The Chicken at Number 12**, tick the four cats → **Start**. *See:* a chat card "The Chicken at Number 12" with Patience 4, the chicken gone at the start of round 10, Lights Out at the end of round 12, and all four cats outside. Every cat's Cattitude is 2.
 3. Lena: open the tracker from the card's **Open the Robbery Tracker** button. *See:* the same house, read-only for the residents, with buttons only under Velvet and Tilly.
 
 ## 3. Round 1: getting in

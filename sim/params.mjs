@@ -47,6 +47,8 @@ export const PARAMS = {
     doc: "Moving a Medium/Large prize is always a roll; carriers can't hide; a human in the prize's room at the end of the House phase finds it disturbed (+1 Broom, Searching); Searching goes for the prize first; messes wait to be found; a driven-off dog hides 3 rounds counting this one; a failed pet roll chases the cat back." },
   tableRules: { def: true, alt: [false], title: "v0.7 fix round: holders see, eating is a roll, temptation rotates", ref: "CORE-RULES v0.7", pkg: true,
     doc: "A human holding a cat still sees their room; eating a portion is a roll every time (Sneaky quietly, Savage wolfing); the Storyteller never tempts the same cat two rounds running (was: never the same cat with the same thing twice); a haul's noise is in the room the prize ends up in; hauling out of a dog's room counts as leaving it, and a failed haul there is chased back and drops the prize; a Knocker's knack helps hauling." },
+  holdRules: { def: true, alt: [false], title: "v0.8 fix round: the Prize Clock's hold beats noise; any cat helps a haul; house haul difficulty", ref: "CORE-RULES v0.8", pkg: true,
+    doc: "The human the Prize Clock moves this round stays with the prize and answers no noise that round (three playtests won by a free round-1 lure); any cat in the room may help a haul (+1 die, its Action); a house may make hauling its prize Tricky (the cake)." },
   searchHold: { def: false, alt: [true], title: "A Searching human with the prize in their room ignores noise", ref: "playtest V6-02 (declined)", pkg: false,
     doc: "Tried for v0.7 and declined: Easy fell to 69% and Hard to 38% (sim/BALANCE.md)." },
   dogOnEntry: { def: true, alt: [false], title: "An awake dog confronts a cat as soon as it enters", ref: "CORE-RULES v0.5 Residents", pkg: true, doc: "" },
@@ -107,10 +109,11 @@ export const PRESETS = {
  * P6 = adopted for core rules v0.3/v0.4. P7 = core rules v0.5 (searching, the owner fetching the prize, dogs on entry,
  * reopening entrances). P8 = core rules v0.6 (hauling, finding it, Searching for the prize: the playtest fix round);
  * P9 = core rules v0.7 (holders still see, eating is a roll, temptation rotates: the third playtest round).
+ * P10 = core rules v0.8 (the Clock's hold beats noise, any cat helps a haul, the cake wobbles: the fourth round).
  * The defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, resetTo: "calm",
+  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
   scale3: [1, 1], scale3Cat: 0, scale5: [0, -1] }; // the v0.5 gang scaling (used once gangScaling is on)
 export const PACKAGES = {
   P1: { ...OFF },
@@ -125,8 +128,10 @@ export const PACKAGES = {
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
   P9: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
+  P10: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
 };
-export const ADOPTED = "P9";
+export const ADOPTED = "P10";
 
 export function makeParams(overrides = {}) {
   return { ...defaults(), ...overrides };

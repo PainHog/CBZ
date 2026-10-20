@@ -727,12 +727,16 @@ class Robbery {
   cr(k) { return this.p.carrierRules && !(this.p.crOff ?? "").split(",").includes(k); }
   /** One piece of the v0.7 fix round (sim/params.mjs tableRules; trOff switches pieces off for study). */
   tr(k) { return this.p.tableRules && !(this.p.trOff ?? "").split(",").includes(k); }
+  /** One piece of the v0.8 fix round (sim/params.mjs holdRules; hrOff switches pieces off for study). */
+  hr(k) { return this.p.holdRules && !(this.p.hrOff ?? "").split(",").includes(k); }
   /** The carriers' roll to move the prize (v0.6 "Carrying"): every carrier's Action; the others help. */
   haul(group, ws, to = null) {
     const c = group[0];
-    const helpers = group.length - 1;
-    for (const x of group) x.acted = true;
-    const diff = 0; // v0.6: no Difficulty; a Large prize is hard enough to lift (three cats)
+    // v0.8: any other cat in the room may help a haul (+1 die, its Action); only carriers move with the prize
+    const extra = this.hr("haulHelp") ? this.catsIn(c.loc).filter(x => !group.includes(x) && !x.acted && !x.tempted).slice(0, Math.max(0, 2 - (group.length - 1))) : [];
+    const helpers = group.length - 1 + extra.length;
+    for (const x of [...group, ...extra]) x.acted = true;
+    const diff = this.hr("haulDiff") ? (this.prize.haulDiff ?? 0) : 0; // plain, unless the house says (the cake wobbles: Tricky)
     const old = !this.p.carrierRules && ws.length ? Math.max(...ws.map(h => h.attention)) : 0; // v0.5 double-counted Attention
     const opt = this.bestOption(c, [["sneaky", diff + old], ["savage", diff]]);
     const res = this.roll(c, { approach: opt[0], diff: opt[1], helpers, seen: ws, important: true, why: "haul",
@@ -906,7 +910,8 @@ class Robbery {
     for (const room of rooms) {
       // the closest awake human within range who isn't already in that room; the Storyteller breaks ties
       const guarding = hu => this.p.searchHold && hu.searching && this.phase() === "get" && !this.prize.withHuman && this.prize.room === hu.room;
-      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !hu.busy && !answered.has(hu.key) && hu.room !== room && !guarding(hu))
+      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !hu.busy && !answered.has(hu.key) && hu.room !== room && !guarding(hu)
+        && !(this.hr("clockHold") && hu.staysUntil === this.round))
         .map(hu => ({ hu, d: this.dist(hu.room, room), t: this.rng.next() })).filter(x => x.d <= this.p.noiseRange).sort((a, b) => a.d - b.d || a.t - b.t);
       const takers = this.p.noiseAnswer === "all" ? cands : cands.slice(0, 1);
       for (const { hu } of takers) {

@@ -34,7 +34,7 @@ const DIST = join(BOOK, "dist");
 const BOOK_TITLE = "Cat Burglars";             // curly apostrophe, as in the chapters
 const BOOK_DESCRIPTION = "A tabletop roleplaying game of street cats, sticky paws and getting away with it";
 const AUTHOR = "Richard Moore";
-const VERSION = "0.7";
+const VERSION = "0.8";
 const FILE_STEM = "Cat_Burglars";        // → Cat_Burglars_v0.1.pdf
 const HTML_NAME = "cat-burglars.html";   // the self-contained print HTML (digital build only)
 // An ornament anchored in the top-left corner of the Table of Contents page

@@ -1,18 +1,16 @@
-# Cat Burglars — balance (core rules v0.7)
+# Cat Burglars — balance (core rules v0.8)
 
-**Adopted: package P9** (the defaults in `sim/params.mjs`; `docs/CORE-RULES.md` v0.7 describes it). The first tables run P8 (v0.6's rules) and P9 on today's houses; older studies follow.
+**Adopted: package P10** (the defaults in `sim/params.mjs`; `docs/CORE-RULES.md` v0.8 describes it). The first tables run P9 (v0.7's rules) and P10 on today's houses; older studies follow.
 
 ## Short version
-- **Gang of 4: Easy 89.4%, Standard 72.3%, Hard 56.1%** (targets ~90 / ~75 / 55–60). Easy and Hard on target; Standard 2.7 under.
-- **Gang-size parity within 6 points:** three cats 86.5 / 68.0 / 56.3, five cats 95.7 / 70.5 / 52.2.
-- **About 12 rolls a robbery** (10.4 under v0.6): eating a portion is now a roll every time, like hauling.
-- **What v0.7 changed** (two more playtests: the box house again, and the salmon house with three cats): a human holding a cat still sees their room; eating is a roll; the Storyteller never tempts the same cat two rounds running; a haul's noise is where the prize ends up, hauling out of a dog's room counts as leaving it, and a Knocker's knack helps; a cat that loiters in a dog's room is chased out; the chef's routine keeps her in her kitchen; the dog door at the Marchettis' is noisy; the robot vacuum there reaches the kitchen. Houses re-tuned (below).
-- **Tried and declined:** after a Shoo! or Scoop, the meter dropping only to half the Patience (Easy fell to 53%, Hard to 14%); Searching humans beside the prize ignoring noise (Easy 69%, Hard 38%). The box playtest's "free reset" (letting the spare cat take the broom) is kept as a sacrifice play: it costs Patience for good and shuts an entrance.
+- **Gang of 4: Easy 90.3%, Standard 75.3%, Hard 57.9%** (targets ~90 / ~75 / 55–60). All three on target.
+- **Gang-size parity within 7 points:** three cats 87.9 / 68.6 / 55.8, five cats 95.5 / 75.6 / 50.7.
+- **About 12 rolls a robbery**; Flops 15.5%, Purrfects 5.6%, temptations given in to 82%, 83% of cats spend at least half their Cattitude, a cat is Held or Shooed in 57% of Standard robberies, a cat is left behind in 3.5% of Easy and 15% of Hard robberies.
+- **What v0.8 changed** (playtests at Grandpa Wendell's with five cats, and the cake with the ready-made gang): the human who puts the prize down stays with it that round, deaf to noise; any cat in the room may help a haul; the cake wobbles (Tricky to haul); owners' routines visit the prize's room. Three of four recent playtests were won by a free round-1 lure that pulled the owner off the prize; the simulated gang under-uses lures, so the simulator's earlier estimate of this rule's cost (8–12 points, v0.6) overstated it for real tables. Houses re-tuned (below).
 - **Misses, still open:**
-  - **Clean share of Hard wins is 10%** (target ≥ ⅓): the simulated gang eats food where it is, and with every bite a roll it rarely finishes a cake or a salmon; most Hard wins are Messy (half eaten). A smarter carry-it-out policy was tried and the simulated carriers got stuck behind doors under a Searcher's eye; the playtests suggest real players carry more (sim/NOTES.md).
-  - **Left behind at Easy is 5.0%**, right at the ≤ 5% cap.
-  - **Caught at least once:** 97% of Easy robberies see a cat Held or Shooed (no target; noted for the feel).
-- **Caveat:** the gang plays by simple policies (`sim/NOTES.md`), not by real players. Treat ±5 points as noise from the policy.
+  - **Clean share of Hard wins is 15%** (target ≥ ⅓). The simulated gang eats food where it is (sim/NOTES.md); playtesters carry it out more, and the Marchettis alone run 23%.
+  - **Five cats at Hard are 7 points behind four.**
+- **Caveat:** the gang plays by simple policies (`sim/NOTES.md`), not by real players; each round of playtests has found a line the policies miss. Treat ±5 points as noise from the policy, and expect sharp players to beat these numbers.
 
 ## How the rules got here
 | Step | What changed | Why (what the simulator showed) |
@@ -30,13 +28,44 @@
 | P6 → P7 | **Searching**; the owner fetches a prize the cats already have; pet routines; dogs confront on entry; reopen shut entrances | The box playtest won with no rolls by staging the prize in a room no routine visits: waiting was free. Standard fell 89 → 76 on the old houses' numbers, so two houses were re-tuned. |
 | P7 → P8 | **Hauling** (moving a Medium or Large prize is a roll, seen or not); **carriers can't hide**; **finding it** at the end of the House phase (a human beside a disturbed prize notices; +1 Broom once a round); **Searching goes for the prize first**; **+1 Broom when a Searching human can see a cat**; messes wait to be found; a driven-off dog is back after 3 rounds counting this one; a failed pet roll chases the cat back; stronger gang scaling | Verification playtests: the box was won with 0 cat rolls by hiding with it and steering Searchers with a decoy; Number 12 (5 cats) was won with every roll under one Distraction, because a human already beside the prize never "walked in" on it. P8 cut every label 3–15 points, so the houses were re-tuned. Making the human who puts the prize down deaf to noise was tried and dropped: it cost 8–12 points and took away the gang's one answer to the Clock round. |
 | P8 → P9 | **Holders still see**; **eating is a roll**; **temptation rotates** (never the same cat two rounds running); haul noise where the prize ends up; hauling out of a dog's room is leaving; Knocker's knack on hauls; loitering in a dog's room is chased out | Salmon playtest: a Scooped cat blinded its holder while four portions were eaten beside him, and five portions cost no rolls; both playtests ran out of temptations in the room where the gang waited. Box playtest: a bark lured the Searcher off the box. |
+| P9 → P10 | **The Prize Clock's hold beats noise** (the human who puts the prize down stays with it that round); **any cat helps a haul**; a house can make hauling Tricky | Wendell and cake playtests (and Number 12 before them) were won by a free round-1 lure. |
+| houses (v0.8) | Number 12: gone on round 10. Cake: Patience 6; Dad's routine visits the kitchen and dining room twice each; hauling the cake is Tricky. Wendell: Grandpa's routine visits the hall twice, June's reaches the landing. Marchettis: gone on round 8. | Back on target after P10. |
 | houses (v0.7) | Number 12: gone on round 9. Box: Patience 7 (gone 13). Cake: Patience 5. Salmon: Patience 6, gone on round 7; the chef's routine is 1–5 Kitchen, 6 Hall (was "stays put", which stranded her in the hall); the dog door is noisy; the vacuum reaches the kitchen. | Back on target after P9. |
 | houses (v0.6) | Number 12: chicken gone on round 8. Box: Patience 8, gone on round 13. Mouse: Patience 7, gone on round 9. Cake: Patience 4. Salmon: Patience 5, gone on round 9. | Back on target after P8. |
 | houses (v0.5) | Number 12: a dog, a 7-round clock, a closed utility door. Box: Patience 6, moved on round 5, gone on round 11. Mouse: Patience 6, moved on round 4, gone on round 11. Cake: gone on round 8. Chef: busy cooking, deaf to noise. | Each label now plays as labelled. |
 
 Targets revised (see `docs/DESIGN.md`): Purrfects 2–6% (two 6s are rare with small pools), and Clean share of Hard wins ≥ ⅓.
 
-## Today's houses: v0.6 rules (P8) against v0.7 rules (P9)
+## Today's houses: v0.7 rules (P9) against v0.8 rules (P10)
+
+`node sim/packages.mjs --runs 3000 --seed 1 --packages P9,P10`
+
+### Gang of 4 against the targets
+
+| | Easy | Standard | Hard | Clean share Easy / Hard | Caught ≥1 (Std) | Left behind Easy / Hard | Flop | Purrfect | Gave in | Spend ≥ ½ Cattitude | Rolls | Rounds |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **target** | ~90 | ~75 | 55–60 | ≥ 75 / ≥ 33 | ≥ 50 | ≤ 5 / ≥ 10 | 15–25 | 2–6 | ≥ 40 | ≥ 50 | — | — |
+| P9 | 91.7 | 73.0 | 67.1 | 88 / 19 | 57.3 | 2.8 / 15.9 | 15.4 | 5.5 | 82.3 | 83.0 | 12.4 | 8.7 |
+| P10 | 90.3 | 75.3 | 57.9 | 81 / 15 | 57.4 | 3.5 / 15.1 | 15.5 | 5.6 | 82.1 | 82.8 | 12.3 | 8.8 |
+
+### Gang size (win % Easy / Standard / Hard)
+
+| package | 3 cats | 4 cats | 5 cats |
+|---|---|---|---|
+| P9 | 88.5 / 68.1 / 61.8 | 91.7 / 73.0 / 67.1 | 96.8 / 72.0 / 61.4 |
+| P10 | 87.9 / 68.6 / 55.8 | 90.3 / 75.3 / 57.9 | 95.5 / 75.6 / 50.7 |
+
+### Per house, gang of 4 (win · clean · busted · left behind)
+
+| house | label | P9 | P10 |
+|---|---|---|---|
+| The Chicken at Number 12 | easy | 91.7 · 80.3 · 8.3 · 2.8 | 90.3 · 72.7 · 9.7 · 3.5 |
+| The Okafors' Big Box | standard | 71.6 · 71.2 · 28.4 · 9.4 | 77.6 · 77.3 · 22.4 · 7.0 |
+| Grandpa Wendell's Catnip Mouse | standard | 74.4 · 72.3 · 25.6 · 11.3 | 73.0 · 70.2 · 27.0 · 10.5 |
+| The Birthday Cake | hard | 78.2 · 12.3 · 21.8 · 18.4 | 59.9 · 5.1 · 40.1 · 16.7 |
+| Chef Marchetti's Salmon | hard | 55.9 · 12.8 · 44.1 · 13.4 | 55.9 · 12.8 · 44.1 · 13.4 |
+
+## Earlier study: v0.6 rules (P8) against v0.7 rules (P9), on the v0.7 houses
 
 `node sim/packages.mjs --runs 3000 --seed 1 --packages P8,P9`
 
