@@ -34,7 +34,39 @@
       "pet": {}
     }
   },
-  "packs": [],
+  "packs": [
+    {
+      "name": "houses",
+      "label": "Houses",
+      "path": "packs/houses",
+      "type": "JournalEntry",
+      "system": "cat-burglars",
+      "ownership": { "PLAYER": "OBSERVER", "ASSISTANT": "OWNER" }
+    },
+    {
+      "name": "gang",
+      "label": "The Ready-Made Gang",
+      "path": "packs/gang",
+      "type": "Actor",
+      "system": "cat-burglars",
+      "ownership": { "PLAYER": "OBSERVER", "ASSISTANT": "OWNER" }
+    },
+    {
+      "name": "residents",
+      "label": "Residents",
+      "path": "packs/residents",
+      "type": "Actor",
+      "system": "cat-burglars",
+      "ownership": { "PLAYER": "NONE", "ASSISTANT": "OWNER" }
+    }
+  ],
+  "packFolders": [
+    {
+      "name": "Cat Burglars",
+      "sorting": "m",
+      "packs": ["houses", "gang", "residents"]
+    }
+  ],
   "socket": true,
   "primaryTokenAttribute": "cattitude",
   "url": "https://github.com/PainHog/CBZ",

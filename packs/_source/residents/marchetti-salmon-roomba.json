@@ -1,0 +1,31 @@
+{
+  "key": "marchetti-salmon-roomba",
+  "name": "The robot vacuum (Chef Marchetti's)",
+  "type": "pet",
+  "img": "icons/svg/clockwork.svg",
+  "system": {
+    "kind": "vacuum",
+    "rating": 0,
+    "soft": false,
+    "asleep": false,
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "stay",
+      "r4": "stay",
+      "r5": "stay",
+      "r6": "stay"
+    },
+    "roam": "living, hall",
+    "house": "marchetti-salmon",
+    "key": "roomba",
+    "start": "living",
+    "notes": "Lives at Chef Marchetti's Salmon."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "marchetti-salmon",
+      "resident": "roomba"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "key": "marchetti-salmon-chef",
+  "name": "Chef Marchetti",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "grownup",
+    "attention": 2,
+    "traits": {
+      "kid": false,
+      "dozes": false,
+      "busy": true,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "stay",
+      "r4": "stay",
+      "r5": "stay",
+      "r6": "hall"
+    },
+    "house": "marchetti-salmon",
+    "key": "chef",
+    "start": "kitchen",
+    "notes": "Lives at Chef Marchetti's Salmon."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "marchetti-salmon",
+      "resident": "chef"
+    }
+  }
+}

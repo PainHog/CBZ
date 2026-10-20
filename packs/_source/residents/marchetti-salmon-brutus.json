@@ -1,0 +1,31 @@
+{
+  "key": "marchetti-salmon-brutus",
+  "name": "Brutus",
+  "type": "pet",
+  "img": "icons/svg/pawprint.svg",
+  "system": {
+    "kind": "dog",
+    "rating": 3,
+    "soft": false,
+    "asleep": false,
+    "routine": {
+      "r1": "stay",
+      "r2": "kitchen",
+      "r3": "hall",
+      "r4": "living",
+      "r5": "sniff",
+      "r6": "sniff"
+    },
+    "roam": "utility, kitchen, hall, living",
+    "house": "marchetti-salmon",
+    "key": "brutus",
+    "start": "utility",
+    "notes": "Lives at Chef Marchetti's Salmon."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "marchetti-salmon",
+      "resident": "brutus"
+    }
+  }
+}

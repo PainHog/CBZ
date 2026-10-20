@@ -1,0 +1,34 @@
+{
+  "key": "wendell-mouse-june",
+  "name": "June",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "grownup",
+    "attention": 1,
+    "traits": {
+      "kid": false,
+      "dozes": false,
+      "busy": false,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "stay",
+      "r4": "living",
+      "r5": "hall",
+      "r6": "kitchen"
+    },
+    "house": "wendell-mouse",
+    "key": "june",
+    "start": "kitchen",
+    "notes": "Lives at Grandpa Wendell's Catnip Mouse."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "wendell-mouse",
+      "resident": "june"
+    }
+  }
+}

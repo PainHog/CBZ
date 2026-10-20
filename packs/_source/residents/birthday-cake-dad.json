@@ -1,0 +1,34 @@
+{
+  "key": "birthday-cake-dad",
+  "name": "Dad",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "grownup",
+    "attention": 1,
+    "traits": {
+      "kid": false,
+      "dozes": false,
+      "busy": false,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "stay",
+      "r4": "dining",
+      "r5": "hall",
+      "r6": "living"
+    },
+    "house": "birthday-cake",
+    "key": "dad",
+    "start": "kitchen",
+    "notes": "Lives at The Birthday Cake."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "birthday-cake",
+      "resident": "dad"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "key": "number-12-pell",
+  "name": "Mr Pell",
+  "type": "human",
+  "img": "icons/svg/mystery-man.svg",
+  "system": {
+    "kind": "grownup",
+    "attention": 1,
+    "traits": {
+      "kid": false,
+      "dozes": false,
+      "busy": false,
+      "headphones": false
+    },
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "kitchen",
+      "r4": "kitchen",
+      "r5": "living",
+      "r6": "living"
+    },
+    "house": "number-12",
+    "key": "pell",
+    "start": "hall",
+    "notes": "Lives at The Chicken at Number 12."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "number-12",
+      "resident": "pell"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "key": "wendell-mouse-roomba",
+  "name": "The robot vacuum (Grandpa Wendell's)",
+  "type": "pet",
+  "img": "icons/svg/clockwork.svg",
+  "system": {
+    "kind": "vacuum",
+    "rating": 0,
+    "soft": false,
+    "asleep": false,
+    "routine": {
+      "r1": "stay",
+      "r2": "stay",
+      "r3": "stay",
+      "r4": "stay",
+      "r5": "stay",
+      "r6": "stay"
+    },
+    "roam": "living, hall, kitchen",
+    "house": "wendell-mouse",
+    "key": "roomba",
+    "start": "living",
+    "notes": "Lives at Grandpa Wendell's Catnip Mouse."
+  },
+  "flags": {
+    "cat-burglars": {
+      "house": "wendell-mouse",
+      "resident": "roomba"
+    }
+  }
+}

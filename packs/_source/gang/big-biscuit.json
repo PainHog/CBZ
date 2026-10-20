@@ -1,0 +1,31 @@
+{
+  "key": "big-biscuit",
+  "name": "Big Biscuit",
+  "type": "cat",
+  "img": "icons/svg/cat.svg",
+  "actorLink": true,
+  "system": {
+    "approaches": {
+      "sneaky": 1,
+      "sweet": 1,
+      "savage": 3,
+      "streetwise": 2
+    },
+    "instinct1": "scrapper",
+    "instinct2": "foodie",
+    "body": "chonky",
+    "cattitude": 2,
+    "lives": 9,
+    "rep": 0,
+    "coat": "Big brown tabby with a cream muzzle",
+    "mark": "A notch in his left ear",
+    "eyes": "Amber",
+    "quirk": "Sleeps on the launderette roof",
+    "notes": "“Excuse me. I'm coming through. Thank you.” Big Biscuit is the Muscle. (The Ready-Made Gang, Chapter 3.)"
+  },
+  "flags": {
+    "cat-burglars": {
+      "gang": "big-biscuit"
+    }
+  }
+}
