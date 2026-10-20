@@ -35,7 +35,7 @@ export function ch_okafor_box() {
   b += catSide({ look: "biscuit", x: 247, y: FLOOR, s: 0.32, step: -0.7, head: -0.5, tailUp: 0.4, id: "ob" });
   b += catSide({ look: "mags", x: 612, y: FLOOR, s: 0.3, flip: true, step: -0.7, head: -0.5, tailUp: 0.6, id: "om" });
   b += catSit({ look: "tilly", x: 430, y: p.top, s: 0.3, id: "ot", headTilt: 6 });
-  return svg("0 0 900 300", "The Okafors' hall: Big Biscuit and Mags shove a huge sealed delivery box from both ends with Tilly riding on top, while Noodle the sausage dog sleeps in his basket in the kitchen", b);
+  return svg("0 0 900 300", "The Okafors' hall: Big Biscuit and Mags shove a huge sealed delivery box from both ends with Tilly riding on top, while Noodle the sausage dog sleeps in his basket in the kitchen", b, { bleed: true });
 }
 
 /** Grandpa Wendell's hall: Pip stalks the pet-shop bag with the catnip mouse in it; Velvet waits; Grandpa walks off to the kitchen; Pom-Pom glares from the window sill. */
@@ -59,7 +59,7 @@ export function ch_wendell_mouse() {
   b += paperBag(330, FLOOR, 70, 92);
   b += catSide({ look: "pip", x: 268, y: FLOOR, s: 0.26, crouch: 1, head: -0.3, tailUp: 0.9, step: 0.2, id: "wpi" });
   b += catSit({ look: "velvet", x: 452, y: FLOOR, s: 0.3, id: "wv", headTilt: -10 });
-  return svg("0 0 900 300", "Grandpa Wendell's hall: Pip stalks the pet-shop bag with a red catnip mouse peeking out, Velvet waits, Grandpa walks off to the kitchen and Pom-Pom glares down from the window sill", b);
+  return svg("0 0 900 300", "Grandpa Wendell's hall: Pip stalks the pet-shop bag with a red catnip mouse peeking out, Velvet waits, Grandpa walks off to the kitchen and Pom-Pom glares down from the window sill", b, { bleed: true });
 }
 
 /** Number 5's dining room at the party: the cake on the table, Velvet on a chair with balloons tied to it, Pip under the table, Captain shouting from his cage, Dad's legs. */
@@ -79,7 +79,7 @@ export function ch_birthday_cake() {
   b += ch.svg + catSit({ look: "velvet", x: 540, y: ch.seat, s: 0.3, id: "cv", headTilt: -12 });
   b += legs({ x: 722, floorY: FLOOR + 6, top: -4, trousers: C.dark, shoe: C.ink, w: 32, walking: 0.2 });
   b += presents(812, FLOOR);
-  return svg("0 0 900 300", "Party at Number 5: a chocolate birthday cake on the dining table, Velvet on a chair with balloons tied to it, Pip under the table, Captain the parrot squawking 'Party!' and Dad's legs", b);
+  return svg("0 0 900 300", "Party at Number 5: a chocolate birthday cake on the dining table, Velvet on a chair with balloons tied to it, Pip under the table, Captain the parrot squawking 'Party!' and Dad's legs", b, { bleed: true });
 }
 
 /** Chef Marchetti's kitchen: Brutus barks in the utility doorway, Biscuit faces him down; Mags creeps along the island to the wrapped salmon; the chef cooks at the stove. */
@@ -96,5 +96,5 @@ export function ch_marchetti_salmon() {
   const k = cooker(762, FLOOR, 128, 150);
   b += k.svg;
   b += legs({ x: 712, floorY: FLOOR + 6, top: -4, trousers: C.light, shoe: C.ink, w: 32, walking: 0.1 }); // the chef, between the island and the stove
-  return svg("0 0 900 300", "Chef Marchetti's kitchen: Brutus the mastiff barks from the utility doorway as Big Biscuit stands up to him, Mags creeps along the island to the paper-wrapped salmon, and the chef cooks at the stove", b);
+  return svg("0 0 900 300", "Chef Marchetti's kitchen: Brutus the mastiff barks from the utility doorway as Big Biscuit stands up to him, Mags creeps along the island to the paper-wrapped salmon, and the chef cooks at the stove", b, { bleed: true });
 }

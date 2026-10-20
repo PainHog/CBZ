@@ -8,23 +8,32 @@ const rect = (x, y, w, h, fill, sw = 3, rx = 0, extra = "") =>
   `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}"${rx ? ` rx="${rx}"` : ""} fill="${fill}"${sw ? ` stroke="${C.ink}" stroke-width="${sw}"` : ""}${extra}/>`;
 export const shadowAt = (x, y, rx, op = 0.18) => ell(x, y + 1, rx, Math.max(3, rx * 0.12), C.ink, C.ink, 0, ` opacity="${op}"`);
 
-/** Room backdrop: wall, skirting board, floorboards to the bottom edge. */
-export function room(w, h, floorY, { wall = C.wall, floor = C.floor, seed = 3 } = {}) {
-  let s = rect(0, 0, w, floorY, wall, 0);
+/**
+ * The book shows a 3:1 vignette in a chapter-head box that is nearly 4:1, centred, with the SVG's
+ * overflow visible (scenes/lib.mjs svg(..., { bleed: true })). So every backdrop (wall, floor, sky,
+ * fence, roofs) runs BLEED units past both side edges, and the side bands show more of the same
+ * place instead of blank paper. Nothing that matters is drawn in the bleed.
+ */
+export const BLEED = 170;
+
+/** Room backdrop: wall, skirting board, floorboards to the bottom edge (running BLEED past both sides). */
+export function room(w, h, floorY, { wall = C.wall, floor = C.floor, seed = 3, bleed = BLEED } = {}) {
+  const x0 = -bleed, x1 = w + bleed, W = x1 - x0;
+  let s = rect(x0, 0, W, floorY, wall, 0);
   // faint wallpaper stripes
   let d = "";
-  for (let x = 24; x < w; x += 48) d += `M${x} 0V${floorY - 14}`;
+  for (let x = 24 - Math.ceil(bleed / 48) * 48; x < x1; x += 48) d += `M${x} 0V${floorY - 14}`;
   s += `<path d="${d}" stroke="${C.wallDeep}" stroke-width="5" opacity="0.35"/>`;
-  s += rect(0, floorY - 14, w, 14, C.light, 0) + path(`M0 ${floorY - 14}H${w}`, "none", C.ink, 2);
-  s += rect(0, floorY, w, h - floorY, floor, 0);
+  s += rect(x0, floorY - 14, W, 14, C.light, 0) + path(`M${x0} ${floorY - 14}H${x1}`, "none", C.ink, 2);
+  s += rect(x0, floorY, W, h - floorY, floor, 0);
   const R = rng(seed);
   let b = "";
   for (let y = floorY + 16; y < h; y += 16) {
-    b += `M0 ${y}H${w}`;
-    for (let x = R() * 120; x < w; x += 110 + R() * 90) b += `M${r1(x)} ${y - 16}V${y}`;
+    b += `M${x0} ${y}H${x1}`;
+    for (let x = x0 + R() * 120; x < x1; x += 110 + R() * 90) b += `M${r1(x)} ${y - 16}V${y}`;
   }
   s += `<path d="${b}" stroke="${C.floorDeep}" stroke-width="1.6" opacity="0.6"/>`;
-  return s + path(`M0 ${floorY}H${w}`, "none", C.ink, 3);
+  return s + path(`M${x0} ${floorY}H${x1}`, "none", C.ink, 3);
 }
 
 /** A window in the wall: frame, panes, sill. night: dark sky outside with a moon. open: the lower sash raised. */
@@ -194,10 +203,12 @@ export function wallClock(x, y, r = 22) {
 
 // ---------------------------------------------------------------- outside, at night
 /** Night sky band with a moon and a few stars. */
-export function nightSky(w, h, seed = 5) {
+export function nightSky(w, h, seed = 5, bleed = 0) {
   const R = rng(seed);
-  let s = `<rect width="${w}" height="${h}" fill="${C.deep}"/>`;
+  let s = `<rect x="${-bleed}" width="${w + 2 * bleed}" height="${h}" fill="${C.deep}"/>`;
   for (let i = 0; i < 26; i++) s += circ(R() * w, R() * h * 0.6, 1 + R() * 1.6, C.accentB, C.ink, 0, ` opacity="${r1(0.5 + R() * 0.5)}"`);
+  const R2 = rng(seed + 101); // a few more stars in the side bands
+  if (bleed) for (let i = 0; i < 12; i++) { const side = i % 2 ? w : -bleed; s += circ(side + R2() * bleed, R2() * h * 0.6, 1 + R2() * 1.6, C.accentB, C.ink, 0, ` opacity="${r1(0.5 + R2() * 0.5)}"`); }
   return s;
 }
 export const moon = (x, y, r = 24) => circ(x, y, r + 14, C.accentB, C.ink, 0, ` opacity="0.15"`) + circ(x, y, r, C.accentB, C.ink, 2.4) + circ(x - r * 0.3, y - r * 0.2, r * 0.18, C.cream);

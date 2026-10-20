@@ -7,8 +7,8 @@ import { C, svg, stage } from "./lib.mjs";
 import { setPrefix, path, circ, ell, r1 } from "../lib.mjs";
 import { catSide, catSit, catCurl } from "../cats.mjs";
 import { dogLie } from "../residents.mjs";
-import { nightSky, moon, bricks, litWindow, streetLamp, wheelieBin, door, fence, box, cushion, table, die, dogBed, shadowAt, balloon } from "../kit.mjs";
-import { vacuum } from "../residents.mjs";
+import { nightSky, moon, bricks, litWindow, streetLamp, wheelieBin, door, fence, box, cushion, table, die, dogBed, shadowAt, balloon, broom } from "../kit.mjs";
+import { vacuum, parrotStand } from "../residents.mjs";
 
 /**
  * A roast chicken carried in a side-view cat's mouth: the cat grips one drumstick and the bird
@@ -176,13 +176,16 @@ function spot(id, title, scene, { k = 1.6, cx = 200, gy = 250 } = {}) {
 export function spot_back() {
   const px = 250;
   let s = ell(px, FL - 4, 58, 9, C.light, C.ink, 2.6); // the plate, lying flat on the floor
-  // the carcass on the plate: the backbone arching over, ribs curving down to the plate
-  const bone = (d, w) => path(d, "none", C.ink, w + 3.4) + path(d, "none", C.paper2, w);
-  let ribs = ""; for (const dx of [-24, -12, 0, 12, 24]) ribs += bone(`M${px + dx} ${FL - 40 + Math.abs(dx) * 0.4}q${dx <= 0 ? -10 : 10} 14 ${dx <= 0 ? -6 : 6} 30`, 3.2);
-  s += ribs + bone(`M${px - 38} ${FL - 10}Q${px - 34} ${FL - 44} ${px} ${FL - 44}Q${px + 34} ${FL - 44} ${px + 38} ${FL - 10}`, 5);
-  s += bone(`M${px + 68} ${FL - 4}L${px + 88} ${FL - 2}`, 4) + circ(px + 90, FL - 2, 4.4, C.paper2, C.ink, 2) + circ(px + 66, FL - 4, 4.4, C.paper2, C.ink, 2); // a drumstick bone on the floor
+  // cartoon bones (a shaft with two knobs at each end), picked clean
+  const bone = (x1, y1, x2, y2) => {
+    const a = Math.atan2(y2 - y1, x2 - x1), nx = -Math.sin(a) * 4.5, ny = Math.cos(a) * 4.5;
+    const knobs = [[x1, y1], [x2, y2]].map(([x, y]) => circ(x + nx, y + ny, 5.5, C.paper2, C.ink, 2.6) + circ(x - nx, y - ny, 5.5, C.paper2, C.ink, 2.6)).join("");
+    return knobs + path(`M${r1(x1)} ${r1(y1)}L${r1(x2)} ${r1(y2)}`, "none", C.ink, 10) + path(`M${r1(x1)} ${r1(y1)}L${r1(x2)} ${r1(y2)}`, "none", C.paper2, 5);
+  };
+  s += bone(px - 40, FL - 9, px + 4, FL - 8) + bone(px + 2, FL - 7, px + 42, FL - 9); // two lying on the plate
+  s += bone(px - 22, FL - 19, px + 24, FL - 20);                                      // one lying across both of them
   s += catCurl({ look: "biscuit", x: 124, y: FL, s: 0.42, id: "bk" });
-  return spot("spot-back", "Big Biscuit asleep and full, curled up beside a plate of picked-clean chicken bones", s, { k: 1.3, cx: 210 });
+  return spot("spot-back", "Big Biscuit asleep and full, curled up beside a plate of picked-clean chicken bones", s, { k: 1.55, cx: 196 });
 }
 
 /** Pip asleep, curled up on a pink cushion. */
@@ -275,4 +278,30 @@ export function spot_fish() {
   s += path(r, "none", C.ink, 2.2);
   s += path(`M246 150L276 128L268 150L276 172Z`, C.paper2, C.ink, 2.6);
   return svg("0 0 400 300", "A fish skeleton licked clean on a plate, seen from above on a tiled kitchen floor", s);
+}
+
+/** Pudding, Mr Pell's old spaniel, asleep on a rug. */
+export function spot_pudding() {
+  const s = ell(200, FL + 2, 100, 11, C.leafDeep, C.ink, 2.6) + ell(200, FL + 2, 80, 8, "none", C.accentB, 2) + dogLie({ dog: "pudding", x: 184, y: FL, s: 0.44 });
+  return spot("spot-pudding", "Pudding the old spaniel asleep on a rug", s, { k: 1.9 });
+}
+
+/** Captain the parrot in his cage on its stand. */
+export function spot_parrot() {
+  return spot("spot-parrot", "Captain the grey parrot on his perch in a cage hanging from a stand", parrotStand({ x: 160, floorY: FL, s: 0.9 }), { k: 1.08, cx: 196 });
+}
+
+/** Pom-Pom, the Wendells' house cat, sitting by her food bowl and not sharing. */
+export function spot_pompom() {
+  let s = shadowAt(268, FL, 30) + path(`M240 ${FL}L246 ${FL - 22}H290L296 ${FL}Z`, C.eyeBlue, C.ink, 3) + ell(268, FL - 22, 24, 4, C.brown, C.ink, 2); // the bowl, kibble showing
+  s += catSit({ look: "pompom", x: 184, y: FL, s: 0.36, id: "spp", headTilt: 8 });
+  return spot("spot-pompom", "Pom-Pom the fluffy grey house cat sitting beside her food bowl", s, { k: 1.5, cx: 214 });
+}
+
+/** The broom on its wall clip, and Tilly slinking low past it. */
+export function spot_broom() {
+  let s = path(`M60 ${FL}V${FL - 222}Q60 ${FL - 240} 78 ${FL - 240}H332Q350 ${FL - 240} 350 ${FL - 222}V${FL}Z`, C.wall, C.ink, 0) + `<rect x="60" y="${FL - 14}" width="290" height="14" fill="${C.light}"/>` + path(`M60 ${FL - 14}H350`, "none", C.ink, 2); // a patch of wall with its skirting
+  s += broom(130, FL, 200);
+  s += catSide({ look: "tilly", x: 262, y: FL, s: 0.3, crouch: 0.9, head: -0.4, tailLow: true, step: 0.4, id: "sbr" });
+  return spot("spot-broom", "Tilly slinks low along the skirting board past a broom hanging on its wall clip", s, { k: 1.0, cx: 205 });
 }

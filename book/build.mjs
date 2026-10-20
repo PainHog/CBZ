@@ -187,7 +187,12 @@ const FOOTER_CSS = `@page { @bottom-center { content: ${cssString(BOOK_TITLE + "
  *   e.g.  "ch-01": ["spot-something", "spot-spare"],
  * Empty until the art exists (the build then warns about large unfilled gaps).
  */
-const SPOTS = {};
+const SPOTS = {
+  "ch-01": ["spot-paws"], "ch-02": ["spot-curl"], "ch-03": ["spot-bin"], "ch-04": ["spot-purrfect"],
+  "ch-05": ["spot-mug"], "ch-06": ["spot-wool"], "ch-07": ["spot-box"], "ch-08": ["spot-fish"],
+  "ch-09": [], "ch-10": ["spot-vacuum"], "ch-11": ["spot-broom"], "ch-12": ["spot-pompom"], "ch-13": [],
+  "ch-14": ["spot-pudding"], "ch-15": ["spot-noodle"], "ch-16": ["spot-vacuum"], "ch-17": ["spot-parrot"], "ch-18": [],
+};
 const PT_PER_IN = 72;
 const BOTTOM_LIMIT_PT = (0.78 + BLEED_IN) * PT_PER_IN;   // @page bottom margin: content must end above this
 const TEXT_H_IN = 11 - 0.72 - 0.78;   // the text area's height (the print bleed adds to both the page and its margins)
