@@ -105,7 +105,7 @@ class Robbery {
   // ------------------------------------------------------------ seeing
   /** CORE-RULES "The Mood": seen = same room, awake human, not Distracted, not holding a cat, cat not hidden. */
   watchers(room) {
-    return this.humans.filter(hu => hu.room === room && hu.asleepUntil < this.round && hu.distractedUntil < this.round && !hu.holding);
+    return this.humans.filter(hu => hu.room === room && hu.asleepUntil < this.round && hu.distractedUntil < this.round && (!hu.holding || this.tr("holderSees")));
   }
   seenBy(cat) { return cat.hidden ? [] : this.watchers(cat.loc); }
 
@@ -217,7 +217,7 @@ class Robbery {
     if (roll.result === "purrfect") { this.gainCattitude(cat); }
     const kid = seenList.some(hu => hu.kind === "kid");
     const delta = moodDelta({ result: roll.result, approach: opts.approach, seen, mood: this.mood, pushedWithMood, kidDoubles: kid }, p);
-    if (makesNoise(roll.result) && !opts.quiet) this.noise.push(cat.loc);
+    if (makesNoise(roll.result) && !opts.quiet) this.noise.push(opts.noiseRoom && works(roll.result) ? opts.noiseRoom : cat.loc);
     if (!(roll.result === "clean" && opts.approach === "sneaky") && roll.result !== "purrfect") cat.hidden = false;
     // the Mood moves after the outcome is known; the trigger (if any) hits this cat
     return { result: roll.result, delta, apply: () => this.moodChange(delta, cat, opts.why) };
@@ -241,10 +241,10 @@ class Robbery {
    * Sneaky to do it unnoticed (their Attention removes dice), Savage to just do it.
    * Policy: the approach with the lowest expected Mood cost, failures weighted heavily.
    */
-  simpleInView(cat, why, tags = []) {
+  simpleInView(cat, why, tags = [], always = false) {
     const seen = this.seenBy(cat);
-    if (!seen.length) return true;
-    const att = Math.max(...seen.map(hu => hu.attention));
+    if (!seen.length && !always) return true;
+    const att = seen.length ? Math.max(...seen.map(hu => hu.attention)) : 0;
     const cost = (approach, n) => {
       const pC = chanceAtLeast(n, "clean"), pS = chanceAtLeast(n, "scrape");
       const clean = approach === "sneaky" ? 0 : 1;
@@ -308,6 +308,7 @@ class Robbery {
   // ------------------------------------------------------------ temptation (CORE-RULES "A round", start)
   temptations() {
     for (const c of this.cats) c.tempted = null;
+    this.lastTempted = this.temptedNow ?? null; this.temptedNow = null;
     for (let k = 0; k < this.p.temptPerRound; k++) {
       const eligible = [];
       for (const c of this.freeInside()) {
@@ -317,12 +318,13 @@ class Robbery {
         if (this.p.carrierRules && this.pets.some(pt => pt.room === c.loc && (pt.kind === "dog" || pt.kind === "housecat") && pt.mode !== "asleep" && pt.mode !== "hiding")) here.push("scrapper");
         for (const i of c.instincts) {
           const key = `${c.loc}:${i}`;
-          if (here.includes(i) && !c.temptUsed.has(key)) eligible.push({ c, i, key, cost: this.temptCost(c, i) });
+          const fresh = this.tr("tempt") ? c.id !== this.lastTempted : !c.temptUsed.has(key);
+          if (here.includes(i) && fresh) eligible.push({ c, i, key, cost: this.temptCost(c, i) });
         }
       }
       if (!eligible.length) return;
       const pick = this.p.tempter === "mean" ? eligible.sort((a, b) => b.cost - a.cost)[0] : this.rng.pick(eligible);
-      pick.c.temptUsed.add(pick.key);
+      pick.c.temptUsed.add(pick.key); this.temptedNow = pick.c.id;
       this.rec.event("tempted");
       if (this.resists(pick.c, pick.cost)) {
         pick.c.cattitude--; pick.c.cattitudeSpent++; this.rec.event("resisted");
@@ -446,7 +448,7 @@ class Robbery {
     if (c.tempted) { this.doTemptation(c); c.acted = true; if (c.status !== "in") return; }
     // a cat starting its turn with an angry dog / guarding house cat must deal with it or leave (CORE-RULES "Residents")
     const pet = this.hostilePet(c.loc);
-    if (pet) {
+    if (pet && !(c.carrying && this.tr("haulLeaves"))) {
       const stay = this.phase() === "get" && (c.loc === this.prize.room || c.carrying) && this.confrontChance(c, pet) >= 0.4;
       if (stay && !c.acted) { this.confront(c, pet); if (c.status !== "in") return; }
       else if (!c.moved) { this.stepToward(c, this.goalRoom(c)) || this.fleeRandom(c); }
@@ -623,12 +625,23 @@ class Robbery {
       res.apply();
       return;
     }
+    if (z.kind === "delicious" && this.wantsToCarryFood(c)) return this.tryPickUp(c);
     if (z.kind === "delicious") {
       c.acted = true;
-      if (this.simpleInView(c, "eat", ["food"]) && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; this.markDisturbed(); this.rec.event("ate"); }
+      if (this.simpleInView(c, "eat", ["food"], this.tr("eat")) && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; this.markDisturbed(); this.rec.event("ate"); }
       return;
     }
     this.tryPickUp(c);
+  }
+  /** Policy (v0.7): carry food out instead of eating it when that's fewer rolls and there's a way out for it. */
+  wantsToCarryFood(c) {
+    const pol = this.p.foodPolicy ?? "eat";
+    if (pol === "eat") return false;
+    const z = this.prize;
+    if (pol === "smart" && (z.portionsLeft <= 2 || this.watchers(z.room).length)) return false;
+    const group = this.catsIn(this.prize.room).filter(x => !x.acted && !x.carrying && !x.tempted);
+    if (!group.includes(c)) group.push(c);
+    return this.canCarry(group) && !!this.bestExit(c, z.size);
   }
   shouldWait(c) {
     const b = this.p.boldness;
@@ -687,7 +700,7 @@ class Robbery {
       const ws = [...new Set([...this.watchers(c.loc), ...this.watchers(path[0])])];
       if (ws.length || this.mustHaul()) {
         if (ws.length && !ws.some(h => h.searching && this.cr("spotted")) && this.lightsOut - this.round > 3 && this.p.boldness !== "bold") { this.rec.event("carrierWaited"); return; }
-        if (!this.haul(group, ws)) return;
+        if (!this.haul(group, ws, path[0])) return;
       }
       for (const x of group) { x.loc = path[0]; x.moved = true; x.hidden = false; }
       z.room = path[0];
@@ -702,17 +715,27 @@ class Robbery {
   mustHaul() { return this.cr("haul") && this.prize.size !== "small"; }
   /** One piece of the v0.6 fix round (sim/params.mjs carrierRules; crOff switches pieces off for study). */
   cr(k) { return this.p.carrierRules && !(this.p.crOff ?? "").split(",").includes(k); }
+  /** One piece of the v0.7 fix round (sim/params.mjs tableRules; trOff switches pieces off for study). */
+  tr(k) { return this.p.tableRules && !(this.p.trOff ?? "").split(",").includes(k); }
   /** The carriers' roll to move the prize (v0.6 "Carrying"): every carrier's Action; the others help. */
-  haul(group, ws) {
+  haul(group, ws, to = null) {
     const c = group[0];
     const helpers = group.length - 1;
     for (const x of group) x.acted = true;
     const diff = 0; // v0.6: no Difficulty; a Large prize is hard enough to lift (three cats)
     const old = !this.p.carrierRules && ws.length ? Math.max(...ws.map(h => h.attention)) : 0; // v0.5 double-counted Attention
     const opt = this.bestOption(c, [["sneaky", diff + old], ["savage", diff]]);
-    const res = this.roll(c, { approach: opt[0], diff: opt[1], helpers, seen: ws, important: true, why: "haul" });
+    const res = this.roll(c, { approach: opt[0], diff: opt[1], helpers, seen: ws, important: true, why: "haul",
+      tags: this.tr("haulKnack") ? ["knock"] : [], noiseRoom: this.tr("haulNoise") ? to : null });
     res.apply();
-    return works(res.result) && c.status === "in";
+    const ok = works(res.result) && c.status === "in";
+    // v0.7: hauling out of an awake dog's room is leaving it; a haul that fails there is chased back and drops the prize
+    if (!ok && this.tr("haulLeaves") && c.status === "in" && this.hostilePet(c.loc)) {
+      const back = c.cameFrom;
+      for (const x of group) if (x.status === "in") this.fleeRandom(x, back);
+      this.rec.event("haulChased");
+    }
+    return ok;
   }
 
   /** Someone else has the prize: head for their exit and wait inside until it's out (policy). */
@@ -846,7 +869,7 @@ class Robbery {
   heldTurn(c) {
     // limp (keep the holder busy) if a gang mate is working in this room; otherwise wriggle (CORE-RULES "Caught")
     const holder = this.humans.find(hu => hu.key === c.heldBy);
-    const mates = this.catsIn(holder.room).length > 0 && this.phase() === "get";
+    const mates = !this.tr("holderSees") && this.catsIn(holder.room).length > 0 && this.phase() === "get";
     if (mates) { this.rec.event("limp"); return; }
     const res = this.roll(c, { approach: "savage", diff: this.p.wriggleDiff, bodyDie: c.body === "chonky",
       seen: [holder], important: true, why: "wriggle" });
@@ -872,7 +895,8 @@ class Robbery {
     const rooms = [...new Set(this.noise)];
     for (const room of rooms) {
       // the closest awake human within range who isn't already in that room; the Storyteller breaks ties
-      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !hu.busy && !answered.has(hu.key) && hu.room !== room)
+      const guarding = hu => this.p.searchHold && hu.searching && this.phase() === "get" && !this.prize.withHuman && this.prize.room === hu.room;
+      const cands = this.humans.filter(hu => !hu.holding && hu.asleepUntil < this.round && hu.kind !== "teen" && !hu.busy && !answered.has(hu.key) && hu.room !== room && !guarding(hu))
         .map(hu => ({ hu, d: this.dist(hu.room, room), t: this.rng.next() })).filter(x => x.d <= this.p.noiseRange).sort((a, b) => a.d - b.d || a.t - b.t);
       const takers = this.p.noiseAnswer === "all" ? cands : cands.slice(0, 1);
       for (const { hu } of takers) {

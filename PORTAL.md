@@ -1,6 +1,6 @@
-Now: The online version for the table, and a last check of the newest rules with two more playtests
-Next: A final playtest of the finished rulebook, then a full read-through
-Number: Design decisions made = 36
+Now: The online version for the table, and a final playtest of the finished rulebook
+Next: A full read-through of the rulebook, then a report for Richard comparing the two versions
+Number: Design decisions made = 37
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
@@ -40,6 +40,7 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Second playtest (the box house) and its fixes: humans now search for the cats when something's missing
 - [x] Check playtests on the new rules (the box house again, and the chicken house with five cats)
 - [x] Fix what they found: dragging a big prize is now a risk, and humans notice when it's been touched
+- [x] Two more playtests (the box house again, and the salmon house with three cats) and their fixes: eating the prize is a risk too, and a cat being cuddled no longer blinds the human holding it
 - [x] First full rulebook draft (all eighteen chapters, the sheets and the five houses)
 - [ ] Final playtest of the finished rulebook
 - [x] Pictures for the rulebook (cover, chapter pictures, maps, the gang, and little end-of-chapter drawings)

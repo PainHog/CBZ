@@ -47,11 +47,11 @@ export const HOUSES = [
       roam: ["kitchen", "hall", "living", "utility"], routine: ["stay", "stay", "living", "kitchen", "hall", "sniff"] }],
     prize: {
       kind: "delicious", name: "rotisserie chicken", size: "medium", perCat: 1, plus: 1,
-      script: [{ round: 2, room: "kitchen", steps: [climb, wrapped], by: "pell" }], goneAt: 8,
+      script: [{ round: 2, room: "kitchen", steps: [climb, wrapped], by: "pell" }], goneAt: 9,
     },
   },
   {
-    key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 8,
+    key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 7,
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], garage: [5, 0, 3, 5], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -134,7 +134,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 4,
+    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 5,
     map: {
       floors: [{ name: "Ground floor", rooms: { dining: [0, 0, 3, 3], kitchen: [3, 0, 3, 2], utility: [6, 0, 2, 2], loo: [0, 3, 3, 2], hall: [3, 2, 2, 3], living: [5, 2, 3, 3] } }],
       entrances: { front: "bottom", patio: "left", utilwin: "top" },
@@ -172,7 +172,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 5,
+    key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 6,
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 3, 2], living: [0, 2, 3, 3], hall: [3, 2, 4, 3] } },
@@ -193,25 +193,25 @@ export const HOUSES = [
       ["hall", "landing", "normal"], ["landing", "bedroom", "big"], ["landing", "study", "big"]],
     entrances: [
       { key: "front", name: "Front door (behind Sam)", room: "hall", size: "big", rounds: [1], one: true, letOut: true, opts: [["sneaky", 2], ["sweet", 0, "charm"]] },
-      { key: "dogdoor", name: "Brutus's dog door", room: "utility", size: "normal", opts: [] },
+      { key: "dogdoor", name: "Brutus's dog door (a heavy flap)", room: "utility", size: "normal", opts: [], noisy: true },
       { key: "balcony", name: "Balcony door (up the tree)", room: "bedroom", size: "normal", climb: true, opts: hardClimb },
       { key: "skylight", name: "Skylight, propped open", room: "landing", size: "tight", climb: true, opts: climb },
     ],
     den: "study",
     humans: [
       { key: "chef", name: "Chef Marchetti", kind: "grownup", attention: 2, start: "kitchen", busy: true,
-        routine: ["stay", "stay", "stay", "stay", "stay", "hall"] },
+        routine: ["kitchen", "kitchen", "kitchen", "kitchen", "kitchen", "hall"] },
       { key: "sam", name: "Sam", kind: "grownup", attention: 1, start: "hall",
         routine: ["stay", "stay", "living", "living", "kitchen", "study"] },
     ],
     pets: [
       { key: "brutus", name: "Brutus", kind: "dog", rating: 3, soft: false, start: "utility", asleep: false,
         roam: ["utility", "kitchen", "hall", "living"], routine: ["stay", "kitchen", "hall", "living", "sniff", "sniff"] },
-      { key: "roomba", name: "The robot vacuum", kind: "vacuum", start: "living", roam: ["living", "hall"] },
+      { key: "roomba", name: "The robot vacuum", kind: "vacuum", start: "living", roam: ["living", "hall", "kitchen"] },
     ],
     prize: {
       kind: "delicious", name: "whole salmon", size: "medium", perCat: 1, plus: 2,
-      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 9,
+      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 7,
     },
   },
 ];

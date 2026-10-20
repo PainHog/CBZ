@@ -308,3 +308,18 @@ export function spot_broom() {
   s += catSide({ look: "tilly", x: 262, y: FL, s: 0.3, crouch: 0.9, head: -0.4, tailLow: true, step: 0.4, id: "sbr" });
   return spot("spot-broom", "Tilly slinks low along the skirting board past a broom hanging on its wall clip", s, { k: 1.0, cx: 205 });
 }
+
+/** Chapter 12 tailpiece: a front door with a cat flap in a patch of brick wall, a milk bottle on the step, and Velvet sizing it up. */
+export function spot_door() {
+  // a patch of brick front wall standing on the pavement, with a stone step under the door
+  let s = bricks(60, FL - 240, 290, 240, { seed: 12 });
+  s += door(150, FL - 12, 110, 214, { catFlap: true });
+  s += `<rect x="134" y="${FL - 12}" width="142" height="12" fill="${C.light}" stroke="${C.ink}" stroke-width="2.6"/>`; // the doorstep, on the pavement
+  // a milk bottle standing on the step: a rounded body, a narrow neck and a foil cap
+  const bx = 250, by = FL - 12;
+  s += shadowAt(bx, by, 12) + path(`M${bx - 11} ${by}V${by - 34}Q${bx - 11} ${by - 44} ${bx - 6} ${by - 50}V${by - 58}H${bx + 6}V${by - 50}Q${bx + 11} ${by - 44} ${bx + 11} ${by - 34}V${by}Z`, C.light, C.ink, 2.6);
+  s += path(`M${bx - 11} ${by - 30}V${by}H${bx + 11}V${by - 30}Z`, C.paper, C.ink, 0); // the milk inside
+  s += `<rect x="${bx - 7}" y="${by - 62}" width="14" height="6" rx="2" fill="${C.accent}" stroke="${C.ink}" stroke-width="2"/>`;
+  s += catSit({ look: "velvet", x: 104, y: FL, s: 0.3, id: "sdr", headTilt: -8 });
+  return spot("spot-door", "Velvet sits on the pavement sizing up a front door with a cat flap, a milk bottle on the step", s, { k: 1.0, cx: 205 });
+}
