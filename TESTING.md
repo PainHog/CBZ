@@ -4,9 +4,8 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 
 ## 0. Set up (once)
 
-1. Install the system: in Foundry's setup screen, **Game Systems → Install System**, paste the manifest URL
-   `https://github.com/PainHog/CBZ/releases/latest/download/system.json`
-   (or copy this repository's folder to `Data/systems/cat-burglars`).
+1. Install the system. Nothing is released yet, so install it by hand: quit Foundry, make a folder `Data/systems/cat-burglars` in your Foundry user data, unzip `Cat_Burglars_Foundry_v0.8.0.zip` into it (so `system.json` sits directly in that folder), and start Foundry again. Once a release exists you can instead use **Game Systems → Install System** with the manifest URL
+   `https://github.com/PainHog/CBZ/releases/latest/download/system.json`.
 2. Create a world with the **Cat Burglars** system and launch it.
 3. **Game Settings → Users**: add a player called **Lena** (role Player). Open a second browser (or a private window) at the same address and log in as Lena. From now on, **GM** means your first window and **Lena** the second.
 4. GM: open **Compendium Packs → Cat Burglars → The Ready-Made Gang**. Import **Two-Bin Tilly**, **Big Biscuit**, **Velvet** and **Marmalade Mags**.
