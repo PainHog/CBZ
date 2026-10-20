@@ -277,7 +277,18 @@ class Robbery {
     if (z.gone || this.prizeGot()) return;
     if (z.withHuman) z.room = this.humans.find(hu => hu.key === z.withHuman).room;
     for (const s of this.h.prize.script) {
-      if (s.round !== this.round || z.carriers.length) continue;
+      if (s.round !== this.round) continue;
+      if (z.carriers.length) {
+        // the owner comes for it, finds it gone, and starts Searching (CORE-RULES v0.5 "The prize")
+        const by = this.humans.find(hu => hu.key === s.by);
+        if (this.p.ownerFetch && by && !by.holding && z.spotRoom) {
+          by.room = z.spotRoom; by.staysUntil = this.round;
+          if (this.p.searching) by.searching = true;
+          this.rec.event("ownerFoundItGone");
+          this.moodChange({ side: "broom", steps: 1 }, null, "owner finds it gone");
+        }
+        continue;
+      }
       this.placePrize(s.room, s.steps);
       const by = this.humans.find(hu => hu.key === s.by);
       if (by && !by.holding) { by.room = s.room; by.staysUntil = this.round; } // puts it down and stays with it this round
@@ -419,7 +430,7 @@ class Robbery {
 
   hostilePet(room) {
     return this.pets.find(pt => pt.room === room && pt.mode !== "hiding" && pt.mode !== "friendly" &&
-      ((pt.kind === "dog" && pt.mode === "angry") || pt.kind === "housecat"));
+      ((pt.kind === "dog" && (pt.mode === "angry" || (this.p.dogOnEntry && pt.mode === "awake"))) || pt.kind === "housecat"));
   }
 
   insideTurn(c) {
@@ -580,7 +591,12 @@ class Robbery {
       if (c.loc !== R || c.acted) return;
     }
     if (c.acted) return;
-    if (this.hostilePet(R) && !(this.hostilePet(R).slippedBy === `${c.id}:${this.round}`)) return;
+    const pet = this.hostilePet(R);
+    if (pet && pet.slippedBy !== `${c.id}:${this.round}`) {
+      // CORE-RULES v0.5: a cat that enters a room with a dog (or a guarding house cat) deals with it before anything else
+      if (this.confrontChance(c, pet) >= 0.4) { this.confront(c, pet); }
+      return;
+    }
     const seen = this.seenBy(c).length > 0;
     if (seen && this.shouldWait(c)) { this.rec.event("waited"); return; }
     const z = this.prize;
@@ -693,15 +709,16 @@ class Robbery {
           if (score > bs) { bs = score; best = { ...e, viaLetOut: true }; }
         }
       }
-      if (!e.open) continue;
+      if (!e.open && !(this.p.reopenEntrance && !e.rounds)) continue;
       if (e.rounds && !e.rounds.includes(this.round)) continue;
       if (e.size === "tight" && c.body !== "lean") continue;
       if (carry && (PRIZE_RANK[carry] > WAY_RANK[e.size] || (e.climb && carry !== "small"))) continue;
       const path = this.path(c.loc, e.room, { lean: c.body === "lean", carry });
       if (path === null) continue;
-      const pr = e.opts.length ? chanceAtLeast(poolSize({ rating: c.r[this.bestOption(c, e.opts)[0]], difficulty: this.bestOption(c, e.opts)[1] }, this.p), "scrape") : 1;
-      const score = pr - 0.35 * path.length;
-      if (score > bs) { bs = score; best = e; }
+      const opts = e.open ? e.opts : [["streetwise", 2, "open"]]; // reopening a shut entrance from inside
+      const pr = opts.length ? chanceAtLeast(poolSize({ rating: c.r[this.bestOption(c, opts)[0]], difficulty: this.bestOption(c, opts)[1] }, this.p), "scrape") : 1;
+      const score = pr - 0.35 * path.length - (e.open ? 0 : 0.3);
+      if (score > bs) { bs = score; best = e.open ? e : { ...e, opts, reopen: e }; }
     }
     return best;
   }
@@ -728,6 +745,7 @@ class Robbery {
       for (const x of group) x.acted = true;
       if (!this.simpleInView(lead, "out with the prize")) return false;
     }
+    if (e.reopen) { e.reopen.open = true; this.rec.event("reopened"); }
     if (e.noisy) this.noise.push(e.room);
     for (const x of group) {
       if (x.status !== "in") continue;
@@ -843,6 +861,18 @@ class Robbery {
       if (hu.holding) { this.holderActs(hu); continue; }
       if (answered.has(hu.key)) continue;
       if (hu.staysUntil === this.round) continue;
+      if (hu.searching && hu.asleepUntil < this.round) {
+        // Searching: stay with a cat in sight, else step into a next room with a cat in sight (carriers first), else the routine
+        const visible = room => this.cats.filter(c => c.status === "in" && c.loc === room && !c.hidden);
+        if (visible(hu.room).length) { this.rec.event("searchStayed"); continue; }
+        const next = this.waysFrom(hu.room).map(x => x.to).filter(r => visible(r).length);
+        if (next.length) {
+          const carrierRoom = next.find(r => visible(r).some(c => c.carrying));
+          hu.room = carrierRoom ?? next[Math.floor(this.rng.next() * next.length)];
+          this.rec.event("searchFound");
+          continue;
+        }
+      }
       const res = hu.routine[this.rng.d6() - 1];
       if (res !== "stay") hu.room = res;
       if (hu.kind === "grandparent" && this.rng.d6() <= 2) hu.asleepUntil = this.round + 1;
@@ -854,6 +884,7 @@ class Robbery {
       for (const hu of this.humans) {
         if (hu.room === z.spotRoom && before.get(hu.key) !== hu.room && disturbed && !hu.holding) {
           this.rec.event("discovered");
+          if (this.p.searching) hu.searching = true;
           this.moodChange({ side: "broom", steps: 1 }, null, "discovered");
         }
       }
@@ -884,7 +915,15 @@ class Robbery {
     if (catsHere().length) { pt.mode = "angry"; this.noise.push(pt.room); this.rec.event("bark"); return; }
     pt.mode = "awake";
     const f = this.rng.d6();
-    if (f >= 3) {
+    if (pt.routine) {
+      // six results like a human's: "stay", a room, or "sniff" (one room toward the nearest cat)
+      const r = pt.routine[f - 1];
+      if (r === "sniff") {
+        let bd = Infinity, to = null;
+        for (const o of this.waysFrom(pt.room).filter(x => x.way.open).map(x => x.to)) for (const c of this.freeInside()) { const d = this.dist(o, c.loc); if (d < bd) { bd = d; to = o; } }
+        if (to) pt.room = to;
+      } else if (r !== "stay") pt.room = r;
+    } else if (f >= 3) {
       const opts = this.waysFrom(pt.room).filter(x => x.way.open && pt.roam.includes(x.to)).map(x => x.to);
       let to = null;
       if (f >= 5) {

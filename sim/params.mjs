@@ -39,6 +39,12 @@ export const PARAMS = {
   lureMess: { def: true, alt: [false], title: "A human who answers a noise made on purpose finds a mess: 1 Broom step", ref: "CORE-RULES A round", pkg: true, doc: "" },
   discovery: { def: true, alt: [false], title: "A human who walks in on a disturbed prize: 1 Broom step", ref: "CORE-RULES The prize", pkg: true,
     doc: "Disturbed = got down, partly eaten, or missing from its spot." },
+  searching: { def: true, alt: [false], title: "A human who finds the prize disturbed starts Searching", ref: "CORE-RULES v0.5 Residents", pkg: true,
+    doc: "Searching humans skip their routine: they stay with a cat they can see, or step into a next room where one is." },
+  ownerFetch: { def: true, alt: [false], title: "The Prize Clock's move still happens when the cats have the prize", ref: "CORE-RULES v0.5 The prize", pkg: true,
+    doc: "The owner goes to its spot, finds it gone (+1 Broom) and starts Searching." },
+  dogOnEntry: { def: true, alt: [false], title: "An awake dog confronts a cat as soon as it enters", ref: "CORE-RULES v0.5 Residents", pkg: true, doc: "" },
+  reopenEntrance: { def: true, alt: [false], title: "A shut entrance can be reopened from inside (Streetwise, Hard)", ref: "CORE-RULES v0.5 In and out", pkg: true, doc: "" },
   lifeEffect: { def: "bolt", alt: ["hide"], title: "Where a cat ends up after spending a Life", ref: "CORE-RULES Lives", pkg: true,
     doc: "bolt: it bolts outside (the entrance stays open). hide: it slips free, hidden in the same room." },
   // ---- caught ----
@@ -87,10 +93,11 @@ export const PRESETS = {
  * package keeps meaning the same thing when the defaults move.
  * P1 = core rules v0.2 base (two Mood meters, every Action in view is a roll, zero-dice fix,
  *      one-round distraction, Lives bolt outside, front door lets one cat in, meow to be let out).
- * P6 = adopted for core rules v0.3 (2026-10-19); the defaults above equal P6.
+ * P6 = adopted for core rules v0.3/v0.4. P7 = core rules v0.5 (searching, the owner fetching the prize, dogs on entry,
+ * reopening entrances); the defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false };
+  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false };
 export const PACKAGES = {
   P1: { ...OFF },
   P2: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet" },
@@ -98,8 +105,10 @@ export const PACKAGES = {
   P4: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true },
   P5: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0 },
   P6: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true },
+  P7: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true },
 };
-export const ADOPTED = "P6";
+export const ADOPTED = "P7";
 
 export function makeParams(overrides = {}) {
   return { ...defaults(), ...overrides };

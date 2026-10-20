@@ -1,4 +1,4 @@
-# Simulator notes — policies, abstractions and gaps (core rules v0.4)
+# Simulator notes — policies, abstractions and gaps (core rules v0.5)
 
 ## Abstractions
 - **Rooms are nodes.** No grid inside a room; a cat is in a room or outside. Humans walk to any room in one round.
@@ -33,3 +33,4 @@
 
 ## Playtests
 - `playtests/2026-10-19-birthday-cake.md` (Hard, 3 cats, v0.3): Clean Getaway in 5 rounds, 3 cat rolls; 23 issues, all settled in v0.4 (`book/REVIEW.md` rows 1–19). It also confirmed that a robbery can have very few rolls when the humans wander off.
+- `playtests/2026-10-19-okafor-box.md` (Standard, 4 cats, v0.3): Clean Getaway in round 6 with **no cat rolls** (staging the box in an unvisited hall); 27 issues. Led to v0.5 (`book/REVIEW.md` rows 20–32): Searching, the owner fetching a taken prize, pet routines, dogs on entry, reopening entrances.
