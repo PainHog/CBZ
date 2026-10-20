@@ -63,9 +63,25 @@ Every piece showing one of them is checked against its sheet (counts and every m
 **The gang** (`tools/art-gen/scenes/gang.mjs`)
 - `ref-tilly`, `ref-biscuit`, `ref-velvet`, `ref-mags`, `ref-pip`: reference sheets (side view walking + front view sitting), 900×420
 
-**Placeholders** (`tools/art-gen/scenes/placeholders.mjs`)
-- `placeholder-cover`: cover-shaped placeholder (612×792)
-- `placeholder-wide`: wide placeholder (3:1), used by the Part One page and Chapter 1
-- `placeholder`: 4:3 placeholder, used by the back cover
+- `portrait-*`: the five in a lamplit brick cameo (square), for Chapter 3
+
+**Chapter vignettes** (`scenes/vignettes.mjs`, `scenes/houses.mjs`), 900×300 with backdrops running
+`BLEED` past both sides (the chapter-head box is nearly 4:1; the SVG sets `overflow="visible"`)
+- `ch-welcome`, `ch-your-cat`, `ch-gang`, `ch-rolling`, `ch-mood`, `ch-round`, `ch-instincts`, `ch-prize`,
+  `ch-caught`, `ch-residents`, `ch-storyteller`, `ch-making-a-house`, `ch-the-block`
+- `ch-number-12`, `ch-okafor-box`, `ch-wendell-mouse`, `ch-birthday-cake`, `ch-marchetti-salmon`
+
+**Maps** (`scenes/maps.mjs`): `map-*`, one per house, from the same data as the simulator
+
+**Cover, part pages, spots** (`scenes/pages.mjs`)
+- `cover` (612×792); `part-gang`, `part-robbery`, `part-storyteller`, `part-houses` (framed night panels, 900×300)
+- `spot-back` (the back-cover panel) and the end-of-chapter spots (400×300, placed by `SPOTS` in
+  `book/build.mjs`): `spot-paws`, `spot-curl`, `spot-bin`, `spot-purrfect`, `spot-mug`, `spot-wool`, `spot-box`,
+  `spot-fish`, `spot-vacuum`, `spot-broom`, `spot-pompom`, `spot-pudding`, `spot-noodle`, `spot-parrot`
+
+**Placeholders** (`tools/art-gen/scenes/placeholders.mjs`): no chapter uses them now
+- `placeholder-cover` (612×792), `placeholder-wide` (3:1), `placeholder` (4:3)
+
+**Audit**: `AUDIT.md` holds the object table and character rows for every piece.
 
 
