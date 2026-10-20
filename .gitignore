@@ -28,6 +28,3 @@ book/dist/*.pass1.pdf
 book/dist/*.pass2.pdf
 book/dist/*.print.html
 book/dist/*.html
-
-# Agent worktrees (local only)
-.claude/worktrees/

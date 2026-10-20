@@ -1,6 +1,6 @@
 # Cat Burglars — Foundry automation design
 
-> **Goal:** players and the Storyteller never track rules by hand (CLAUDE.md). The system does the bookkeeping; where the rules need a human choice (which cat to tempt, how to narrate), the Storyteller gets **one click with a rules-correct default**.
+> **Goal:** players and the Storyteller never track rules by hand (the project's working rules). The system does the bookkeeping; where the rules need a human choice (which cat to tempt, how to narrate), the Storyteller gets **one click with a rules-correct default**.
 
 Rules source: the rulebook (`book/src/chapters/`), currently summarised in `docs/CORE-RULES.md` v0.8. The simulator's rules (`sim/rules.mjs`) are a separate copy; a parity test keeps `module/logic/` and the simulator agreeing on the adopted package. Copied patterns from *Heisty Spideys* (`docs/reference/heisty-automation-design.md`) are noted as such.
 

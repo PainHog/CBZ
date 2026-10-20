@@ -2,7 +2,7 @@
 
 A tabletop roleplaying game by **Richard Moore**. The players are a gang of street cats. They've just watched a human carry something into a house: something delicious, something fun, or a box. They must get it at all costs, without getting caught.
 
-**Status:** core rules v0.7 (`docs/CORE-RULES.md`), rulebook drafted (`book/`), simulated (`sim/`), and a Foundry VTT system (0.5.0) that runs a whole robbery. See `docs/DESIGN.md`.
+**Status:** core rules v0.8 (`docs/CORE-RULES.md`), rulebook finished in draft (`book/`), simulated (`sim/`), and a Foundry VTT system (0.8.0) that runs a whole robbery. See `docs/DESIGN.md`.
 
 ## What's in here
 | Folder | What it is |

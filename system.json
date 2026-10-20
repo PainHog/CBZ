@@ -3,7 +3,7 @@
   "type": "system",
   "title": "Cat Burglars",
   "description": "The Foundry VTT game system for Cat Burglars, a tabletop roleplaying game by Richard Moore: a gang of street cats robs a house. Automation-first: cat sheets, a roll dialog that knows who is watching, roll cards with Push, the two-meter Mood with Shoo! and Scooped!, and a Robbery Tracker that runs the house's turn (pets, noise, routines, Searching, the Prize Clock) and the outcome. Includes the five ready-to-run houses, their residents and the ready-made gang.",
-  "version": "0.5.0",
+  "version": "0.8.0",
   "compatibility": {
     "minimum": "13",
     "verified": "14"

@@ -1,14 +1,14 @@
-# Cat Burglars — Claude's version: experiment report
+# Cat Burglars — the delegated version: experiment report
 
-*For Richard Moore. Branch `claude/cat-burglars-core-design-55iymx`, 2026-10-20. Not merged into the main line (your call).*
+*For Richard Moore, 2026-10-20. Merged into the main line on your say-so (a fresh single commit; the full history stays on the experiment branch).*
 
-You chose the identity — instincts as the cats' heart, hiding in plain sight, starting at the door, choosing different entrances, a street gang rather than a heist crew — and asked Claude to make every other call and build the game to completion, so you can compare it with the version you direct. This is what came out, what it cost to get there, and what is still open.
+You chose the identity — instincts as the cats' heart, hiding in plain sight, starting at the door, choosing different entrances, a street gang rather than a heist crew — and asked an AI assistant to make every other call and build the game to completion, so you can compare it with the version you direct. This is what came out, what it cost to get there, and what is still open.
 
 ## What exists
 
 | Part | State |
 |---|---|
-| Design | 39 decisions in `docs/DESIGN.md` (Claude's marked "Claude"); all 12 open questions settled. |
+| Design | 39 decisions in `docs/DESIGN.md` (the delegated ones marked "AI"); all 12 open questions settled. |
 | Core rules | `docs/CORE-RULES.md` v0.8 — a two-page summary of the book. |
 | Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Cat_Burglars_v0.8.pdf` (50 pages, every picture final; the cover says "draft" until you approve it), plus a print edition with bleed (`…_print-interior.pdf`, 48 pages, and front and back covers). Every ruling is a row in `book/REVIEW.md` (103 rows). |
 | Art | 49 pictures, all generated as code (`book/tools/art-gen/`): cover, part pages, 18 chapter pictures, 5 floor plans drawn from the same data the simulator plays, 5 cat portraits (plus a reference sheet per cat), 15 end-of-chapter spots and a back-cover picture. Each audited against `book/art/ART-CHECKLIST.md` (`book/art/AUDIT.md`). |
@@ -58,7 +58,7 @@ Two late fixes: a gang of **five** now gets Patience −1 only (with the Prize C
 
 ## Things that are your call
 
-1. **Credits.** CLAUDE.md asks for "Game design & writing: Richard Moore". Because this branch is the experiment where Claude made the design calls, the credits page says "Created by Richard Moore", then "Game design & writing: Claude (Anthropic), in a design experiment directed by Richard Moore", then the usual "Editing, layout & illustration: Produced with AI assistance (Claude, by Anthropic), directed by Richard Moore". Change it back if you prefer.
+1. **Credits.** Settled: the credits page names only you ("Created by" and "Game design & writing: Richard Moore"), and nothing in the game or the docs names the AI tool or its maker.
 2. **The name.** Other games already use *Cat Burglars* (a free TTRPG on itch.io, a 2025 board game, an *Exploding Kittens* edition). It's the working title until you decide.
 3. **Names changed for originality:** the Wendells' house cat is **Pom-Pom** (not "Duchess", *The Aristocats*); the Okafors' dog is **Noodle** (it was "Biscuit", which clashed with Big Biscuit).
 4. **Merging, releasing, the art direction:** nothing is merged, released or final without you.

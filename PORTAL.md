@@ -13,9 +13,9 @@ Download: downloads/Cat_Burglars_Foundry_v0.5.0-test.zip = The online version fo
 # Cat Burglars plan
 
 Read by Richard's project portal on every push to this branch and shown on the Cat Burglars card to everyone he has invited.
-Plain words only: no repo names, usernames, file paths, links or commit IDs. Rules: CLAUDE.md, "Portal".
+Plain words only: no repo names, usernames, file paths, links or commit IDs. Rules: the project's working rules, "Portal" section.
 
-This version is an experiment: Richard chose what makes the game its own, then asked Claude to make every other design call and build the whole game, so it can be compared with the version Richard directs himself.
+This version is an experiment: Richard chose what makes the game its own, then asked an AI assistant to make every other design call and build the whole game, so it can be compared with the version Richard directs himself.
 
 ## Design
 
