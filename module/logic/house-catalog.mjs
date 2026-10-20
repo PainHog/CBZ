@@ -21,7 +21,7 @@ const climb = [["sneaky", 1, "climb"], ["savage", 1, "climb"]];
 const hardClimb = [["sneaky", 2, "climb"], ["savage", 2, "climb"]];
 const door = [["streetwise", 1, "open"], ["savage", 2]];
 const stiffDoor = [["streetwise", 2, "open"], ["savage", 2]];
-const wrapped = [["streetwise", 1, "open"], ["savage", 1, "fight"]];   // foil, cling film, a cake cover
+const wrapped = [["streetwise", 1, "open"], ["savage", 1]];   // foil, cling film, a cake cover (tearing it isn't fighting)
 const bag = [["streetwise", 1, "open"], ["sneaky", 1]];                // rummage in a shopping bag
 
 export const HOUSES = [

@@ -1,4 +1,4 @@
-Now: The online version for the table, and a final playtest of the finished rulebook
+Now: Two final playtests of the finished rulebook (Grandpa Wendell's house with five cats, and the birthday cake)
 Next: A full read-through of the rulebook, then a report for Richard comparing the two versions
 Number: Design decisions made = 37
 Number: Open design questions = 0
@@ -44,4 +44,5 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] First full rulebook draft (all eighteen chapters, the sheets and the five houses)
 - [ ] Final playtest of the finished rulebook
 - [x] Pictures for the rulebook (cover, chapter pictures, maps, the gang, and little end-of-chapter drawings)
-- [ ] Online version that runs the rules for the table
+- [x] Online version that runs the rules for the table (built and tested on a pretend table)
+- [ ] Richard tries the online version at a real table

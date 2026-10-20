@@ -150,6 +150,16 @@ class Robbery {
 
   /** Shoo! / Scooped! (CORE-RULES). */
   trigger(kind, cat) {
+    if (cat && cat.status === "held" && kind === "shoo") {
+      // a held cat whose own roll fills Broom: the holder lets go and shoos it outside (CORE-RULES v0.7)
+      const holder = this.humans.find(hu => hu.key === cat.heldBy);
+      if (holder) holder.holding = null;
+      const after = afterTrigger(this.mood, this.patience, "broom", this.p);
+      this.patience = after.patience; this.mood = after.mood;
+      cat.status = "out"; cat.loc = "outside"; cat.heldBy = null; cat.hidden = false;
+      this.rec.event("shoo"); this.rec.event("shooed");
+      return;
+    }
     if (!cat || cat.status !== "in") {
       // nobody in sight: the meter stays full and the next cat seen on that side gets it (CORE-RULES "Shoo!/Scooped!")
       this.rec.event(`${kind}Pending`);
@@ -175,7 +185,7 @@ class Robbery {
       if (ent && this.p.shutOnShoo) ent.open = false;
       this.rec.event("shooed");
     } else {
-      const ws = this.watchers(cat.loc).sort((a, b) => b.attention - a.attention);
+      const ws = this.watchers(cat.loc).filter(hu => !hu.holding).sort((a, b) => b.attention - a.attention); // a holder has their hands full
       const holder = ws[0] ?? this.humans.find(hu => hu.room === cat.loc && !hu.holding) ?? this.humans.find(hu => !hu.holding);
       if (!holder) return;
       holder.holding = cat.id; holder.room = cat.loc;
@@ -218,7 +228,7 @@ class Robbery {
     const kid = seenList.some(hu => hu.kind === "kid");
     const delta = moodDelta({ result: roll.result, approach: opts.approach, seen, mood: this.mood, pushedWithMood, kidDoubles: kid }, p);
     if (makesNoise(roll.result) && !opts.quiet) this.noise.push(opts.noiseRoom && works(roll.result) ? opts.noiseRoom : cat.loc);
-    if (!(roll.result === "clean" && opts.approach === "sneaky") && roll.result !== "purrfect") cat.hidden = false;
+    cat.hidden = false; // CORE-RULES "Seen": doing anything ends hiding
     // the Mood moves after the outcome is known; the trigger (if any) hits this cat
     return { result: roll.result, delta, apply: () => this.moodChange(delta, cat, opts.why) };
   }
@@ -355,7 +365,7 @@ class Robbery {
     const i = c.tempted;
     if (c.carrying && (i !== "boxSitter" || this.p.carrierRules)) this.dropPrize(c, { here: true });
     if (i === "boxSitter" || i === "climber") { c.hidden = true; return; }
-    const watchers = this.seenBy(c);
+    const watchers = this.seenBy(c).filter(hu => !hu.holding);
     if (i === "lapCat") {
       // a fuss from a human here: that human is Distracted until the round ends (Cuddle +1); no human: a sunny spot, quiet
       if (watchers.length) { watchers[0].distractedUntil = Math.max(watchers[0].distractedUntil, this.round); this.moodChange({ side: "cuddle", steps: watchers[0].kind === "kid" && this.p.carrierRules ? 2 : 1 }, c, "temptation:lapCat"); }
@@ -403,7 +413,7 @@ class Robbery {
       const watchedHere = this.watchers(lead.loc).length;
       R = watchedHere || !path?.length ? lead.loc : path[0];
     }
-    const ws = this.watchers(R);
+    const ws = this.watchers(R).filter(hu => !hu.holding); // a holder can't be Distracted (their hands are full)
     if (!ws.length) return plan;
     const cand = this.freeInside().filter(c => !c.carrying && !c.tempted && c.r.sweet >= 2 &&
       (c.loc === R || (this.path(c.loc, R, { lean: c.body === "lean" })?.length === 1 && this.wayBetween(c.loc, R)?.open)))
@@ -929,6 +939,7 @@ class Robbery {
           continue;
         }
       }
+      if (hu.asleepUntil >= this.round) continue; // dozing: sees nothing, hears nothing, stays put
       const res = hu.routine[this.rng.d6() - 1];
       if (res !== "stay") hu.room = res;
       if (hu.kind === "grandparent" && this.rng.d6() <= 2) hu.asleepUntil = this.round + 1;
