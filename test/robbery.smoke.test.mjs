@@ -296,3 +296,34 @@ test("every automation can be switched off; Push with the Mood; giving in from t
   assert.equal(catOf(dot.id).acted, true, "giving in was her Action");
   assert.deepEqual(log.errors, []);
 });
+
+test("the sheet's Roll buttons: what am I doing (in a robbery), or a free roll (outside one)", async () => {
+  const kit = await makeCat("Midnight Kit", p1, { approaches: { sneaky: 3, sweet: 2, savage: 1, streetwise: 1 }, instinct1: "climber", instinct2: "foodie", body: "lean" });
+  const { CatSheet } = await import("../module/sheets/actor-sheets.mjs");
+  const sheet = new CatSheet({ document: kit });
+  await asUser(p1, () => sheet.render(true));
+  // outside any robbery this cat is in: straight to the roll dialog
+  diceQueue.push(4, 2, 6);
+  dialogResponders.push(opts => opts.buttons.find(b => b.action === "roll").callback({}, { form: fakeForm({ approach: "sneaky" }) }));
+  await asUser(p1, () => sheet.runAction("roll", { approach: "sneaky" }));
+  await settle();
+  const free = game.messages.at(-1);
+  assert.equal(flags(free).result, "clean");
+  assert.equal(flags(free).robberyId, null);
+  assert.equal(flags(free).plan.total, 3);
+  // in a robbery: first "what are you doing?", then the dialog for that option
+  await asUser(gmU, () => api().robbery.startRobbery("number-12", { actorIds: [kit.id] }));
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  let asked = null;
+  dialogResponders.push(opts => { asked = opts.buttons.map(b => b.action); return "enter:window"; });
+  dialogResponders.push(opts => opts.buttons.find(b => b.action === "roll").callback({}, { form: fakeForm({ approach: "sneaky" }) }));
+  diceQueue.push(6, 6, 2);
+  await asUser(p1, () => sheet.runAction("roll", { approach: "sneaky" }));
+  await settle();
+  assert.ok(asked.includes("enter:window") && asked.includes("enter:front") && asked.includes("free"));
+  const m = game.messages.at(-1);
+  assert.equal(flags(m).optionId, "enter:window");
+  assert.equal(flags(m).result, "purrfect", "Sneaky 3 + Climber − Tricky = 3 dice, two 6s");
+  assert.deepEqual(log.errors, []);
+});

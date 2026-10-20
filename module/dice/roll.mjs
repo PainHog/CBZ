@@ -37,8 +37,10 @@ export async function rollFor(actor, { approach = null, optionId = null } = {}) 
   await finalizePendingFor(actor.id);
   const state = getState();
   const inRobbery = running(state) && state.cats.some(c => c.id === actor.id);
-  if (inRobbery && !optionId) optionId = await chooseOption(state, actor, approach);
-  if (optionId === null) return null;
+  if (inRobbery && !optionId) {
+    optionId = await chooseOption(state, actor, approach);
+    if (!optionId) return null; // the player closed the chooser
+  }
   const ctx = inRobbery ? rollContext(state, actor.id, optionId ?? "free") : freeContext(actor);
   if (!ctx) { ui.notifications?.warn(`${actor.name} can't do that now.`); return null; }
   const answer = await rollDialog(actor, ctx, approach);

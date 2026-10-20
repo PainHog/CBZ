@@ -1,6 +1,6 @@
 <section class="catb-sheet-body {{cssClass}}">
   <header class="catb-sheet-head">
-    <img class="catb-portrait" src="{{actor.img}}" alt="{{actor.name}}" data-edit="img">
+    <img class="catb-portrait" src="{{actor.img}}" alt="{{actor.name}}" {{#if editable}}data-action="editImage" data-edit="img"{{/if}}>
     <div class="catb-name">
       <input type="text" name="name" value="{{actor.name}}" placeholder="Street name" {{#unless editable}}disabled{{/unless}}>
       <p class="catb-sub">Cattitude, Lives and the dice — Chapter 2.</p>
