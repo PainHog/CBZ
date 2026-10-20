@@ -1,5 +1,5 @@
-Now: Testing the rules by having the computer play thousands of robberies, then checking them in a full playtest with real dice
-Next: Computer playtests that follow the rules word for word and note every unclear rule
+Now: Fixing every unclear rule the first full playtest found, and running the second playtest
+Next: Writing the rules chapters of the rulebook
 Number: Design decisions made = 31
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
@@ -33,7 +33,8 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Write the core rules
 - [x] First balance simulation
 - [x] Tune easy, standard and hard houses to their targets (easy still plays a little easy)
-- [ ] First computer playtests with real dice
+- [x] First computer playtest with real dice (the hard birthday-cake house)
+- [ ] Second playtest (the box house) and its fixes
 - [ ] First full rulebook draft
 - [ ] Pictures for the rulebook
 - [ ] Online version that runs the rules for the table

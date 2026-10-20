@@ -1,14 +1,13 @@
-# Cat Burglars — balance (first simulation, core rules v0.3)
+# Cat Burglars — balance (core rules v0.4)
 
-**Adopted: package P6** (the defaults in `sim/params.mjs`; `docs/CORE-RULES.md` v0.3 describes it).
+**Adopted: package P6** (the defaults in `sim/params.mjs`; `docs/CORE-RULES.md` v0.4 describes it). The tables below were re-run after the v0.4 playtest fixes (noise, the human staying with the prize, instinct effects, the parrot).
 
 ## Short version
-- **Gang of 4: Easy 95%, Standard 77%, Hard 60%** (targets ~90 / ~75 / 55–60). Standard and Hard are on target; **Easy plays about 5 points easy.**
-- **Hits:** Flops 16% of rolls, Purrfects 5%, temptations given in to 75% of the time, 74% of cats spend at least half their Cattitude, a cat gets Held or Shooed in about half of Standard robberies, and a cat is left behind (adopted) in 22% of Hard robberies.
+- **Gang of 4: Easy 95%, Standard 77%, Hard 58%** (targets ~90 / ~75 / 55–60). Standard and Hard are on target; **Easy plays about 5 points easy.**
+- **Hits:** Flops 16% of rolls, Purrfects 5%, temptations given in to 74% of the time, 74% of cats spend at least half their Cattitude, a cat gets Held or Shooed in about half of Standard robberies, and a cat is left behind (adopted) in 20% of Hard robberies and 3.5% of Easy ones.
 - **Misses, still open:**
   - **Easy runs ~5 points easy (95%).** Every one-human tweak tried (shorter clock, Patience 4, a dog, a stiffer flap) left it at 94–98%.
-  - **Left behind at Easy is 5.3%,** just over the ≤ 5% cap.
-  - **Gang-size parity is ~±9 points, not ±5.** Three cats lose ~9 at Standard (the Large box needs all three to carry it); five cats gain ~7 at Hard.
+  - **Gang-size parity is ~±10 points at Standard, not ±5.** Three cats lose ~10 at Standard (the Large box needs all three to carry it); five cats gain ~5. At Easy and Hard every size is within 4 points.
   - **About 8 rolls per robbery over ~9 rounds.** Many turns are moves and waits. The agent playtests should say whether that feels thin; if so, the houses need more obstacles on their routes.
 - **Caveat:** the gang plays by simple policies (`sim/NOTES.md`), not by real players. Several house results moved 10–20 points when the policy got smarter, so treat ±5 points as noise from the policy.
 
@@ -38,26 +37,26 @@ Each package runs every house with gangs of 3, 4 and 5 cats on the same gangs an
 | | Easy | Standard | Hard | Clean share Easy / Hard | Caught ≥1 (Std) | Left behind Easy / Hard | Flop | Purrfect | Gave in | Spend ≥ ½ Cattitude | Rolls | Rounds |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **target** | ~90 | ~75 | 55–60 | ≥ 75 / ≥ 33 | ≥ 50 | ≤ 5 / ≥ 10 | 15–25 | 2–6 | ≥ 40 | ≥ 50 | — | — |
-| P1 | 96.0 | 81.7 | 61.6 | 91 / 48 | 36.4 | 0.9 / 1.7 | 10.9 | 4.7 | 70.3 | 30.7 | 7.2 | 8.3 |
-| P3 | 89.2 | 73.3 | 54.2 | 81 / 50 | 52.0 | 2.6 / 3.3 | 16.9 | 2.9 | 67.3 | 39.5 | 7.3 | 8.5 |
-| P5 | 93.7 | 75.6 | 57.5 | 86 / 45 | 52.0 | 5.2 / 21.9 | 18.9 | 2.7 | 68.1 | 41.2 | 8.0 | 8.8 |
-| P6 | 95.1 | 77.3 | 60.1 | 87 / 45 | 49.0 | 5.3 / 21.6 | 15.6 | 5.0 | 74.8 | 73.5 | 7.9 | 8.8 |
+| P1 | 95.9 | 83.8 | 61.7 | 96 / 48 | 34.2 | 0.9 / 2.3 | 11.4 | 4.5 | 71.3 | 30.6 | 7.2 | 8.1 |
+| P3 | 94.8 | 73.9 | 52.7 | 92 / 47 | 49.6 | 0.9 / 2.9 | 16.7 | 2.8 | 66.0 | 40.0 | 7.1 | 8.3 |
+| P5 | 95.2 | 75.5 | 52.8 | 92 / 42 | 49.6 | 3.4 / 20.3 | 18.9 | 2.6 | 66.9 | 42.3 | 8.0 | 8.7 |
+| P6 | 95.2 | 76.6 | 58.3 | 94 / 42 | 49.0 | 3.5 / 19.9 | 15.6 | 5.0 | 74.1 | 73.6 | 7.8 | 8.6 |
 
 ## Gang size (win % Easy / Standard / Hard)
 
 | package | 3 cats | 4 cats | 5 cats |
 |---|---|---|---|
-| P1 | 87.2 / 67.2 / 45.0 | 96.0 / 81.7 / 61.6 | 99.0 / 85.7 / 70.6 |
-| P3 | 78.5 / 57.0 / 38.1 | 89.2 / 73.3 / 54.2 | 97.6 / 78.8 / 62.3 |
-| P5 | 91.6 / 68.5 / 55.0 | 93.7 / 75.6 / 57.5 | 96.3 / 80.8 / 63.9 |
-| P6 | 92.9 / 68.4 / 56.3 | 95.1 / 77.3 / 60.1 | 97.9 / 81.8 / 67.0 |
+| P1 | 91.3 / 68.6 / 45.5 | 95.9 / 83.8 / 61.7 | 98.7 / 89.1 / 67.8 |
+| P3 | 86.7 / 53.7 / 36.2 | 94.8 / 73.9 / 52.7 | 97.6 / 80.4 / 61.2 |
+| P5 | 92.5 / 66.8 / 53.4 | 95.2 / 75.5 / 52.8 | 96.2 / 80.7 / 59.6 |
+| P6 | 93.1 / 67.0 / 57.4 | 95.2 / 76.6 / 58.3 | 97.2 / 81.4 / 62.3 |
 
 ## Per house, gang of 4 (win · clean · busted · left behind)
 
 | house | label | P1 | P3 | P5 | P6 |
 |---|---|---|---|---|---|
-| The Chicken at Number 12 | easy | 96.0 · 87.6 · 4.0 · 0.9 | 89.2 · 72.6 · 10.8 · 2.6 | 93.7 · 80.3 · 6.3 · 5.2 | 95.1 · 82.7 · 4.9 · 5.3 |
-| The Okafors' Big Box | standard | 80.5 · 80.2 · 19.5 · 2.5 | 70.1 · 69.4 · 29.9 · 4.7 | 72.3 · 70.9 · 27.7 · 7.6 | 75.4 · 73.6 · 24.6 · 6.9 |
-| Grandpa Wendell's Catnip Mouse | standard | 82.9 · 81.8 · 17.1 · 4.0 | 76.4 · 74.8 · 23.6 · 5.1 | 78.9 · 73.7 · 21.1 · 14.5 | 79.1 · 72.5 · 20.9 · 15.9 |
-| The Birthday Cake | hard | 61.3 · 13.4 · 38.7 · 0.4 | 48.8 · 9.8 · 51.2 · 2.7 | 53.0 · 7.8 · 47.0 · 30.2 | 59.4 · 10.4 · 40.6 · 29.4 |
-| Chef Marchetti's Salmon | hard | 61.9 · 46.2 · 38.1 · 3.0 | 59.6 · 44.0 · 40.4 · 3.9 | 62.1 · 43.8 · 37.9 · 13.6 | 60.8 · 43.1 · 39.2 · 13.8 |
+| The Chicken at Number 12 | easy | 95.9 · 91.9 · 4.1 · 0.9 | 94.8 · 87.1 · 5.2 · 0.9 | 95.2 · 88.0 · 4.8 · 3.4 | 95.2 · 89.3 · 4.8 · 3.5 |
+| The Okafors' Big Box | standard | 81.5 · 80.8 · 18.5 · 3.2 | 71.6 · 70.7 · 28.4 · 4.5 | 73.1 · 71.4 · 26.9 · 7.3 | 73.5 · 71.7 · 26.5 · 6.7 |
+| Grandpa Wendell's Catnip Mouse | standard | 86.0 · 84.9 · 14.0 · 3.3 | 76.2 · 75.0 · 23.8 · 4.8 | 78.0 · 74.0 · 22.0 · 12.7 | 79.6 · 74.7 · 20.4 · 13.5 |
+| The Birthday Cake | hard | 64.8 · 15.5 · 35.2 · 0.6 | 49.3 · 8.5 · 50.7 · 1.5 | 49.8 · 7.1 · 50.2 · 22.9 | 59.6 · 10.3 · 40.4 · 22.1 |
+| Chef Marchetti's Salmon | hard | 58.6 · 43.1 · 41.4 · 4.0 | 56.2 · 40.7 · 43.8 · 4.2 | 55.8 · 37.0 · 44.2 · 17.7 | 56.9 · 38.3 · 43.1 · 17.6 |

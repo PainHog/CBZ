@@ -343,6 +343,7 @@ class Robbery {
     }
     if (i === "foodie") { if (watchers.length) this.moodChange({ side: "broom", steps: 1 }, c, "temptation:foodie"); return; } // munching is quiet
     this.noise.push(c.loc);
+    if (i === "hunter") return; // chasing a fly in view looks innocent: noise only
     if (i === "knocker") (this.messes ??= new Set()).add(c.loc); // it's on the floor now: whoever comes finds a mess
     if (i === "scrapper") for (const pt of this.pets) if (pt.room === c.loc && pt.kind === "dog" && pt.mode !== "hiding") pt.mode = "angry";
     if (watchers.length) this.moodChange({ side: "broom", steps: 1 }, c, `temptation:${i}`);
@@ -432,6 +433,15 @@ class Robbery {
       if (this.hostilePet(c.loc) === pet) return; // still stuck with it
     }
     if (this.plan.distract.has(c.id) && !c.acted) { this.distract(c, this.plan.distract.get(c.id)); return; }
+    // cover a squawking parrot in the prize's room (Streetwise, Tricky; CORE-RULES "Residents")
+    const parrot = this.pets.find(pt => pt.kind === "parrot" && pt.mode !== "covered" && pt.room === c.loc);
+    if (parrot && !c.acted && !c.carrying && !this.seenBy(c).length && c.loc === this.prize.room && c.r.streetwise >= 2 && this.phase() === "get") {
+      const res = this.roll(c, { approach: "streetwise", diff: 1, tags: ["open"], important: true, why: "cover parrot" });
+      c.acted = true;
+      if (works(res.result)) { parrot.mode = "covered"; this.rec.event("parrotCovered"); }
+      res.apply();
+      return;
+    }
     if (this.plan.lure?.cat === c.id && !c.acted) {
       if (c.loc !== this.plan.lure.room && !c.moved) this.moveTo(c, this.plan.lure.room);
       if (c.loc === this.plan.lure.room) { this.lure(c); return; }
