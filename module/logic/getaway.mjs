@@ -7,6 +7,13 @@
  * obstacles to the hideout with the loot in pieces, the animal warden coming
  * up behind.
  *
+ * The playtest fix round (package P14): the warden pulls up on the garden at the
+ * end of round 2 (round 3 if nobody was Shooed or Scooped), never passes a cat
+ * (he stops on the rearmost running cat's space), and a dodge that works leaves
+ * the cat where it is and sends him sprawling (he skips his next move); a group
+ * loses 1 die if any cat in it carries loot; a cat carrying loot can't be Sweet;
+ * a cat may wait.
+ *
  * Cred (Ch 9 "Cred: showing off", package P13): the rivals hang about on one
  * obstacle (the house's `cred.patch`): loot dropped there is nicked at once, and
  * the cat who leads a group over it with a Clean or a Purrfect scores 1; a
@@ -17,7 +24,7 @@
  *   { round, stage: "run"|"cornered", route: [{ name, opts, pet? }], arrives, warden: null|space,
  *     catches, cats: { [catId]: { pos, carry, state: "running"|"home"|"pinched", acted, where } },
  *     drops: [pieces lying on space 0…3], cornered: [catId], flopped, loot: { total, safe, start, left, nicked }, houseEnd,
- *     patch: the rivals' obstacle (null: none), rivals: their name }
+ *     patch: the rivals' obstacle (null: none), rivals: their name, stunned: the warden skips his next move }
  * Spaces: a cat on space k is in front of obstacle k (0–3); getting over obstacle 3 is the hideout.
  * The warden stands on a space (null: still on the way). Every function takes a
  * state and returns { state, events, … } with a NEW state; `ctx.getaway` false
@@ -47,8 +54,10 @@ export const DEFAULT_ROUTE = Object.freeze([
 /** Ch 9 "Cornered": dodge with Sneaky (slip between their boots), Savage (bolt) or Sweet ("I'm somebody's cat!"), plain. */
 export const DODGE = Object.freeze([["sneaky", R.dodgeDiff, "hide"], ["savage", R.dodgeDiff, "chase"], ["sweet", R.dodgeDiff, "charm"]]);
 
-/** Ch 9 "Running with the loot": a cat carrying loot loses 1 die — a Chonky cat carrying a single piece doesn't. */
+/** Ch 9 "Running with the loot": a cat carrying loot weighs its group down — a Chonky cat carrying a single piece doesn't. */
 export const lootDie = (c, carry) => (carry > (c?.body === "chonky" ? 1 : 0) ? 1 : 0);
+/** Ch 9 (P14): a cat carrying loot can't be Sweet — its mouth is full. */
+const noSweet = (opts, carry) => { const left = carry > 0 ? opts.filter(o => o[0] !== "sweet") : opts; return left.length ? left : opts; };
 
 export const inGetaway = s => s?.phase === "getaway" && !!s.getaway;
 const runner = (s, id) => s.getaway?.cats?.[id] ?? null;
@@ -76,8 +85,8 @@ function dropLoot(g, pos, n, ev, who = "") {
  * (held, shut in, free) are pinched; every other cat starts at space 0 with its
  * share of the loot (one piece each, two for a Chonky cat; Chonky cats first, as
  * the simulator shares; what nobody can carry is left lying in the garden). The
- * warden arrives at the end of round 1 if any cat was Shooed or Scooped tonight,
- * else at the end of round 2.
+ * warden pulls up at the end of round 2 if any cat was Shooed or Scooped tonight,
+ * else at the end of round 3 (P14: wardenLag 2).
  */
 export function startGetaway(state, reason = "manual", house = null) {
   const s = clone(state);
@@ -100,7 +109,7 @@ export function startGetaway(state, reason = "manual", house = null) {
   }
   const cr = credOf(s);
   const patch = Number.isInteger(cr.patch) && cr.patch >= 0 && cr.patch < route.length ? cr.patch : null;
-  s.getaway = { round: 1, stage: "run", route, arrives: catches ? 1 : 1 + R.wardenLag, warden: null, catches, cats,
+  s.getaway = { round: 1, stage: "run", route, arrives: catches ? R.wardenLag : R.wardenLag + 1, warden: null, stunned: false, catches, cats,
     drops: route.map(() => 0), cornered: [], flopped: false, loot: { total, safe, start: pieces, left, nicked: 0 }, houseEnd: reason,
     patch, rivals: patch === null ? null : cr.rivals ?? "the rival gang" };
   const lootEv = [];
@@ -117,7 +126,7 @@ export function startGetaway(state, reason = "manual", house = null) {
     ev.push({ type: "loot", text: `The loot: the ${z.name} in ${pieces} piece${pieces > 1 ? "s" : ""}${shares.length ? ` — ${shares.join(", ")}` : ""}${left ? `; ${left} left lying in the garden` : ""}.${safe ? ` (${safe} portion${safe > 1 ? "s" : ""} already safe inside a cat.)` : ""}` });
   } else ev.push({ type: "loot", text: safe ? `No loot to carry: ${safe} portion${safe > 1 ? "s" : ""} of the ${z.name} already safe inside a cat.` : `No loot to carry: the ${z.name} never left the house.` });
   ev.push(...lootEv);
-  ev.push({ type: "warden", text: s.getaway.arrives === 1 ? "Somebody was Shooed or Scooped tonight: the van pulls up at the end of round 1." : "Nobody was caught tonight, so the humans take their time: the van pulls up at the end of round 2." });
+  ev.push({ type: "warden", text: catches ? `Somebody was Shooed or Scooped tonight: the van pulls up at the end of round ${s.getaway.arrives}.` : `Nobody was caught tonight, so the humans take their time: the van pulls up at the end of round ${s.getaway.arrives}.` });
   if (patch !== null) ev.push({ type: "rivals", text: `${Rivals(s.getaway)} hang about at ${route[patch].name}: drop loot there and it's nicked; lead the gang past them with a Clean or a Purrfect for 1 Cred.` });
   wearOff(s, ev); // Ch 9: by the back fence the zoomies have worn off
   if (!run.length) return finished(s, ev);
@@ -130,10 +139,12 @@ export function startGetaway(state, reason = "manual", house = null) {
 
 /**
  * What a cat can do in the getaway now (the same shape as actions.catOptions):
- * `over` (a roll: the next obstacle's roll, −1 die carrying loot unless a Chonky
- * cat with one piece; the obstacle's pet takes its rating), `gdrop` (drop a piece
- * here on purpose — before rolling, to lose the die; no turn used), `gpick` (pick
- * up a dropped piece here instead of going on), and when cornered `dodge` (a roll).
+ * `over` (a roll: the next obstacle's roll, −1 die if the group carries loot —
+ * the leader's own load here, a helper's added by the roll dialog; not a Chonky
+ * cat with one piece; no Sweet with loot; the obstacle's pet takes its rating),
+ * `gdrop` (drop a piece here on purpose — before rolling, to lose the die; no turn
+ * used), `gpick` (pick up a dropped piece here instead of going on), `gwait`
+ * (stay put this round), and when cornered `dodge` (a roll; no Sweet with loot).
  */
 export function getawayOptions(state, catId) {
   const s = state;
@@ -145,7 +156,10 @@ export function getawayOptions(state, catId) {
   const opt = o => out.options.push({ uses: [], roll: null, group: false, simple: false, disabled: null, room: null, ...o });
   if (r.state !== "running") return out;
   if (g.stage === "cornered") {
-    if (g.cornered.includes(catId)) opt({ id: "dodge", kind: "dodge", label: "Dodge the warden! (Sneaky, Savage or Sweet, plain)", uses: ["action"], roll: { options: DODGE.map(o => [...o]) } });
+    if (g.cornered.includes(catId)) {
+      const opts = noSweet(DODGE.map(o => [...o]), r.carry);
+      opt({ id: "dodge", kind: "dodge", label: `Dodge the warden! (${opts.length < DODGE.length ? "Sneaky or Savage: no Sweet with your mouth full" : "Sneaky, Savage or Sweet"}, plain)`, uses: ["action"], roll: { options: opts } });
+    }
     return out;
   }
   const done = r.acted ? "already went this getaway round" : null;
@@ -154,9 +168,10 @@ export function getawayOptions(state, catId) {
   const home = r.pos === g.route.length - 1;
   const rivals = onPatch(g, r.pos);
   opt({ id: "over", kind: "over", label: `Over ${ob.name}${home ? ", and home to the hideout" : ""}${die ? " (carrying loot: −1 die)" : ""}${ob.pet ? ` (it takes ${ob.pet} ${ob.pet > 1 ? "dice" : "die"} off)` : ""}${rivals ? ` — past ${g.rivals}: a Clean or a Purrfect is 1 Cred` : ""}`,
-    uses: ["action"], group: true, roll: { options: ob.opts.map(([a, d, ...t]) => [a, d + die, ...t]), opposition: ob.pet ?? 0, diffLabel: die ? "carrying loot −1" : null }, disabled: done });
+    uses: ["action"], group: true, roll: { options: noSweet(ob.opts, r.carry).map(([a, d, ...t]) => [a, d + die, ...t]), opposition: ob.pet ?? 0, diffLabel: die ? "carrying loot −1" : null, lootDie: die }, disabled: done });
   if (r.carry > 0) opt({ id: "gdrop", kind: "gdrop", label: rivals ? `Drop a piece of loot here (${g.rivals} nick it at once!)` : `Drop a piece of loot here${die ? " (no loot die for the next roll)" : ""}`, uses: [] });
   if ((g.drops[r.pos] ?? 0) > 0 && r.carry < carryCap(c)) opt({ id: "gpick", kind: "gpick", label: `Grab a dropped piece (${g.drops[r.pos]} here) instead of going on`, uses: ["action"], disabled: done });
+  opt({ id: "gwait", kind: "gwait", label: "Wait here this round", uses: ["action"], disabled: done });
   out.helpTargets = getawayHelpTargets(s, c);
   return out;
 }
@@ -192,7 +207,10 @@ export function getawayRollContext(state, catId, optionId) {
     })),
     opposition: o.roll.opposition ?? 0, bodyDie: false, diffLabel: o.roll.diffLabel ?? null,
     seenBy: [], seenNames: [], attention: 0, kid: false,
-    helpers: getawayHelpers(s, c, o).map(x => ({ id: x.id, name: x.name, locked: false, queued: queued.includes(x.id), note: "goes over with them" })),
+    helpers: getawayHelpers(s, c, o).map(x => ({ id: x.id, name: x.name, locked: false, queued: queued.includes(x.id),
+      loaded: lootDie(x, runner(s, x.id)?.carry ?? 0) > 0, note: lootDie(x, runner(s, x.id)?.carry ?? 0) ? "goes over with them (carrying loot: the group loses a die)" : "goes over with them" })),
+    // P14: a group loses 1 die if any cat in it carries loot — the leader's is in the options, a loaded helper's the dialog adds
+    lootDie: o.roll.lootDie ?? 0,
     autoHelpers: false, getaway: true
   };
 }
@@ -262,9 +280,9 @@ export function applyGetawayRoll(state, card, ctx = {}) {
   } else if (o.kind === "dodge") {
     g.cornered = g.cornered.filter(id => id !== c.id);
     if (ok) {
-      r.pos = (g.warden ?? -1) + 1;
-      if (r.pos >= g.route.length) r.state = "home";
-      ev.push({ type: r.state === "home" ? "home" : "dodged", cats: [c.id], text: `${c.name} slips between the warden's boots and bolts on${r.state === "home" ? " — all the way home!" : ` to ${spaceName(g, r.pos)}`}.` });
+      // P14: the net swishes past — the cat stays where it is, and the warden goes sprawling (he skips his next move)
+      g.stunned = true;
+      ev.push({ type: "dodged", cats: [c.id], text: `${c.name} slips between the warden's boots — the net swishes past, and the warden goes sprawling into the hedge. He won't move next round.` });
     } else {
       const lost = r.carry;
       r.state = "pinched"; r.where = "route"; r.carry = 0;
@@ -298,6 +316,9 @@ export function doGetawayAction(state, catId, optionId, args = {}, ctx = {}) {
   } else if (o.kind === "gpick") {
     r.carry += 1; g.drops[r.pos] -= 1; r.acted = true;
     ev.push({ type: "picked", cats: [c.id], text: `${c.name} grabs a dropped piece of loot.` });
+  } else if (o.kind === "gwait") {
+    r.acted = true;
+    ev.push({ type: "waits", cats: [c.id], text: `${c.name} waits at ${spaceName(g, r.pos)}, keeping low.` });
   }
   return settle(s, ev, [], true);
 }
@@ -310,11 +331,12 @@ function settle(s, ev, cattitude = [], ok = true) {
 }
 
 /**
- * The end of a getaway round (Ch 9): the warden — the van pulls up at the end
- * of round 1 (round 2 if nobody was Shooed or Scooped tonight), then the
- * warden moves one space a round, two if any cat Flopped this round (never past
- * the last obstacle). Loot lying on or behind the warden's space is gone. Then
- * cornered cats — on or behind the warden's space — must dodge (their players
+ * The end of a getaway round (Ch 9, P14): the warden — the van pulls up on the
+ * garden at the end of round 2 (round 3 if nobody was Shooed or Scooped tonight),
+ * then the warden moves one space a round, two if any cat's roll ended in a Flop
+ * this round, never past a cat (he stops on the rearmost running cat's space) nor
+ * the last obstacle; after a dodge he skips a move. Loot lying on or behind his
+ * space is gone. Then cornered cats — on his space — must dodge (their players
  * roll; the round waits). With ctx.getaway false only the round moves on.
  */
 export function endGetawayRound(state, ctx = {}) {
@@ -332,12 +354,16 @@ export function endGetawayRound(state, ctx = {}) {
     if (g.round >= g.arrives) {
       g.warden = 0;
       ev.push({ type: "warden", text: "Screeeech! The animal control van pulls up at the house, and the warden jumps out into the garden, net at the ready." });
-    } else ev.push({ type: "warden", text: "Somewhere a van is on its way… (it pulls up at the end of next round)." });
+    } else ev.push({ type: "warden", text: `Somewhere a van is on its way… (it pulls up at the end of round ${g.arrives}).` });
+  } else if (g.stunned) {
+    g.stunned = false;
+    ev.push({ type: "warden", text: `The warden is still picking bits of hedge out of his hair: he doesn't move this round.` });
   } else {
     const steps = g.flopped ? R.wardenFlopSpaces : 1;
     const from = g.warden;
-    g.warden = Math.min(last, g.warden + steps);
-    ev.push({ type: "warden", text: g.warden === from ? `The warden is at ${g.route[g.warden].name} and stays there, puffing.` : `The warden ${steps > 1 ? "hears the racket and charges" : "stomps"} on to ${g.route[g.warden].name}${steps > 1 && g.warden - from > 1 ? " — two spaces!" : ""}.` });
+    const rear = Math.min(...running(s).map(id => g.cats[id].pos)); // P14: he never gets past a cat
+    g.warden = Math.max(from, Math.min(last, g.warden + steps, rear));
+    ev.push({ type: "warden", text: g.warden === from ? `The warden is at ${g.route[g.warden].name} and stays there, puffing${g.warden < Math.min(last, from + steps) ? " (he can't get past a cat)" : ""}.` : `The warden ${steps > 1 ? "hears the racket and charges" : "stomps"} on to ${g.route[g.warden].name}${g.warden - from > 1 ? " — two spaces!" : ""}.` });
   }
   if (g.warden !== null) {
     let gone = 0;
@@ -348,7 +374,7 @@ export function endGetawayRound(state, ctx = {}) {
       g.cornered = cornered;
       g.stage = "cornered";
       const list = cornered.map(id => catOf(s, id));
-      ev.push({ type: "cornered", cats: cornered, text: `Cornered! ${names(list)} must dodge the warden: Sneaky, Savage or Sweet, plain — or it's the van.` });
+      ev.push({ type: "cornered", cats: cornered, text: `Cornered! ${names(list)} must dodge the warden: Sneaky, Savage or Sweet (not with your mouth full), plain — or it's the van.` });
       log(s, ev);
       return { state: s, events: ev, outcome: null };
     }

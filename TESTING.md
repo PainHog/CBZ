@@ -8,7 +8,7 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
    `https://github.com/PainHog/CBZ/releases/latest/download/system.json`.
 2. Create a world with the **Nine Lives Gang** system and launch it.
 3. **Game Settings → Users**: add a player called **Lena** (role Player). Open a second browser (or a private window) at the same address and log in as Lena. From now on, **GM** means your first window and **Lena** the second.
-4. GM: open **Compendium Packs → Nine Lives Gang → The Ready-Made Gang**. Import **Two-Bin Tilly**, **Big Biscuit**, **Velvet** and **Marmalade Mags**.
+4. GM: open **Compendium Packs → Nine Lives Gang → Meet the Gang**. Import **Two-Bin Tilly**, **Big Biscuit**, **Velvet** and **Marmalade Mags**.
 5. GM: right-click Velvet and Tilly → **Configure Ownership** → Lena: Owner. Biscuit and Mags stay yours (you play them for the "second player").
 6. GM: **Configure Settings → System Settings**: leave every Nine Lives Gang setting at its default for now.
 

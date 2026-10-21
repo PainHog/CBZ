@@ -1,8 +1,8 @@
 /**
  * Parity: the table's rules (module/logic/) and the simulator's (sim/) must
- * agree on the package the system follows (the simulator's ADOPTED P13: core rules v0.9 with the
- * getaway, shiny loot and Cred), and the house catalog must be an exact copy of sim/houses.mjs
- * (AUTOMATION.md §9).
+ * agree on the package the system follows (the simulator's ADOPTED P14: core rules v0.9 with the
+ * getaway, shiny loot, Cred and the playtest fix round), and the house catalog must be an exact copy
+ * of sim/houses.mjs (AUTOMATION.md §9).
  * module/ never imports from sim/; this test is the only bridge.
  */
 import test from "node:test";
@@ -17,16 +17,23 @@ import { CATB } from "../module/config.mjs";
 import { foldMood, upsertEntry } from "../module/logic/mood.mjs";
 import { gangScaling } from "../module/logic/prize.mjs";
 
-const p = makeParams(PACKAGES.P13); // the getaway, shiny loot and Cred
+const p = makeParams(PACKAGES.P14); // the getaway, shiny loot, Cred and the playtest fix round
 
-test("the system follows the simulator's adopted package P13 (core rules v0.9 with the getaway, shiny loot and Cred)", () => {
-  assert.equal(ADOPTED, "P13");
+test("the system follows the simulator's adopted package P14 (core rules v0.9 with the getaway, shiny loot, Cred and the playtest fixes)", () => {
+  assert.equal(ADOPTED, "P14");
   assert.equal(p.cred, true, "Ch 9 Cred: tags, the catnip stash, the rivals (test/cred.test.mjs)");
-  assert.equal(p.tagMess, true, "a tag is a mess");
+  assert.equal(p.tagMess, true, "an unseen tag is a mess");
+  assert.equal(p.seenTagNoMess, true, "P14: a tag made in view isn't a mess");
+  assert.equal(p.zoomiesTagRoll, true, "P14: with the zoomies every tag is a roll");
   assert.equal(p.nipDie, CATB.rules.cred.nipDie, "the zoomies: +1 die");
+  assert.equal(p.wardenLag, CATB.rules.wardenLag, "P14: the warden pulls up at the end of round 2 (3 if nobody was caught)");
+  assert.equal(p.wardenNoPass, true, "P14: the warden never passes a cat");
+  assert.equal(p.dodgeStun, true, "P14: a dodge that works leaves the cat put and the warden sprawling");
+  assert.equal(p.mouthFull, true, "P14: no Sweet with loot");
+  assert.equal(p.eatCap, 0, "no limit on the portions one cat eats");
   assert.equal(p.getaway, true, "v0.10 (Ch 9): the getaway");
   assert.equal(p.shinyTempts, true, "shiny things tempt Curious and Knocker cats in every room");
-  assert.deepEqual([p.wardenLag, p.wardenFlop, p.dodgeDiff], [1, true, 0], "the warden: arrives a round later if nobody was caught, 2 spaces after a Flop; dodges are plain");
+  assert.deepEqual([p.wardenLag, p.wardenFlop, p.dodgeDiff], [2, true, 0], "the warden: two rounds on the way (three if nobody was caught), 2 spaces after a Flop; dodges are plain");
   assert.equal(p.carrierRules, true, "v0.6: hauling, finding it, Searching for the prize");
   assert.equal(p.tableRules, true, "v0.7: holders see, eating is a roll, temptation rotates");
   assert.equal(p.holdRules, true, "v0.8: the Clock's hold beats noise, any cat helps a haul, a house may make hauling Tricky (test/v08.test.mjs)");
@@ -41,7 +48,7 @@ test("the system follows the simulator's adopted package P13 (core rules v0.9 wi
   assert.equal(p.heldBroomDen, false, "a held cat whose own roll fills Broom is still put outside");
   assert.equal(p.searchHold, false, "declined: a Searching human beside the prize still answers noise");
   assert.equal(p.resetTo, "calm", "a trigger empties its meter");
-  for (const [k, v] of Object.entries(PACKAGES.P13)) assert.deepEqual(p[k], v, k);
+  for (const [k, v] of Object.entries(PACKAGES.P14)) assert.deepEqual(p[k], v, k);
 });
 
 test("the rules numbers in config match the simulator's adopted parameters", () => {

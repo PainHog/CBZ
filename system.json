@@ -45,7 +45,7 @@
     },
     {
       "name": "gang",
-      "label": "The Ready-Made Gang",
+      "label": "Meet the Gang",
       "path": "packs/gang",
       "type": "Actor",
       "system": "cat-burglars",

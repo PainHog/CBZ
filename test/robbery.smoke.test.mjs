@@ -228,7 +228,7 @@ test("a GM and two players rob Number 12 (core rules v0.9) from start to Clean G
   assert.equal(state().phase, "getaway");
   assert.match(lastCard("getaway").content, /Leg it!/);
   assert.match(lastCard("getaway").content, /Big Biscuit 2 pieces/);
-  assert.match(lastCard("getaway").content, /the van pulls up at the end of round 1/);
+  assert.match(lastCard("getaway").content, /the van pulls up at the end of round 2/);
   const over = async (user, actor, approach, faces, helpers = []) => {
     const msg = await rollAs(user, actor, "over", { approach, ...Object.fromEntries(helpers.map(h => [`help-${h.id}`, true])) }, faces);
     assert.ok(!buttonLabels(msg, user).includes("Push (+1 Mood)"), "out here a Push costs Cattitude only");
@@ -243,14 +243,15 @@ test("a GM and two players rob Number 12 (core rules v0.9) from start to Clean G
   m = await over(p2, biscuit, "savage", [5, 1]); // Savage 3 − 1: two pieces is a load even for a Chonky cat
   assert.equal(pos(biscuit).pos, 1);
   await trackerAction(gmU, "endGetawayRound");
-  assert.match(lastCard("getaway").content, /the warden jumps out into the garden/);
-  assert.equal(state().getaway.warden, 0);
+  assert.match(lastCard("getaway").content, /a van is on its way… \(it pulls up at the end of round 2\)/);
+  assert.equal(state().getaway.warden, null);
   for (const [faces, bFaces] of [[[6, 1, 1], [6, 2]], [[6, 2, 2], [6]], [[6, 1, 1, 1], [4, 1]]]) { // the allotments, the alley wall, Station Road
     await over(p1, tilly, tilly.system.approaches.streetwise && state().getaway.cats[tilly.id].pos === 3 ? "streetwise" : "sneaky", faces, [velvet, mags]);
     await over(p2, biscuit, "savage", bFaces);
     if (state().phase === "getaway") await trackerAction(gmU, "endGetawayRound");
   }
   assert.equal(state().phase, "ended");
+  assert.ok(cardMsgs("getaway").some(x => /the warden jumps out into the garden/.test(x.content)), "the van pulled up at the end of round 2");
   assert.ok([tilly, velvet, mags, biscuit].every(c => pos(c).state === "home"));
   const out = lastCard("outcome");
   assert.match(out.content, /Clean Getaway/);
@@ -478,7 +479,7 @@ test("the getaway (Ch 9): a piece dropped on purpose, a Flop, the van, a dodge, 
   await settle();
   assert.equal(state().phase, "getaway");
   assert.match(lastCard("getaway").content, /Fudge 2 pieces, Wisp 1 piece/);
-  assert.match(lastCard("getaway").content, /the van pulls up at the end of round 2/);
+  assert.match(lastCard("getaway").content, /the van pulls up at the end of round 3/);
   const app = asUser(p1, () => api().openTracker());
   await settle();
   assert.match(app.element.innerHTML, /The getaway — round 1/);
@@ -497,11 +498,15 @@ test("the getaway (Ch 9): a piece dropped on purpose, a Flop, the van, a dodge, 
   await trackerAction(gmU, "endGetawayRound");
   assert.match(lastCard("getaway").content, /a van is on its way/);
 
-  // round 2: Wisp grabs a dropped piece; Fudge Flops in the allotments and drops his; the van pulls up
+  // round 2: Wisp grabs a dropped piece; Fudge Flops in the allotments and drops his
   await trackerAction(p2, "act", { cat: wisp.id, option: "gpick" });
   m = await rollAs(p1, fudge, "over", { approach: "savage" }, [1, 1, 2, 3]); // Savage 3 + Hunter (chase)
   await click(m, p1, "Accept");
   assert.deepEqual([at(fudge).pos, at(fudge).carry, state().getaway.drops[1]], [1, 0, 1]);
+  await trackerAction(gmU, "endGetawayRound");
+  // round 3: Wisp waits in the garden; the van pulls up (nobody was caught tonight: the end of round 3)
+  await trackerAction(p2, "act", { cat: wisp.id, option: "gwait" });
+  assert.match(lastCard("getaway").content, /Wisp waits at the garden, keeping low/);
   await trackerAction(gmU, "endGetawayRound");
   const card = lastCard("getaway");
   assert.match(card.content, /the warden jumps out into the garden/);
@@ -512,16 +517,21 @@ test("the getaway (Ch 9): a piece dropped on purpose, a Flop, the van, a dodge, 
   await click(m, p2, "Accept");
   assert.equal(at(wisp).state, "pinched");
   assert.match(lastCard("getaway").content, /Pinched! The warden(&#x27;|')s net comes down on Wisp, loot and all/);
-  assert.equal(state().getaway.round, 3);
+  assert.equal(state().getaway.round, 4);
 
-  // rounds 3–5: Fudge grabs his piece back, dodges the warden, and gets home
+  // rounds 4–7: Fudge grabs his piece back, dodges the warden (who goes sprawling), and gets home
   await trackerAction(p1, "act", { cat: fudge.id, option: "gpick" });
   assert.ok(buttonLabels(lastCard("getaway"), gmU).includes("End the getaway round"));
   await click(lastCard("getaway"), gmU, "End the getaway round");
   assert.deepEqual(state().getaway.cornered, [fudge.id], "the warden stomps on to the allotments");
   m = await rollAs(p1, fudge, "dodge", { approach: "savage" }, [6, 1, 1, 1]);
   await click(m, p1, "Accept");
-  assert.equal(at(fudge).pos, 2, "he bolts to the space just ahead of the warden");
+  assert.equal(at(fudge).pos, 1, "the net swishes past: he stays where he is");
+  assert.ok(flags(m).appliedText.some(t => /the warden goes sprawling into the hedge/.test(t)));
+  m = await rollAs(p1, fudge, "over", { approach: "savage" }, [6, 1, 1, 1]); // the allotments: Savage 3 + Hunter (chase); one piece: a Chonky cat runs free
+  await click(m, p1, "Accept");
+  await trackerAction(gmU, "endGetawayRound");
+  assert.match(lastCard("getaway").content, /still picking bits of hedge out of his hair/);
   m = await rollAs(p1, fudge, "over", { approach: "savage" }, [6, 1, 1]); // the alley wall: Savage 3 + Climber − Tricky
   await click(m, p1, "Accept");
   await trackerAction(gmU, "endGetawayRound");
@@ -545,23 +555,23 @@ test("Cred (Ch 9): a tag over the rivals', a tag in view, the catnip and the zoo
   const mitts = await makeCat("Mittens", p2, { approaches: { sneaky: 3, savage: 2, sweet: 1, streetwise: 1 }, instinct1: "foodie", instinct2: "boxSitter", body: "lean" });
   const duke = await makeCat("The Duke", p1, { approaches: { streetwise: 3, sweet: 2, sneaky: 1, savage: 1 }, instinct1: "curious", instinct2: "hunter", body: "chonky" });
   await asUser(gmU, () => api().robbery.startRobbery("number-12", { actorIds: [scruff.id, mitts.id, duke.id] }));
-  assert.match(lastCard("robbery").content, /Cred: the catnip stash is a bag of catnip behind the washing machine \(the utility room\); the Bin Lid Boys have tagged the downstairs loo, and hang about at the allotments on the getaway\. Show off!/);
+  assert.match(lastCard("robbery").content, /Cred: the catnip stash is a catnip cushion on Mr Pell’s armchair \(the living room\); the Bin Lid Boys have tagged the kitchen, and hang about at the allotments on the getaway\. Show off!/);
   await set("autoHouseTurn", "manual");
   await asUser(gmU, () => api().robbery.beginRound());
   await settle();
   await asUser(gmU, () => api().robbery.overrides.patch("pudding", { mode: "hiding", until: 99 }));
-  await trackerAction(gmU, "place", { cat: scruff.id, to: "loo" });
-  await trackerAction(gmU, "place", { cat: mitts.id, to: "utility" });
+  await trackerAction(gmU, "place", { cat: scruff.id, to: "kitchen" });
+  await trackerAction(gmU, "place", { cat: mitts.id, to: "living" });
   await trackerAction(gmU, "place", { cat: duke.id, to: "hall" }); // with Mr Pell
 
-  // Scruff tags the loo, over the Bin Lid Boys' tag: nobody sees, so no roll
+  // Scruff tags the kitchen, over the Bin Lid Boys' tag: nobody sees, so no roll
   await trackerAction(p1, "act", { cat: scruff.id, option: "tag" });
   let card = lastCard("cred");
   assert.match(card.content, /Showing off!/);
   assert.match(card.content, /slap over the Bin Lid Boys(&#x27;|') tag\. Take that!/);
-  assert.match(card.content, /Scruff \+2 Cred for tagging the downstairs loo over the Bin Lid Boys/);
+  assert.match(card.content, /Scruff \+2 Cred for tagging the kitchen over the Bin Lid Boys/);
   assert.equal(catOf(scruff.id).cred, 2);
-  assert.ok(state().messes.includes("loo"), "a tag is a mess");
+  assert.ok(state().messes.includes("kitchen"), "an unseen tag is a mess");
   const app = asUser(p1, () => api().openTracker());
   await settle();
   assert.match(app.element.innerHTML, /Tagged by the gang · The Bin Lid Boys(&#x27;|') tag \(tagged over!\)/);
@@ -572,16 +582,17 @@ test("Cred (Ch 9): a tag over the rivals', a tag in view, the catnip and the zoo
   await click(m, p1, "Accept");
   assert.equal(catOf(duke.id).cred, 2, "1, +1: he watched and couldn't stop it");
   assert.ok(flags(m).appliedText.some(t => /right under their noses/.test(t)));
+  assert.ok(!state().messes.includes("hall"), "a tag made in view isn't a mess");
 
-  // the catnip stash tempts Mittens (a Foodie and a Box Sitter) all the same
+  // the catnip cushion tempts Mittens (a Foodie and a Box Sitter) all the same
   await trackerAction(gmU, "tempt", { cat: mitts.id, instinct: "catnip" });
   card = lastCard("temptation");
-  assert.match(card.content, /The catnip stash — a bag of catnip behind the washing machine, in the utility room/);
+  assert.match(card.content, /The catnip stash — a catnip cushion on Mr Pell’s armchair, in the living room/);
   await click(card, p2, "Give in (+1 Cattitude)");
   assert.equal(catOf(mitts.id).nip, true, "the zoomies");
   assert.equal(catOf(mitts.id).cred, 1);
   assert.equal(mitts.system.cattitude, 4);
-  assert.ok(state().noise.some(x => x.room === "utility"), "yowling");
+  assert.ok(state().noise.some(x => x.room === "living"), "yowling");
   const { CatSheet } = await import("../module/sheets/actor-sheets.mjs");
   const sheet = new CatSheet({ document: mitts });
   await asUser(p2, () => sheet.render(true));
@@ -595,9 +606,9 @@ test("Cred (Ch 9): a tag over the rivals', a tag in view, the catnip and the zoo
   m = await rollAs(p2, mitts, "free", { approach: "sneaky" }, [6, 1, 1, 1]); // Sneaky 3 + the zoomies
   assert.equal(flags(m).plan.total, 4);
   assert.ok(flags(m).plan.add.some(a => a.key === "nip"));
-  assert.match(m.content, /Noise in the Utility room/);
+  assert.match(m.content, /Noise in the Living room/);
   await click(m, p2, "Accept");
-  assert.ok(state().noise.some(x => x.room === "utility"));
+  assert.ok(state().noise.some(x => x.room === "living"));
 
   // a round later, a temptation: no Resist button for a cat with the zoomies
   await houseTurn([]);

@@ -6,7 +6,7 @@ import { findHouse } from "../module/logic/house-catalog.mjs";
 import { newRobbery, clone, finishRobbery } from "../module/logic/round.mjs";
 import { placeRunner } from "../module/logic/getaway.mjs";
 
-/** Chapter 3, "The Ready-Made Gang". */
+/** Chapter 3, "Meet the Gang". */
 export const GANG = {
   tilly: { id: "tilly", name: "Two-Bin Tilly", r: { streetwise: 3, sneaky: 2, sweet: 1, savage: 1 }, instincts: ["curious", "climber"], body: "lean" },
   biscuit: { id: "biscuit", name: "Big Biscuit", r: { savage: 3, streetwise: 2, sweet: 1, sneaky: 1 }, instincts: ["scrapper", "foodie"], body: "chonky" },

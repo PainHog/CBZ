@@ -81,9 +81,10 @@ async function rollDialog(actor, ctx, approach) {
   const seenDefault = autoSeen ? ctx.seenBy.length > 0 : false;
   const queued = ctx.helpers.filter(h => h.queued).length;
   const nip = zoomed(ctx);
+  const loot = groupLoot(ctx, ctx.helpers.filter(h => h.queued).map(h => h.id));
   const approaches = ctx.options.map(o => {
     const plan = buildRollPlan({ approach: o.approach, rating: o.rating, knack: o.knack, bodyDie: ctx.bodyDie, helpers: queued,
-      difficulty: o.difficulty, opposition: ctx.opposition, attention: seenDefault ? o.attention : 0, nip });
+      difficulty: o.difficulty + loot, opposition: ctx.opposition, attention: seenDefault ? o.attention : 0, nip });
     const n = plan.zero ? 0 : plan.total;
     const bits = [`${o.label} ${o.rating}`];
     if (o.difficulty) bits.push(CATB.difficulties[o.difficulty] ?? `−${o.difficulty}`);
@@ -121,6 +122,12 @@ async function rollDialog(actor, ctx, approach) {
   }).then(r => (r && typeof r === "object" ? r : null));
 }
 
+/**
+ * Ch 9 (P14): a group loses 1 die if any cat in it carries loot. The leader's own
+ * load is already in the options' Difficulty; a loaded helper the player ticks adds it.
+ */
+const groupLoot = (ctx, helperIds = []) => (ctx?.getaway && !ctx.lootDie && (ctx.helpers ?? []).some(h => h.loaded && helperIds.includes(h.id)) ? 1 : 0);
+
 /** Ch 9 "Cred": the zoomies add a die and make the roll a noise — when Cred is automated (the autoCred setting). */
 const zoomed = ctx => !!ctx?.nip && !ctx.getaway && setting(SETTINGS.autoCred) !== false;
 
@@ -155,7 +162,7 @@ export async function makeRoll(actor, ctx, answer, state) {
   let seen = answer.seen === "seen" ? true : answer.seen === "unseen" ? false : (autoSeen ? ctx.seenBy.length > 0 : false);
   let seenBy = seen ? (ctx.seenBy.length ? ctx.seenBy : []) : [];
   const kid = seen && !!ctx.kid;
-  const difficulty = answer.difficulty === "auto" ? o.difficulty : Number(answer.difficulty) || 0;
+  const difficulty = answer.difficulty === "auto" ? o.difficulty + groupLoot(ctx, answer.helpers) : Number(answer.difficulty) || 0;
   const knack = answer.knack === "auto" ? o.knack : answer.knack === "yes";
   const attention = seen && attentionApplies(approach) ? answer.attention : 0;
   // v0.9 (Ch 4): Cattitude no longer buys a die — it pays for a Push or resisting a temptation

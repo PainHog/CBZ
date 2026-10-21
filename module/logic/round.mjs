@@ -296,7 +296,9 @@ export function trigger(s, side, cat, human, cause, ev, { tie: who = "" } = {}) 
       const wasShut = !entrance.open;
       const keep = lastOpenEntrance(s, entrance);
       entrance.open = keep;
-      how = `${wasShut ? " (opening it first)" : ""}, ${keep ? "leaves it open (it's the last way in still open)" : "shuts it"} and stays in the ${roomName(s, entrance.room).toLowerCase()}`;
+      // P14: a cat flap gets locked (Streetwise, Hard, to open it again from inside)
+      const flap = /\bflap\b/i.test(entrance.name ?? "");
+      how = `${wasShut ? " (opening it first)" : ""}, ${keep ? "leaves it open (it's the last way in still open)" : flap ? "locks it" : "shuts it"} and stays in the ${roomName(s, entrance.room).toLowerCase()}`;
     }
     const from = cat.where;
     Object.assign(cat, { where: "outside", status: "outside", hidden: false, riding: null, heldBy: null, carrying: false, outSerial: s.roundSerial });
@@ -434,7 +436,10 @@ export function roomTemptations(s, room) {
  * free cats inside the house in a room with a temptation for one of their
  * instincts, never the cat tempted last round (v0.7), who haven't moved or
  * acted yet, and not a cat that has to deal with a pet in its room this turn
- * (an awake dog or a guarding house cat it hasn't dealt with or slipped past).
+ * (an awake dog or a guarding house cat it hasn't dealt with or slipped past) —
+ * except that a Scrapper may be tempted by the very pet it faces (P14): it
+ * squares up, which isn't dealing with it, so it's chased back at the end of
+ * its turn (dogsChase).
  * One per round; the tempted cat decides at once (actions.mjs holds the others
  * back until it answers), and a cat that gives in has acted first. The house's
  * catnip stash (Ch 9 "Cred") tempts every cat in its room, whatever its
@@ -446,17 +451,18 @@ export function temptationOptions(state) {
   for (const c of freeInside(state)) {
     if (c.moved || c.acted || c.id === state.temptedLast) continue;
     const pet = hostilePet(state, c.where, c);
-    if (pet && !(c.dealt ?? []).includes(pet.key)) continue;
-    const here = roomTemptations(state, c.where);
+    const facing = pet && !(c.dealt ?? []).includes(pet.key);
+    if (facing && !(c.instincts.includes("scrapper") && (pet.kind === "dog" || pet.kind === "housecat"))) continue;
+    const here = facing ? ["scrapper"] : roomTemptations(state, c.where);
     for (const i of c.instincts) {
       const key = `${c.where}:${i}`;
       if (here.includes(i)) {
         const shiny = (R.shinyTempts ?? []).includes(i) && !(state.rooms[c.where]?.tempt ?? []).includes(i);
         out.push({ catId: c.id, catName: c.name, instinct: i, label: CATB.instincts[i]?.label ?? i, room: c.where, roomName: roomName(state, c.where), key,
-          tempt: shiny ? (i === "knocker" ? "something sparkly on the edge of a table" : "something shiny lying about") : CATB.instincts[i]?.tempt ?? "" });
+          tempt: facing ? `${pet.name}, right there` : shiny ? (i === "knocker" ? "something sparkly on the edge of a table" : "something shiny lying about") : CATB.instincts[i]?.tempt ?? "" });
       }
     }
-    if (stashHere(state, c.where)) {
+    if (!facing && stashHere(state, c.where)) {
       out.push({ catId: c.id, catName: c.name, instinct: "catnip", label: CATB.catnip.label, room: c.where, roomName: roomName(state, c.where), key: `${c.where}:catnip`,
         tempt: credOf(state).catnipName });
     }

@@ -146,9 +146,9 @@ test("5. a Push paid with the Mood always lands — on a Purrfect too — and a 
 test("6. temptation: only a free cat inside; not one that must deal with a pet; a give-in never fills a meter; a seen Knocker leaves no mess; a Lap Cat's fuss is a distraction", () => {
   let s = number12({ cats: { tilly: "hall", velvet: { where: "living", status: "held", heldBy: "pell" } }, humans: { pell: { room: "living", holding: "velvet" } } });
   assert.deepEqual(temptationOptions(s).map(o => o.catId), ["tilly"], "the held cat and the cats outside can't be tempted");
-  s = arrange(number12({ cats: { biscuit: "kitchen" } }), { pets: { pudding: { mode: "awake", room: "kitchen" } } });
-  assert.deepEqual(temptationOptions(s), [], "Biscuit has to deal with Pudding first");
-  assert.ok(temptationOptions(arrange(s, { cats: { biscuit: { dealt: ["pudding"] } } })).some(o => o.catId === "biscuit"), "once it has dealt with him, it can be");
+  s = arrange(number12({ cats: { tilly: "kitchen" } }), { pets: { pudding: { mode: "awake", room: "kitchen" } } });
+  assert.deepEqual(temptationOptions(s), [], "Tilly has to deal with Pudding first");
+  assert.ok(temptationOptions(arrange(s, { cats: { tilly: { dealt: ["pudding"] } } })).some(o => o.catId === "tilly"), "once it has dealt with him, it can be");
   // Broom one short of full: Curious in view stops one short — no Shoo!
   s = setMood(number12({ cats: { tilly: "hall" }, humans: { pell: "hall" } }), { broom: 3 }).state;
   s = tempt(s, { catId: "tilly", instinct: "curious" }).state;

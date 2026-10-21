@@ -101,7 +101,7 @@ test("the prize not where the Clock left it: the owner goes there, stays, finds 
 test("temptation: free cats in a room with one of their instincts' temptations, one per round, never twice", () => {
   let s = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "kitchen", velvet: "living", mags: "hall" }, pets: { pudding: { mode: "hiding", until: 99 } } });
   const opts = temptationOptions(s);
-  assert.deepEqual(opts.map(o => `${o.catId}:${o.instinct}`).sort(), ["tilly:climber", "tilly:curious", "velvet:knocker", "velvet:lapCat"], "shiny things tempt Curious and Knocker cats in every room");
+  assert.deepEqual(opts.map(o => `${o.catId}:${o.instinct}`).sort(), ["tilly:climber", "tilly:curious", "velvet:catnip", "velvet:knocker", "velvet:lapCat"], "shiny things tempt Curious and Knocker cats in every room; the catnip cushion tempts anyone in the living room");
   assert.equal(opts.find(o => o.catId === "tilly" && o.instinct === "curious").tempt, "something shiny lying about");
   assert.ok(!temptationOptions(arrange(s, { pets: { pudding: { mode: "awake", room: "kitchen" } } })).some(o => o.catId === "tilly"),
     "v0.9: a cat that has to deal with a pet in its room this turn can't be tempted");
@@ -172,11 +172,12 @@ test("giving in, instinct by instinct (Ch 7 table)", () => {
   assert.equal(r.state.noise.length, 1, "…and noise, nothing more");
 });
 
-test("any room with an awake dog or house cat tempts Scrappers (v0.6) — not a befriended one; a cat that must deal with it can't be tempted (v0.9)", () => {
-  let s = arrange(beginRound(robbery("number-12")).state, { cats: { biscuit: "kitchen" } });
+test("any room with an awake dog or house cat tempts Scrappers (v0.6) — not a befriended one; a cat that must deal with it can only be tempted by it, and only a Scrapper (P14)", () => {
+  let s = arrange(beginRound(robbery("number-12")).state, { cats: { biscuit: "kitchen", tilly: "kitchen" } });
   s.rooms.kitchen.tempt = [];
   assert.ok(roomTemptations(s, "kitchen").includes("scrapper"));
-  assert.ok(!temptationOptions(s).some(o => o.catId === "biscuit"), "v0.9: Biscuit has to deal with Pudding this turn first");
+  assert.deepEqual(temptationOptions(s).map(o => [o.catId, o.instinct, o.tempt]), [["biscuit", "scrapper", "Pudding, right there"]],
+    "P14: Biscuit, facing Pudding, can be tempted by him (and only him); Tilly has to deal with him first");
   assert.ok(!roomTemptations(arrange(s, { pets: { pudding: { mode: "friendly" } } }), "kitchen").includes("scrapper"), "v0.9: a befriended dog doesn't");
   s = arrange(s, { pets: { pudding: { mode: "asleep" } } });
   assert.ok(!roomTemptations(s, "kitchen").includes("scrapper"), "a sleeping dog doesn't");

@@ -94,12 +94,23 @@ test("a cat that ends its turn in an awake dog's room without dealing with it is
   r = endRound(r.state, { d6: dice(1, 1, 1) });
   assert.equal(cat(r.state, "velvet").where, "kitchen");
   assert.equal(cat(r.state, "tilly").where, "kitchen", "slipped past this turn");
-  // v0.9: a Scrapper that has to deal with the dog this turn can't be tempted by it (so squaring up never replaces dealing with it)
+  // P14: a Scrapper facing the dog can be tempted by it — it squares up, which isn't dealing with it, so it's chased back
   s = dog(base({ cats: { biscuit: { where: "kitchen", status: "free", cameFrom: "hall" } } }));
   s.rooms.kitchen.tempt = [];
-  assert.throws(() => tempt(s, { catId: "biscuit", instinct: "scrapper" }), /can't be tempted/);
+  s = tempt(s, { catId: "biscuit", instinct: "scrapper" }).state;
+  r = answerTemptation(s, { choice: "gaveIn", cattitude: 2 });
+  assert.match(texts(r.events), /You square up to it\. Noise\. \(That isn't dealing with it: you still have to\.\)/);
+  assert.deepEqual(cat(r.state, "biscuit").dealt ?? [], [], "squaring up isn't dealing with it");
+  assert.ok((r.state.noise ?? []).some(x => x.room === "kitchen"));
+  r = endRound(r.state, { d6: dice(1, 1, 1) });
+  assert.equal(cat(r.state, "biscuit").where, "hall", "chased back at the end of its turn");
+  // P14 (Charge): a cat with no Action left — it gave in first — that walks into the dog's room stays, and deals with it next turn
+  s = base({ cats: { tilly: "hall" }, pets: { pudding: { mode: "awake", room: "kitchen" } } });
+  s = tempt(s, { catId: "tilly", instinct: "curious" }).state;
+  s = answerTemptation(s, { choice: "gaveIn", cattitude: 2 }).state;
+  s = doAction(s, "tilly", "move:kitchen").state;
   r = endRound(s, { d6: dice(1, 1, 1) });
-  assert.equal(cat(r.state, "biscuit").where, "hall");
+  assert.equal(cat(r.state, "tilly").where, "kitchen", "it had no Action left");
 });
 
 test("hauling (v0.7): a Knocker's Knack, its noise in the room it ends up in, and a failed haul in a dog's room is chased back", () => {

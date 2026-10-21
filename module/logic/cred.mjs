@@ -6,19 +6,23 @@
  * scored per cat, and it never changes how the night went — only who gets to
  * brag about it:
  *   - Tag a room: 1 Cred. One tag a room for the whole gang; it's the cat's
- *     Action — unseen a simple thing, in view a roll (Sneaky to do it unnoticed,
- *     Savage to just do it) and +1 if it works; +1 more over the rivals' tag.
- *     A tag is a mess (the next human in that room finds it: +1 Broom).
+ *     Action — unseen a simple thing (no roll, no noise) and a mess (the next
+ *     human in that room finds it: +1 Broom); in view a roll (Sneaky to do it
+ *     unnoticed, Savage to just do it), +1 if it works, and no mess (they already
+ *     know: P14 seenTagNoMess); +1 more over the rivals' tag. With the zoomies
+ *     every tag is a roll (P14 zoomiesTagRoll).
  *   - The catnip stash: 1 Cred. One stash, one cat: given in to as a temptation
  *     (any cat in its room, whatever its instincts) or taken on purpose as an
  *     Action (in view, a roll). That cat has the zoomies ("on the nip") until the
  *     house part ends: +1 die (still no more than 5), every roll it makes is a
- *     noise, it can't resist a temptation, and its Cred counts double.
+ *     noise, it can't resist a temptation, and its Cred counts double (not the
+ *     catnip's own point). It ends when the getaway starts.
  *   - The getaway (getaway.mjs): the cat who leads a group past the rivals with
  *     a Clean or a Purrfect 1, a Purrfect on any obstacle 1; loot dropped where
  *     the rivals hang about is nicked at once.
  *   - The end of the night: the most Cred is the Cat's Whiskers (ties share it);
- *     in a campaign a night with 5 or more Cred that wasn't Busted is worth 1 Rep.
+ *     in a campaign a night when the gang's Cred adds up to 8 or more (P14) and
+ *     it wasn't Busted is worth 1 Rep.
  *
  * State: `s.cred = { catnip, catnipName, rivals, rivalTag, patch, tags: [room], nipBy }`
  * (the house's Cred line, from the catalog) and each cat's `cred` (tonight's
@@ -78,19 +82,20 @@ export const rivalsRoom = (s, room) => !!room && credOf(s).rivalTag === room;
 export const tagWorth = (s, room) => C.tag + (rivalsRoom(s, room) ? C.overRivals : 0);
 
 /**
- * The tag goes on (Ch 9): the room is tagged for the whole gang, it's a mess
- * for the next human in that room (no noise), and the cat scores 1, +1 for
- * doing it in view (a roll that worked), +1 over the rivals' tag. MUTATES s.
+ * The tag goes on (Ch 9): the room is tagged for the whole gang; unseen it's a
+ * mess for the next human in that room (no noise), in view it isn't (they saw
+ * it: P14); the cat scores 1, +1 for doing it in view (a roll that worked), +1
+ * over the rivals' tag. MUTATES s.
  */
 export function tagRoom(s, c, { inView = false } = {}, ev, ctx = {}) {
   const room = c.where;
   const cr = (s.cred ??= credOf(s));
   (cr.tags ??= []).push(room);
-  if (!(s.messes ??= []).includes(room)) s.messes.push(room);
+  if (!inView && !(s.messes ??= []).includes(room)) s.messes.push(room);
   const over = rivalsRoom(s, room);
   const name = low(roomName(s, room));
   ev.push({ type: "tag", cat: c.id, room,
-    text: `${c.name} leaves the gang's mark on the ${name}${inView ? " — right under their noses, and they couldn't stop it" : ""}${over ? `, slap over ${cr.rivals ?? "the rivals"}' tag. Take that!` : "."} A tag is a mess: the next human in here finds it.` });
+    text: `${c.name} leaves the gang's mark on the ${name}${inView ? " — right under their noses, and they couldn't stop it" : ""}${over ? `, slap over ${cr.rivals ?? "the rivals"}' tag. Take that!` : "."}${inView ? " (They saw it go on: no mess to find later.)" : " A tag is a mess: the next human in here finds it."}` });
   addCred(s, c, C.tag + (inView ? C.inView : 0) + (over ? C.overRivals : 0),
     `tagging the ${name}${inView ? " in view" : ""}${over ? ` over ${cr.rivals ?? "the rivals"}` : ""}`, ev, ctx);
 }

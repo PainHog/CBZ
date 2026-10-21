@@ -204,9 +204,13 @@ export function catOptions(state, catId) {
   if (!c.hidden && s.rooms[room]?.hide !== false && !c.carrying) act({ id: "hide", kind: "hide", label: "Hide", roll: ws.length ? { options: [["sneaky", 0, "hide"]] } : null }, { simple: true }); // Ch 5: a Sneaky roll if somebody sees
   // v0.8 (REVIEW #88): a noise made on purpose is a noise whatever the roll, and leaves a mess (one per room)
   act({ id: "noise", kind: "noise", label: "Make a noise on purpose (a lure: leaves a mess)" }, { simple: true, tags: ["knock"] });
-  // Ch 9 "Cred": tag the room (one tag a room for the whole gang) — unseen a simple thing, in view a roll (+1 if it works)
+  // Ch 9 "Cred": tag the room (one tag a room for the whole gang) — unseen a simple thing and a mess, in view a roll
+  // (+1 if it works, and no mess: they already know); P14: with the zoomies every tag is a roll
   if (!tagged(s, room)) {
-    act({ id: "tag", kind: "tag", label: `Tag the ${low(roomName(s, room))}: leave the gang's mark (${tagWorth(s, room)} Cred${ws.length ? ", +1 if it works in view" : ""}${rivalsRoom(s, room) ? `, over ${credOf(s).rivals ?? "the rivals"}' tag` : ""}; it's a mess)` }, { simple: true });
+    const zoom = !!c.nip && !ws.length;
+    act({ id: "tag", kind: "tag", inView: ws.length > 0,
+      label: `Tag the ${low(roomName(s, room))}: leave the gang's mark (${tagWorth(s, room)} Cred${ws.length ? ", +1 if it works in view" : ""}${rivalsRoom(s, room) ? `, over ${credOf(s).rivals ?? "the rivals"}' tag` : ""}${ws.length ? "" : "; it's a mess"}${zoom ? "; the zoomies: a roll" : ""})`,
+      roll: zoom ? { options: SIMPLE_IN_VIEW([]) } : undefined }, { simple: true });
   }
   // Ch 9 "Cred": the house's catnip stash, on purpose (one stash, one cat)
   if (stashHere(s, room)) act({ id: "catnip", kind: "catnip", label: `Get into the catnip — ${credOf(s).catnipName} (1 Cred, a noise, and the zoomies)` }, { simple: true });
@@ -450,7 +454,10 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
   const helpCats = helpers.map(id => catById(s, id)).filter(Boolean);
   switch (o.kind) {
     case "move": {
-      Object.assign(c, { cameFrom: c.where, where: o.target, hidden: false, riding: null });
+      // Ch 11 "Charge" (P14): a cat with no Action left (it gave in, or did something else first) that walks into a
+      // dog's room stays there, and deals with it first thing next turn (arrivedSpent), as one that climbed in
+      const spent = c.acted;
+      Object.assign(c, { cameFrom: c.where, where: o.target, hidden: false, riding: null, arrivedSpent: spent ? s.roundSerial : c.arrivedSpent });
       mark(c);
       ev.push({ type: "move", cat: c.id, to: o.target, text: `${c.name} goes to the ${low(roomName(s, o.target))}.` });
       break;
@@ -569,7 +576,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       // Ch 9 "Cred": in view, a roll that works — they watched and still couldn't stop it (+1)
       mark(c);
       if (!ok) { ev.push({ type: "tagFailed", cat: c.id, text: `${c.name} goes to leave the gang's mark, but gets rumbled mid-scratch: no tag.` }); break; }
-      tagRoom(s, c, { inView: !!o.roll }, ev, ctx);
+      tagRoom(s, c, { inView: !!o.inView }, ev, ctx);
       break;
     }
     case "catnip": {

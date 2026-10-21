@@ -40,6 +40,7 @@ test("the ready-made gang matches Chapter 3", () => {
     assert.ok(html.includes(inst), `${c.name}: "${inst}"`);
     assert.ok(html.includes(c.name), c.name);
     assert.deepEqual(Object.values(c.approaches).sort().join(), "1,1,2,3", `${c.name} has the starting spread`);
+    assert.ok(html.replace(/[’‘]/g, "'").includes(`“${c.quote}”`), `${c.name}'s quote is Chapter 3's: "${c.quote}"`);
   }
   assert.deepEqual(GANG.map(c => c.name), ["Two-Bin Tilly", "Big Biscuit", "Velvet", "Marmalade Mags", "Pip"]);
 });

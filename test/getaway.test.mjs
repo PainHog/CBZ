@@ -6,7 +6,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { beginRound, finishRobbery, setMood, temptationOptions, newRobbery } from "../module/logic/round.mjs";
-import { applyRoll, catOptions, rollContext, doAction, queueHelp } from "../module/logic/actions.mjs";
+import { applyRoll, catOptions, rollContext, doAction, queueHelp, findOption } from "../module/logic/actions.mjs";
 import { endGetawayRound, finishGetaway, placeRunner, setWarden, setCarry, getawayView, DEFAULT_ROUTE, lootDie } from "../module/logic/getaway.mjs";
 import { lootOf, robberyOutcome, prizeKindByD8 } from "../module/logic/prize.mjs";
 import { moodNow } from "../module/logic/round.mjs";
@@ -26,6 +26,7 @@ function chickenOut({ caught = false, eaten = 0, inside = [] } = {}) {
   Object.assign(s.prize, { withHuman: null, out: true, room: null, eaten, portionsLeft: s.prize.portions - eaten });
   for (const id of inside) Object.assign(cat(s, id), { status: "free", where: "hall" });
   if (caught) s.moodLedger.push({ id: "t1", seq: 99, kind: "trigger", side: "broom", target: "biscuit" });
+  s.cred.patch = null; // the Bin Lid Boys stay in (test/cred.test.mjs has them)
   return finishRobbery(s, "allOut").state;
 }
 
@@ -36,8 +37,8 @@ test("the getaway starts when the house part ends: cats inside are pinched, the 
   assert.deepEqual(Object.fromEntries(Object.entries(g(s).cats).map(([id, r]) => [id, [r.state, r.carry]])),
     { tilly: ["running", 1], biscuit: ["running", 2], velvet: ["pinched", 0], mags: ["running", 1] }, "Chonky Biscuit carries two; one piece is left in the garden");
   assert.deepEqual(g(s).drops, [1, 0, 0, 0]);
-  assert.equal(g(s).arrives, 2, "nobody was Shooed or Scooped tonight: the van comes at the end of round 2");
-  assert.equal(chickenOut({ caught: true }).getaway.arrives, 1, "somebody was: the end of round 1");
+  assert.equal(g(s).arrives, 3, "nobody was Shooed or Scooped tonight: the van comes at the end of round 3");
+  assert.equal(chickenOut({ caught: true }).getaway.arrives, 2, "somebody was: the end of round 2");
   // a house with no route of its own uses the default one
   const plain = { ...findHouse("number-12"), getaway: undefined };
   let p = beginRound(newRobbery(plain, { cats: Object.values(GANG).slice(0, 4) })).state;
@@ -60,7 +61,7 @@ test("the loot in pieces: food is its uneaten portions (if it was carried out); 
 
 test("over an obstacle: the obstacle's roll, a loot die, the pet's rating, Knacks; a leader and up to two helpers go over together", () => {
   let s = chickenOut();
-  assert.deepEqual(catOptions(s, "tilly").options.map(o => o.id), ["over", "gdrop"]);
+  assert.deepEqual(catOptions(s, "tilly").options.map(o => o.id), ["over", "gdrop", "gwait"]);
   let ctx = rollContext(s, "tilly", "over");
   assert.deepEqual(ctx.options.map(o => [o.approach, o.difficulty, o.knack]), [["savage", 1, true], ["sneaky", 1, true]], "plain, −1 for her piece of chicken; climbing is a Climber's Knack");
   assert.deepEqual([ctx.seenBy, ctx.attention, ctx.kid], [[], 0, false], "nobody's watching from a window out here");
@@ -84,7 +85,7 @@ test("over an obstacle: the obstacle's roll, a loot die, the pet's rating, Knack
   assert.equal(rollContext(o, "mags", "over").options.find(x => x.approach === "savage").knack, true, "the main road: a Hunter's Knack to bolt");
 });
 
-test("a Flop: the group is stuck and every carrier drops a piece; the warden comes on two spaces that round", () => {
+test("a Flop: the group is stuck and every carrier drops a piece; a dodge leaves the cat put and the warden sprawling; he comes on two spaces after a Flop, but never past a cat", () => {
   let s = chickenOut({ caught: true });
   let r = over(s, "tilly", "sneaky", "flop", ["velvet"]);
   assert.deepEqual([run(r.state, "tilly").pos, run(r.state, "tilly").carry, run(r.state, "velvet").carry, g(r.state).drops[0]], [0, 0, 0, 2]);
@@ -92,7 +93,12 @@ test("a Flop: the group is stuck and every carrier drops a piece; the warden com
   r = over(r.state, "biscuit", "savage", "clean");
   r = over(r.state, "mags", "sneaky", "clean");
   r = endGetawayRound(r.state);
-  assert.equal(g(r.state).warden, 0, "the van pulls up at the end of round 1");
+  assert.equal(g(r.state).warden, null, "somebody was caught tonight: the van pulls up at the end of round 2");
+  assert.match(texts(r.events), /a van is on its way… \(it pulls up at the end of round 2\)/);
+  r = doAction(r.state, "tilly", "gwait"); // round 2: Tilly and Velvet wait in the garden
+  assert.match(texts(r.events), /Two-Bin Tilly waits at the garden/);
+  r = endGetawayRound(r.state);
+  assert.equal(g(r.state).warden, 0, "the van pulls up at the end of round 2, on the garden");
   assert.match(texts(r.events), /scoops up 2 pieces of dropped loot/);
   assert.equal(g(r.state).stage, "cornered", "Tilly and Velvet are still in the garden");
   assert.deepEqual(g(r.state).cornered, ["tilly", "velvet"]);
@@ -101,17 +107,55 @@ test("a Flop: the group is stuck and every carrier drops a piece; the warden com
   assert.deepEqual(catOptions(r.state, "biscuit").options, [], "everyone waits for the dodges");
   assert.throws(() => endGetawayRound(r.state), /dodge first/);
   r = dodge(r.state, "tilly", "sneaky", "scrape");
-  assert.equal(run(r.state, "tilly").pos, 1, "she bolts to the space just ahead of the warden");
+  assert.equal(run(r.state, "tilly").pos, 0, "the net swishes past: she stays where she is");
+  assert.equal(g(r.state).stunned, true);
+  assert.match(texts(r.events), /the warden goes sprawling into the hedge/);
   r = dodge(r.state, "velvet", "sweet", "flop");
   assert.equal(run(r.state, "velvet").state, "pinched");
   assert.match(texts(r.events), /Pinched! The warden's net comes down on Velvet/);
-  assert.equal(g(r.state).round, 2, "the last dodge done: round 2");
-  // round 2: a Flop over the allotments — the warden comes on two spaces
-  r = over(r.state, "tilly", "sneaky", "flop", ["biscuit", "mags"]);
+  assert.equal(g(r.state).round, 3, "the last dodge done: round 3");
+  // round 3: a Flop on the allotments, but the warden is still in the hedge
+  r = over(r.state, "biscuit", "savage", "flop", ["mags"]);
+  assert.deepEqual([run(r.state, "biscuit").carry, run(r.state, "mags").carry, g(r.state).drops[1]], [1, 0, 2]);
+  r = over(r.state, "tilly", "sneaky", "clean");
   r = endGetawayRound(r.state);
-  assert.equal(g(r.state).warden, 2, "0 → 2 after a Flop");
-  assert.match(texts(r.events), /hears the racket and charges on to the alley wall — two spaces!/);
+  assert.equal(g(r.state).warden, 0, "he skips this move");
+  assert.match(texts(r.events), /still picking bits of hedge out of his hair: he doesn't move this round/);
+  assert.equal(g(r.state).stage, "run", "nobody is on his space");
+  // round 4: another Flop — he'd come on two spaces, but he never gets past a cat: he stops on the allotments
+  r = over(r.state, "biscuit", "savage", "flop", ["mags", "tilly"]);
+  r = endGetawayRound(r.state);
+  assert.equal(g(r.state).warden, 1);
+  assert.match(texts(r.events), /hears the racket and charges on to the allotments/);
+  assert.match(texts(r.events), /scoops up 3 pieces of dropped loot/);
   assert.deepEqual(g(r.state).cornered.sort(), ["biscuit", "mags", "tilly"]);
+});
+
+test("P14: a group loses a die if any cat in it carries loot; a cat with loot can't be Sweet; a cat may wait", () => {
+  let s = chickenOut();
+  s = doAction(s, "biscuit", "gdrop").state; // Biscuit down to one piece: a Chonky cat with one runs free
+  const ctx = rollContext(s, "biscuit", "over");
+  assert.equal(ctx.lootDie, 0, "his own load costs nothing");
+  assert.deepEqual(ctx.helpers.map(h => [h.id, h.loaded]), [["tilly", true], ["velvet", true], ["mags", true]], "a helper with loot weighs the group down (the roll dialog takes the die)");
+  assert.match(ctx.helpers[0].note, /carrying loot: the group loses a die/);
+  // no Sweet with your mouth full
+  let w = { ...findHouse("number-12"), getaway: [{ name: "a nosy neighbour", opts: [["sweet", 0, "charm"], ["sneaky", 0, "hide"]] }, ...findHouse("number-12").getaway.slice(1)] };
+  let n = arrange(beginRound(newRobbery(w, { cats: Object.values(GANG).slice(0, 4) })).state, { round: 6 });
+  Object.assign(n.prize, { withHuman: null, out: true, room: null });
+  n = finishRobbery(n).state;
+  assert.deepEqual(rollContext(n, "tilly", "over").options.map(o => o.approach), ["sneaky"], "she's carrying a piece of chicken");
+  n = doAction(n, "tilly", "gdrop").state;
+  assert.deepEqual(rollContext(n, "tilly", "over").options.map(o => o.approach), ["sweet", "sneaky"]);
+  // cornered with loot: Sneaky or Savage
+  n = endGetawayRound(endGetawayRound(endGetawayRound(n).state).state).state;
+  assert.equal(n.getaway.stage, "cornered");
+  assert.deepEqual(rollContext(n, "biscuit", "dodge").options.map(o => o.approach), ["sneaky", "savage"]);
+  assert.match(findOption(n, "biscuit", "dodge").label, /no Sweet with your mouth full/);
+  assert.deepEqual(rollContext(n, "tilly", "dodge").options.map(o => o.approach), ["sneaky", "savage", "sweet"]);
+  // waiting is a go
+  const r = doAction(chickenOut(), "mags", "gwait");
+  assert.equal(run(r.state, "mags").acted, true);
+  assert.equal(run(r.state, "mags").pos, 0);
 });
 
 test("dropping a piece on purpose loses the loot die (no turn used); a cat can grab a dropped piece instead of going on", () => {
@@ -121,21 +165,28 @@ test("dropping a piece on purpose loses the loot die (no turn used); a cat can g
   assert.equal(rollContext(r.state, "biscuit", "over").options[0].difficulty, 0, "one piece: a Chonky cat runs free");
   assert.match(texts(r.events), /drops a piece of loot on purpose/);
   r = doAction(r.state, "tilly", "gdrop");
-  assert.deepEqual(catOptions(r.state, "tilly").options.map(o => o.id), ["over", "gpick"]);
+  assert.deepEqual(catOptions(r.state, "tilly").options.map(o => o.id), ["over", "gpick", "gwait"]);
   r = doAction(r.state, "tilly", "gpick");
   assert.deepEqual([run(r.state, "tilly").carry, run(r.state, "tilly").acted, g(r.state).drops[0]], [1, true, 1]);
   assert.match(catOptions(r.state, "tilly").options[0].disabled, /already went/);
 });
 
-test("the warden: on the way, then 1 space a round, never past the last obstacle; loot on or behind it is gone", () => {
+test("the warden: on the way for two rounds (three if nobody was caught), then 1 space a round, 2 after a Flop, never past the last obstacle; loot on or behind him is gone", () => {
   let s = chickenOut();
+  assert.equal(g(s).arrives, 3);
   let r = endGetawayRound(s);
   assert.equal(g(r.state).warden, null, "nobody was caught tonight: the van is still on its way at the end of round 1");
-  assert.match(texts(r.events), /a van is on its way/);
+  assert.match(texts(r.events), /a van is on its way… \(it pulls up at the end of round 3\)/);
+  r = endGetawayRound(r.state);
+  assert.equal(g(r.state).warden, null);
   for (const id of ["tilly", "biscuit", "velvet", "mags"]) r = { state: placeRunner(r.state, id, 3).state };
   r = endGetawayRound(r.state);
-  assert.equal(g(r.state).warden, 0);
-  for (let i = 0; i < 3; i++) r = endGetawayRound(r.state);
+  assert.equal(g(r.state).warden, 0, "the end of round 3: on the garden");
+  r = over(r.state, "tilly", "sneaky", "flop");
+  r = endGetawayRound(r.state);
+  assert.equal(g(r.state).warden, 2, "0 → 2 after a Flop");
+  assert.match(texts(r.events), /hears the racket and charges on to the alley wall — two spaces!/);
+  r = endGetawayRound(r.state);
   assert.equal(g(r.state).warden, 3, "it stops at the last obstacle");
   assert.equal(g(r.state).stage, "cornered", "and now everyone on space 3 must dodge");
 });

@@ -76,7 +76,7 @@ export async function postOutcome(state) {
 
 /** The getaway's big moments in chat: the start, the warden, cornered cats, drops, pinches, getting home. */
 const GETAWAY_EVENTS = new Set(["getawayStart", "loot", "pinched", "warden", "lootLost", "cornered", "dropped", "picked", "home", "getawayManual",
-  "rivals", "nicked", "zoomiesOff"]);
+  "rivals", "nicked", "zoomiesOff", "waits"]);
 
 /** Showing off with no roll (Ch 9 "Cred"): a tag or the catnip unseen, and the Cred it scored. */
 const CRED_EVENTS = new Set(["tag", "nip", "cred", "credManual", "dropped"]);

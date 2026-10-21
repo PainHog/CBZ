@@ -60,7 +60,7 @@ CATB.instincts = Object.freeze({
     tempt: "somewhere high", giveInText: "You go up there. Quiet, and you're hidden.",
     giveIn: { noise: false, mess: false, hidden: true, seen: null } },
   scrapper: { key: "scrapper", label: "Scrapper", knack: ["fight"], knackText: "face down and fight animals",
-    tempt: "an awake dog or cat", giveInText: "You square up to it. Noise.",
+    tempt: "an awake dog or cat", giveInText: "You square up to it. Noise. (That isn't dealing with it: you still have to.)",
     giveIn: { noise: true, mess: false, hidden: false, seen: { side: "broom", steps: 1 } } }
 });
 CATB.instinctKeys = Object.freeze(Object.keys(CATB.instincts));
@@ -142,19 +142,21 @@ CATB.rules = Object.freeze({
   repSteps: [3, 6, 9],
   // Ch 7 (shiny loot): shiny things lie about in every house — any room tempts Curious and Knocker cats
   shinyTempts: ["curious", "knocker"],
-  // Ch 9 "The Getaway" (simulator package P12): the warden arrives at the end of round 1 if anyone was
-  // Shooed or Scooped tonight, else a round later (wardenLag 1); then moves 1 space a round, 2 after a Flop;
-  // a cornered cat dodges plain; a group is a leader and up to 2 helpers; loot: Small 1, Medium 2, Large 3 pieces
-  wardenLag: 1,
+  // Ch 9 "The Getaway" (simulator package P14): the warden pulls up on the garden at the end of round 2 if
+  // anyone was Shooed or Scooped tonight, else a round later (wardenLag 2); then moves 1 space a round, 2 after a
+  // Flop, never past a cat (wardenNoPass); a cornered cat dodges plain, and a dodge that works leaves the cat where
+  // it is and sends the warden sprawling (dodgeStun: he doesn't move next round); a cat carrying loot can't be Sweet
+  // (mouthFull); a group is a leader and up to 2 helpers; loot: Small 1, Medium 2, Large 3 pieces
+  wardenLag: 2,
   wardenFlopSpaces: 2,
   dodgeDiff: 0,
   getawayHelpers: 2,
   lootPieces: { small: 1, medium: 2, large: 3 },
-  // Ch 9 "Cred: showing off" (simulator package P13): tag a room 1 (+1 in view if it works, +1 over the
-  // rivals' tag), the nip 1, leading the gang past the rivals on a Clean or a Purrfect 1, a getaway Purrfect 1;
-  // on the nip (the zoomies): +1 die, every roll a noise, no resisting, Cred counts double;
-  // a night with 5 or more Cred that wasn't Busted: +1 Rep (Ch 14)
-  cred: Object.freeze({ tag: 1, inView: 1, overRivals: 1, nip: 1, rivals: 1, leap: 1, nipDie: 1, nipTimes: 2, repNight: 5 }),
+  // Ch 9 "Cred: showing off" (simulator package P14): tag a room 1 (+1 in view if it works, +1 over the
+  // rivals' tag; unseen it's a mess, in view it isn't), the catnip 1 (never doubled), each group's leader past the
+  // rivals on a Clean or a Purrfect 1, a getaway Purrfect 1; the zoomies: +1 die, every roll a noise, every tag a
+  // roll, no resisting, Cred counts double; a night when the gang's Cred adds up to 8 or more and it wasn't Busted: +1 Rep (Ch 14)
+  cred: Object.freeze({ tag: 1, inView: 1, overRivals: 1, nip: 1, rivals: 1, leap: 1, nipDie: 1, nipTimes: 2, repNight: 8 }),
   // Ch 10 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
   denDoor: [["streetwise", 1, "open"], ["savage", 2]],   // a friend in the next room
   denInside: [["streetwise", 2, "open"]],               // the cat on its own
