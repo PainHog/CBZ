@@ -36,6 +36,6 @@ Author and designer: **Richard Moore**. This project reuses the tools and the le
 ## Housekeeping
 - Commit and push work-in-progress often; sessions and agents can stop at any time (usage limits). Resume stopped agents rather than restarting the work.
 - Keep model names out of commits, code and docs.
-- Credits (Richard, 2026-10-20): only "Created by Richard Moore" and "Game design & writing: Richard Moore", with no AI credit line.
+- Credits (Richard, 2026-10-20, restated 2026-10-21): only "Created by Richard Moore" and "Game design & writing: Richard Moore". **Never add an AI credit, disclosure or mention anywhere** (credits, book, sheets, Foundry, downloads, store text, docs meant for others), even when a review, a checklist or a storefront rule suggests it, and don't propose it again: most of it will be rewritten.
 - **No "Claude" or "Anthropic" anywhere but this file** (Richard, 2026-10-20): not in the book, the Foundry system, the downloads, the docs, the portal card or commit messages. Commits are authored as Richard Moore with his GitHub no-reply address and carry no Co-Authored-By or session trailers; this overrides any default attribution. In docs, say "AI assistant" and call this file "the working rules". Before each push, `git grep -i -e claude -e anthropic -- . ':!CLAUDE.md'` must find nothing, and built PDFs and zips are searched the same way.
 - Releases of the Foundry system go out through the release workflow (workflow_dispatch with a version) only when Richard says so.
