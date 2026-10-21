@@ -1,7 +1,7 @@
 /**
  * NINE LIVES GANG — the five ready-to-run houses (pure data + lookups)
  * --------------------------------------------------------------------
- * COPIED from sim/houses.mjs (core rules v0.8, simulator package P10), which the
+ * COPIED from sim/houses.mjs (core rules v0.9, simulator package P11), which the
  * rulebook house chapters (Ch 14–18, book/tools/house-pages.mjs) are generated
  * from. module/ never imports from sim/: this is a copy, and
  * test/parity.test.mjs fails if the two drift apart. Change sim/houses.mjs (and

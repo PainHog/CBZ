@@ -1,6 +1,6 @@
 /**
  * A whole robbery at The Chicken at Number 12, replayed through the pure logic
- * with fixed dice (AUTOMATION.md §9), under core rules v0.8: every roll is built
+ * with fixed dice (AUTOMATION.md §9), under core rules v0.9: every roll is built
  * with the roll plan from the robbery state (approach, Knack, help, Difficulty,
  * pet, Attention), read from scripted faces, and applied as a final roll card
  * would be; the house's turns use scripted d6s.
@@ -14,12 +14,12 @@ import { robbery, dice, cat, human, pet } from "./fixtures.mjs";
 
 let ev = 0;
 /** Roll for an option with these faces; checks the pool is what the state says it should be. */
-function rollWith(s, id, optionId, approach, faces, { helpers = null, cattitudeDie = false, expectDice } = {}) {
+function rollWith(s, id, optionId, approach, faces, { helpers = null, expectDice } = {}) {
   const ctx = rollContext(s, id, optionId);
   const o = ctx.options.find(x => x.approach === approach);
   assert.ok(o, `${optionId} offers ${approach}`);
   const help = helpers ?? ctx.helpers.filter(h => h.locked).map(h => h.id); // a haul's other carriers are locked in
-  const plan = buildRollPlan({ approach, rating: o.rating, knack: o.knack, bodyDie: ctx.bodyDie, helpers: help.length, cattitudeDie,
+  const plan = buildRollPlan({ approach, rating: o.rating, knack: o.knack, bodyDie: ctx.bodyDie, helpers: help.length,
     difficulty: o.difficulty, opposition: ctx.opposition, attention: ctx.seenBy.length ? o.attention : 0 });
   if (expectDice !== undefined) assert.equal(plan.total, expectDice, `${id} ${optionId}: dice`);
   assert.equal(faces.length, plan.dice, `${id} ${optionId}: ${plan.dice} dice to roll`);
@@ -27,7 +27,7 @@ function rollWith(s, id, optionId, approach, faces, { helpers = null, cattitudeD
   return applyRoll(s, { eventId: `r${++ev}`, catId: id, optionId, approach, result, seen: ctx.seenBy.length > 0, seenBy: ctx.seenBy, kid: ctx.kid, helpers: help });
 }
 
-test("a whole robbery at Number 12 (v0.8) ends in a Clean Getaway, with every rule applied on the way", () => {
+test("a whole robbery at Number 12 (v0.9) ends in a Clean Getaway, with every rule applied on the way", () => {
   const log = [];
   const keep = r => { log.push(...r.events.map(e => e.text)); return r.state; };
   let s = robbery("number-12");

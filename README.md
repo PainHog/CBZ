@@ -16,7 +16,7 @@ A tabletop roleplaying game by **Richard Moore**. The players are a gang of stre
 ## The Foundry system
 Automation-first (`docs/AUTOMATION.md`): nobody tracks rules by hand.
 - **Cat sheets** with a Roll button per approach; Human and Pet sheets for the residents.
-- **The roll dialog** builds the pool from the robbery: Knack, help, the Cattitude die, Difficulty, the pet in the way, the watching human's Attention, Seen and kids — all changeable.
+- **The roll dialog** builds the pool from the robbery: Knack, help, Difficulty, the pet in the way, the watching human's Attention, Seen and kids — all changeable.
 - **Roll cards** with **Push** (1 Cattitude or +1 Mood), **Accept**, and the Storyteller's **Seen / Not seen**. The Storyteller's client applies each final roll to the robbery: the step, the door, the entrance, the dog, the distraction, the noise, and the two-meter **Mood** (a ledger: one roll, one change), with **Shoo!** and **Scooped!**.
 - **The Robbery Tracker**: the house room by room, the Prize Clock, Broom and Cuddle with Patience, each cat's Moves and Actions as buttons, **Begin round** (the Prize Clock, a one-click temptation prompt) and **End round** (the house's turn rolled in the open: dogs chase cats that didn't deal with them, pets, noise, routines and Searching, holders, Finding it), the Storyteller's pick when a meter fills with no roll, the outcome, and the Storyteller's overrides.
 - **Compendia**: the five houses (journals), the ready-made gang, and every house's residents.

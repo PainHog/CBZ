@@ -28,11 +28,11 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 
 1. GM: **Begin round**. *See:* a "Round 1" card; the tracker shows Round 1 — The cats' turn. Mr Pell is in the hall holding the chicken; Pudding is in the kitchen.
 2. Lena: under Velvet, click **Roll: In through the Front door (behind Mr Pell)**. *See:* the roll dialog says Mr Pell can see this; Sweet shows 3 dice (3 + Knack − Attention 1). Roll with **Sweet**.
-3. Lena: on the card, *see* **Push (1 Cattitude)**, **Push (+1 Mood)** and **Accept**; the GM window shows **Accept** and **Not seen** instead. Lena clicks **Accept**. *See:* the card says "Applied to the robbery"; on a Scrape or Clean, Velvet is in the hall and **Cuddle** shows 1/4; the front door is now shut (only one cat gets in).
+3. Lena: on the card, *see* **Push (1 Cattitude)**, **Push (+1 Mood)** and **Accept**; the GM window shows **Accept** and **Not seen** instead. Lena clicks **Accept**. *See:* the card says "Applied to the robbery"; on a Scrape or Clean, Velvet is in the hall and **Cuddle** shows 1/4; the front door's line in the tracker says "tried this round" (one cat a round gets through it).
 4. GM: under Mags, click **In through the Cat flap in the back door**. *See:* Mags is in the utility room; the room shows "Noise here this round".
-5. Lena: under Tilly, click **Help Big Biscuit**. *See:* "Will help Big Biscuit" under Tilly.
-6. GM: under Biscuit, click **Roll: In through the Open kitchen window (up the bins)**. *See:* the dialog lists Tilly as a helper, already ticked. Roll **Savage**.
-7. GM: if it's a Flop, click **Push (1 Cattitude)**. *See:* the non-6 dice are rerolled, Biscuit's Cattitude drops to 1, and the card is final at once. On a success, both Biscuit **and Tilly** are in the kitchen.
+5. Lena: look under Tilly (outside). *See:* no **Help …** buttons: cats outside can't help one coming in (a helper is in the same room, and outside isn't a room).
+6. GM: under Biscuit, click **Roll: In through the Open kitchen window (up the bins)**. *See:* the dialog lists no helpers and no "Spend 1 Cattitude for +1 die" box (Cattitude only pays for a Push or for resisting now). Roll **Savage** (2 dice: Savage 3, Tricky −1).
+7. GM: if it's a Flop, click **Push (1 Cattitude)**. *See:* the non-6 dice are rerolled, Biscuit's Cattitude drops to 1, and the card is final at once. On a success Biscuit is in the kitchen. Lena: under Tilly, **Roll: In through the Open kitchen window (up the bins)**, Sneaky, and Accept.
 8. GM: **End round** → confirm. *See:* a "The house's turn" card: Pudding barks (a cat is in the kitchen), Mr Pell comes to see the noise in the utility room (the cat flap was the first noise), and the dice he rolled if any. Pudding does **not** chase Biscuit and Tilly out: they climbed in, so they had no Action left, and they deal with him first thing next turn.
 9. GM (optional, the dog's chase): in a later round, move a cat that still has its Action into a room with an awake dog and **End round** without rolling against the dog. *See:* "… chases … back into the …" on the house-turn card, before the pets move.
 
@@ -42,7 +42,7 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 2. GM: click **Tempt Velvet: …** if offered, else any cat of Lena's. *See:* a public temptation card. Lena *sees* **Give in (+1 Cattitude)** and **Resist (1 Cattitude)**; every other cat's buttons in the tracker say they wait ("… is tempted and goes first").
 3. Lena: **Resist**. *See:* that cat's Cattitude −1; the card says "Resisted".
 4. GM: in the tracker header, click Broom **+1** three times. *See:* Broom 3/4.
-5. GM: make a roll Mr Pell can see that fills Broom — e.g. under Biscuit (in the kitchen with Mr Pell) **Roll: Deal with Pudding**, Savage, and **Accept**. *See:* on a success Pudding is driven off; then, because Broom reached 4, a **Shoo!** card: Mr Pell chases Biscuit out of the kitchen window (the nearest entrance that works this round: the front door only works in round 1), shuts it and stays in the kitchen; Broom 0, **Patience 3**. Biscuit is outside; the window shows SHUT.
+5. GM: make a roll Mr Pell can see that fills Broom — e.g. under Biscuit (in the kitchen with Mr Pell) **Roll: Deal with Pudding**, Savage, and **Accept**. *See:* on a success Pudding is driven off; then, because Broom reached 4, a **Shoo!** card: Mr Pell chases Biscuit out of the kitchen window (the nearest entrance Biscuit fits through that works this round: the front door only works in round 1), shuts it (the cat flap is still open) and stays in the kitchen; Broom 0, **Patience 3**; Cuddle stays where it was (it was below 3). Biscuit is outside; the window shows SHUT.
 6. GM: **Undo last Mood change** twice. *See:* the first puts Biscuit back in the kitchen with the window open and Patience 4 (Broom 4/4: full again, so the next change to the robbery would set it off once more — Mr Pell can see Biscuit); the second takes the roll's own step off (Broom 3/4). Then click Broom **−1** three times (Broom 0/4) so the rest of the round stays calm.
 7. Lena: under Tilly, **Roll: Get at the rotisserie chicken: step 1 of 2**. On the card, GM clicks **Not seen**, then **Seen** again. *See:* the badge flips each time; then Lena **Accept**s. *See:* "Step 1 of 2 done".
 8. GM (the Prize Clock's hold): in the tracker, under the utility room, click **Noise here**; then **End round**. *See:* the house-turn card says "Mr Pell stays with the rotisserie chicken (the Prize Clock's hold): the noise in the utility room doesn't draw them this round" and "Mr Pell stays with the rotisserie chicken (the Prize Clock)"; at the end, "Finding it": he is beside the chicken with a step done, so he finds it disturbed: +1 Broom, and starts **Searching** (the badge appears on Mr Pell).
@@ -58,23 +58,40 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 5. *See:* when the prize is out and no free cat is inside, the round's end posts **Clean Getaway** (or Messy). GM: click **Give the gang +1 Rep (campaign)** → each cat's Rep is 1.
 6. If a cat was left inside, its owner sees **…: spend a Life to escape** on the outcome card; clicking it takes one Life.
 
-## 6. Core rules v0.8 on other houses
+## 6. Core rules v0.8 on other houses (still true in v0.9)
 
 1. **The parrot remembers (The Birthday Cake).** GM: start a robbery at **The Birthday Cake** and **Begin round**; move Aunt Rosalind to the living room (**Move:**). Lena: under Velvet, **In through the Patio door, ajar** (no roll), then **Hide**. *See:* in the dining room, Captain the parrot's line says "saw a cat this round: squawks in the Pets step", although Velvet is now hidden. GM: **End round**. *See:* "Captain the parrot squawks (it saw a cat earlier this round)"; Dad, who put the cake down this round, stays with it ("the Prize Clock's hold"), so somebody else comes to the dining room.
 2. **The cake wobbles** (optional, if you play on until a cat carries the cake): *See:* **Roll: Haul the birthday cake …** offers Sneaky and Savage, both **Tricky**.
 3. **A meter that waits (any house).** GM: with a human **Distracted** in a room where a cat stands unhidden, click Broom **+1** until it is full. *See:* no Shoo! yet; the tracker's log says "Broom is full, but nobody with free hands can see a cat: it stays full, and as soon as someone can, they act at once", and the header says so too. GM: **End round**. *See:* as the house's turn starts the human looks round: "Broom was waiting full: … can see … and acts at once", then the Shoo! card.
 4. **Out and back in.** Lena: send a cat out through an entrance that needs no roll (Number 12's cat flap). *See:* its **In through …** buttons now say "it went out this turn: back in next round".
-5. **Dozing (Grandpa Wendell's Catnip Mouse).** GM: play a few rounds. *See:* when Grandpa nods off, the next house's turn says "Grandpa Wendell is asleep and stays put" (no routine roll for him). To try the Prize Clock's wake-up, put him to sleep from the console before round 4 begins: `game.catBurglars.robbery.overrides.patch("wendell", { asleepUntil: 4 })`, then **Begin round**. *See:* "Grandpa Wendell wakes up: there's the catnip mouse to see to", and he moves the mouse to the living room.
+5. **Dozing (Grandpa Wendell's Catnip Mouse).** GM: play a few rounds. *See:* Grandpa rolls his doze die every house's turn — even in a round he answers a noise or Searches ("Grandpa Wendell nods off (d6 1)") — and when he has nodded off, the next house's turn says "Grandpa Wendell is asleep and stays put" (no routine roll for him). To try the Prize Clock's wake-up, put him to sleep from the console before round 4 begins: `game.catBurglars.robbery.overrides.patch("wendell", { asleepUntil: 4 })`, then **Begin round**. *See:* "Grandpa Wendell wakes up: there's the catnip mouse to see to", and he moves the mouse to the living room.
 6. **Chased back out (The Okafors' Big Box).** GM: wake Noodle (console: `game.catBurglars.robbery.overrides.patch("noodle", { mode: "awake" })`). Lena: a cat comes in through the **Dog door** and does nothing else. GM: **End round**. *See:* "Noodle chases … back out through the Dog door: it only just came in!" — the cat is outside again.
 
-## 7. The Storyteller away
+## 7. Core rules v0.9 (any robbery at Number 12 unless it says)
+
+1. **A Shoo! through a shut entrance.** GM: in the footer's **Ways and entrances**, **Shut** the kitchen window. Put Biscuit and Mr Pell in the kitchen (**Put:** / **Move:**) and bring Broom to one short of full with **+1**. GM: under Biscuit, a free **Savage** roll; **Accept**. *See:* "Shoo! Mr Pell grabs the broom and chases Big Biscuit out through the Open kitchen window (up the bins) (opening it first), shuts it and stays in the kitchen". The window shows SHUT again; the cat flap is still open.
+2. **The human who shooed stays put.** GM: under the hall, click **Noise here**; **End round**. *See:* "Mr Pell stays by the entrance they shooed a cat out of: the noise in the hall doesn't draw them this round". Biscuit's **In through …** buttons said "it went out this turn: back in next round" until the next round began.
+3. **The last open entrance stays open.** GM: **Shut** the cat flap too (the window is shut from step 1). With a cat and Mr Pell in the kitchen and Broom one short of full, fill Broom with a seen roll. *See:* the Shoo! card says "leaves it open (it's the last way in still open)", and the window shows open (the front door doesn't count: it only works in round 1).
+4. **The other meter drops to one below.** GM: with Patience 4, set Cuddle to 3 (**+1** three times) and Broom to 3; fill Broom with a seen roll. *See:* "Broom empties; Patience drops to 3. Cuddle drops to 2, one below it: one catch never sets off the other." — and no Scooped! follows.
+5. **A give-in stops one short.** GM: bring Cuddle to one below full; put Velvet and Mr Pell in the living room; **Tempt Velvet: Lap Cat**. Lena: **Give in**. *See:* "Cuddle +0 (…): … (giving in never fills a meter: it stops one short)" — no Scoop; Mr Pell is Distracted; later, Velvet's **Distract Mr Pell** says "(distracted 1× before: −1)" (the fuss counts as a distraction).
+6. **A Knocker in view leaves no mess.** Tempt a Knocker in a room with an awake human; give in. *See:* +1 Broom (or one short of full), noise, and no "Mess here" in that room. Unseen (nobody in the room), it leaves the mess and no Broom.
+7. **Distract and the Scoop.** With Cuddle one short of full and Mr Pell in Velvet's room, Velvet **Distract**s him: on a Scrape or Clean *see* "Scooped! Mr Pell picks Velvet up" and "The Scoop wins: Mr Pell picks Velvet up instead, and isn't Distracted" — he has no Distracted badge.
+8. **A held cat can be helped.** With Velvet held, put Tilly in the same room. Lena: under Tilly, **Help Velvet**; then Velvet's **Roll: Wriggle free** lists Tilly as a ticked helper.
+9. **The Den.** With a cat held, **End round** until the holder rolls 4 or 5. *See:* "… shuts … in the downstairs loo, … and stays just outside, in the hall" — the human is in the hall, not the loo.
+10. **The party's front door (The Birthday Cake).** Round 1: one cat tries the front door (any result). *See:* every other cat's **In through the Front door (guests arriving)** says "one cat a round: it has been tried this round". Round 2: it works again for one cat; round 3: "only in round 1 or 2".
+11. **Ties go to the higher Attention, then a die (The Birthday Cake).** Put Dad and Mia in the kitchen (both Attention 1) and make a noise in the utility room (**Noise here**), then **End round**. *See:* "… comes to see the noise in the utility room (as close as another and tied on Attention: a die, N)". With Aunt Rosalind (Attention 2) as close, she goes: "(as close as another: the higher Attention goes)".
+12. **A befriended dog.** Befriend Pudding (Sweet). *See:* at End round no "Pudding barks" with cats in his room, but he still follows his routine; he no longer tempts Scrappers.
+13. **Gang size and Rep.** Start Grandpa Wendell's with three cats. *See:* the start card's "Patience 10 (this house's own number for three cats)", gone at the start of round 11. Then give one cat Rep 3 on its sheet and start a new robbery with four cats. *See:* "Every cat starts with 3 Cattitude (the gang's Rep 3: +1)", and every cat's Cattitude is 3.
+14. **The end.** With the prize got (or gone) and a cat still held, take every other cat outside and **End round**. *See:* the house-turn card's footer "No free cat is inside and the … is got: the robbery ends at the end of the round (still inside, so adopted: …)", then the outcome card. With the prize still to get and everyone outside, nothing ends by itself: **End the robbery** is the gang going home.
+
+## 8. The Storyteller away
 
 1. GM: start a new robbery (any house), **Begin round**.
 2. GM: close the GM window (log out).
 3. Lena: make a roll from the tracker and **Accept** it. Try a Move button. *See:* the roll card stays "Final — waiting for the Storyteller's client"; the Move warns "The Storyteller isn't connected — nothing was changed."
 4. GM: log back in. *See:* a notification "applied 1 roll made while the Storyteller was away"; the roll's effect and Mood are in the tracker.
 
-## 8. Switching automations off
+## 9. Switching automations off
 
 In **Configure Settings**, try each and check the "Off" behaviour:
 
@@ -87,7 +104,7 @@ In **Configure Settings**, try each and check the "Off" behaviour:
 | The house's turn | Ask first / Run at once / By hand | End round asks / doesn't ask / only ends the round (nobody moves) |
 | Roll routines | off | The house's turn moves nobody by routine (noise still draws humans) |
 | Temptation | No prompt / Tempt at random | No whispered card / a random cat is tempted at Begin round |
-| Spend and earn Cattitude | off | Pushes, dice, giving in and Purrfects don't change any sheet |
+| Spend and earn Cattitude | off | Pushes, resisting, giving in and Purrfects don't change any sheet, and a new robbery doesn't reset it |
 | Run the Prize Clock | off | Begin round doesn't put the prize down or take it away (and nobody is held by it: noise draws everyone) |
 | End the robbery by itself | off | No outcome card; end it with **End the robbery** |
 | Players can open the tracker | off | Lena's tracker button warns that the Storyteller keeps it |

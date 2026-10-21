@@ -64,7 +64,7 @@ async function houseTurn(faces) {
   diceQueue.length = 0;
 }
 
-test("a GM and two players rob Number 12 (v0.8) from start to Clean Getaway", async () => {
+test("a GM and two players rob Number 12 (core rules v0.9) from start to Clean Getaway", async () => {
   const tilly = await makeCat("Two-Bin Tilly", p1, { approaches: { streetwise: 3, sneaky: 2, sweet: 1, savage: 1 }, instinct1: "curious", instinct2: "climber", body: "lean" });
   const velvet = await makeCat("Velvet", p1, { approaches: { sweet: 3, sneaky: 2, savage: 1, streetwise: 1 }, instinct1: "lapCat", instinct2: "knocker", body: "lean" });
   const biscuit = await makeCat("Big Biscuit", p2, { approaches: { savage: 3, streetwise: 2, sweet: 1, sneaky: 1 }, instinct1: "scrapper", instinct2: "foodie", body: "chonky", cattitude: 4 });
@@ -96,19 +96,23 @@ test("a GM and two players rob Number 12 (v0.8) from start to Clean Getaway", as
 
   await trackerAction(p2, "act", { cat: mags.id, option: "enter:flap" });
   assert.equal(catOf(mags.id).where, "utility");
+  const warned = log.warnings.length;
   await trackerAction(p1, "help", { cat: tilly.id, target: biscuit.id });
-  assert.equal(state().help[tilly.id], biscuit.id);
+  assert.equal(state().help[tilly.id], undefined, "v0.9: cats outside can't help one coming in");
+  assert.ok(log.warnings.slice(warned).some(w => /outside isn't a room/.test(w)));
 
-  m = await rollAs(p2, biscuit, "enter:window", { approach: "savage", [`help-${tilly.id}`]: true }, [3, 2, 1]); // 3 − Tricky + help
+  m = await rollAs(p2, biscuit, "enter:window", { approach: "savage" }, [3, 2]); // 3 − Tricky
   assert.equal(flags(m).result, "flop");
-  diceQueue.push(6, 4, 1);
+  diceQueue.push(6, 4);
   await click(m, p2, "Push (1 Cattitude)");
   assert.equal(flags(m).result, "clean");
   assert.equal(flags(m).pushed, true);
   assert.equal(biscuit.system.cattitude, 1, "the roller pays for the Push");
   assert.equal(flags(m).applied, true, "a Push makes the roll final");
   assert.equal(catOf(biscuit.id).where, "kitchen");
-  assert.equal(catOf(tilly.id).where, "kitchen", "the helper comes in too");
+  m = await rollAs(p1, tilly, "enter:window", { approach: "sneaky" }, [6, 4]); // Sneaky 2 + Climber − Tricky
+  await click(m, p1, "Accept");
+  assert.equal(catOf(tilly.id).where, "kitchen", "Tilly climbs in after him");
   assert.equal(catOf(tilly.id).acted, true);
 
   await houseTurn([1, 1, 1, 1, 1, 1, 1]); // Pudding barks; Mr Pell answers the cat flap's clack first
@@ -196,7 +200,7 @@ test("a GM and two players rob Number 12 (v0.8) from start to Clean Getaway", as
   assert.deepEqual(state().prize.carriers.sort(), [tilly.id, velvet.id].sort(), "two Lean cats carry a Medium prize");
   await trackerAction(p2, "act", { cat: biscuit.id, option: "exit:flap" });
   assert.equal(catOf(biscuit.id).status, "outside");
-  await houseTurn([5, 1, 1, 1, 1, 1, 1]); // Mr Pell wanders to the living room
+  await houseTurn([1, 5, 1, 1, 1, 1, 1]); // Pudding (befriended, but still wandering: v0.9) stays; Mr Pell wanders to the living room
   assert.equal(pell().room, "living");
 
   // ---- Round 5: hauling the chicken — Mags helps, but only the carriers move with it
@@ -379,5 +383,52 @@ test("v0.7: a meter filled with no roll — the Storyteller picks the cat from a
   assert.equal(state().pendingTrigger, null);
   assert.match(lastCard("mood").content, /Shoo! Mr Pell grabs the broom and chases Lamppost Sully out/);
   assert.deepEqual(meters(), [0, 0, 4]);
+  assert.deepEqual(log.errors, []);
+});
+
+test("v0.9: a Shoo! through a shut entrance, the last open entrance staying open, the other meter dropping, a give-in stopping one short", async () => {
+  const sooty = await makeCat("Sooty Boots", p2, { approaches: { savage: 3, streetwise: 2, sweet: 1, sneaky: 1 }, instinct1: "curious", instinct2: "scrapper", body: "chonky" });
+  const pickles = await makeCat("Pickles", p2, { approaches: { sneaky: 3, savage: 2, streetwise: 1, sweet: 1 }, instinct1: "climber", instinct2: "hunter", body: "lean" });
+  const lady = await makeCat("Lady Whiskers", p1, { approaches: { sweet: 3, sneaky: 2, savage: 1, streetwise: 1 }, instinct1: "lapCat", instinct2: "knocker", body: "lean" });
+  await asUser(gmU, () => api().robbery.startRobbery("number-12", { actorIds: [sooty.id, pickles.id, lady.id] }));
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  await asUser(gmU, () => api().robbery.overrides.patch("pudding", { mode: "hiding", until: 99 }));
+  for (const c of [sooty, pickles, lady]) await trackerAction(gmU, "place", { cat: c.id, to: "kitchen" });
+  await trackerAction(gmU, "place", { key: "pell", to: "kitchen" });
+  await trackerAction(gmU, "toggleEntrance", { entrance: "window", open: "true" });
+  assert.equal(state().entrances.find(e => e.key === "window").open, false, "the Storyteller shut the kitchen window");
+  for (let i = 0; i < 4; i++) await trackerAction(gmU, "mood", { side: "broom", steps: "1" });
+  for (let i = 0; i < 4; i++) await trackerAction(gmU, "mood", { side: "cuddle", steps: "1" });
+  assert.deepEqual(meters(), [4, 4, 5], "three cats: Patience 5");
+
+  // a seen Scrape fills Broom: out through the nearest entrance Sooty fits — the shut window, opened and shut again (the cat flap is open)
+  let m = await rollAs(p2, sooty, "free", { approach: "savage" }, [5, 2, 1]);
+  await click(m, p2, "Accept");
+  assert.equal(catOf(sooty.id).status, "outside");
+  assert.match(lastCard("mood").content, /out through the Open kitchen window \(up the bins\) \(opening it first\), shuts it and stays in the kitchen/);
+  assert.equal(state().entrances.find(e => e.key === "window").open, false);
+  assert.deepEqual(meters(), [0, 3, 4], "Patience 4, and Cuddle drops to 3: one below it");
+
+  // the cat flap shut too: the window is the last way in still open, so Mr Pell leaves it open
+  await trackerAction(gmU, "toggleEntrance", { entrance: "flap", open: "true" });
+  for (let i = 0; i < 3; i++) await trackerAction(gmU, "mood", { side: "broom", steps: "1" });
+  m = await rollAs(p2, pickles, "free", { approach: "savage" }, [5, 1]);
+  await click(m, p2, "Accept");
+  assert.equal(catOf(pickles.id).status, "outside");
+  assert.match(lastCard("mood").content, /leaves it open \(it(&#x27;|')s the last way in still open\)/);
+  assert.equal(state().entrances.find(e => e.key === "window").open, true);
+  assert.deepEqual(meters(), [0, 2, 3], "Cuddle 3 drops to 2");
+
+  // Lady gives in to a lap in the living room: Cuddle would fill, so it stops one short — no Scoop
+  await trackerAction(gmU, "place", { cat: lady.id, to: "living" });
+  await trackerAction(gmU, "place", { key: "pell", to: "living" });
+  await trackerAction(gmU, "tempt", { cat: lady.id, instinct: "lapCat" });
+  await click(lastCard("temptation"), p1, "Give in (+1 Cattitude)");
+  assert.deepEqual(meters(), [0, 2, 3], "the fuss's Cuddle step stops one short");
+  assert.equal(catOf(lady.id).status, "free");
+  assert.equal(pell().distractedRound, state().round, "Mr Pell is Distracted…");
+  assert.equal(pell().distractions, 1, "…and it counts as a distraction of him");
+  assert.equal(lady.system.cattitude, 4, "3 (a gang of three) + 1 for giving in");
   assert.deepEqual(log.errors, []);
 });
