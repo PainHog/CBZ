@@ -1,68 +1,63 @@
 # Nine Lives Gang — the delegated version: experiment report
 
-*For Richard Moore, 2026-10-20. Merged into the main line on your say-so (a fresh single commit; the full history stays on the experiment branch).*
+*For Richard Moore, 2026-10-21 (version 0.9). The main line holds it as clean single commits; the full history stays on the experiment branch.*
 
-You chose the identity — instincts as the cats' heart, hiding in plain sight, starting at the door, choosing different entrances, a street gang rather than a heist crew — and asked an AI assistant to make every other call and build the game to completion, so you can compare it with the version you direct. This is what came out, what it cost to get there, and what is still open.
+You chose the identity — instincts as the cats' heart, hiding in plain sight, starting at the door, choosing different entrances, a street gang rather than a heist crew — and asked an AI assistant to make every other call and build the game to completion, so you can compare it with the version you direct. Since version 0.8 you added the direction that made it this game: **a gang of thug cats** who love **shiny things**, a chaotic home invasion with a **getaway from animal control**, **comical and light**, and points for **marking territory, catnip and rival gangs**. This is what came out, what it cost to get there, and what is still open.
 
 ## What exists
 
 | Part | State |
 |---|---|
-| Design | 41 decisions in `docs/DESIGN.md` (the delegated ones marked "AI"); all 12 open questions settled. |
-| Core rules | `docs/CORE-RULES.md` v0.8 — a two-page summary of the book. |
-| Rulebook | 18 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Nine_Lives_Gang_v0.8.pdf` (50 pages, every picture final; the cover says "draft" until you approve it), plus a print edition with bleed (`…_print-interior.pdf`, 48 pages, and front and back covers). Every ruling is a row in `book/REVIEW.md` (104 rows). |
-| Art | 50 pictures, all generated as code (`book/tools/art-gen/`): cover, the gang's tag, part pages, 18 chapter pictures, 5 floor plans drawn from the same data the simulator plays, 5 cat portraits (plus a reference sheet per cat), 15 end-of-chapter spots and a back-cover picture. Each audited against `book/art/ART-CHECKLIST.md` (`book/art/AUDIT.md`). |
-| Simulator | `sim/`: every rule as a switchable parameter, ten rule packages compared on the same dice; package P10 adopted. `sim/BALANCE.md`. |
-| Playtests | 9 agent playtests with real dice across all five houses (`sim/playtests/`), each followed by a fix round. The last (Number 12, v0.8) found only wording issues and judged it a good first robbery. |
-| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood ledger, the round and the house's turn, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 129 tests (pure logic, a seeded replay, 750-robbery fuzzing, fake-Foundry smoke tests with a Storyteller and two players). Never run in a live Foundry: `TESTING.md` is a two-client script for you. A zip for manual install (`Nine_Lives_Gang_Foundry_v0.8.0-test.zip`) is attached to the hand-off; nothing is released. |
-| Portal | `PORTAL.md` current; the rulebook cover is the card's picture. |
+| Design | 47 decisions in `docs/DESIGN.md` (the delegated ones marked "AI", yours marked "Richard"); no open questions. |
+| Core rules | `docs/CORE-RULES.md` v0.9 — a two-page summary of the book. |
+| Rulebook | 19 chapters, 5 ready-to-run houses, cat sheet, house tracker, quick reference: `book/dist/Nine_Lives_Gang_v0.9.pdf` (54 pages; the cover says "draft" until you approve it), a **printer-friendly** copy with white pages, and a print-shop edition with bleed (interior, front and back covers, and a one-piece cover with a spine). Every ruling is a row in `book/REVIEW.md` (152 rows). |
+| Art | 48 pictures in the book, all generated as code (`book/tools/art-gen/`): the getaway cover (the warden's net, the van, the gang going over the fence), the gang in their gear (bandanas, chains, hoops, daft tattoos), graffiti tags, part pages, 19 chapter pictures, 5 floor plans drawn from the simulator's own house data, 5 cat portraits, end-of-chapter spots and a back-cover picture. Audited against `book/art/ART-CHECKLIST.md` (`book/art/AUDIT.md`, 2026-10-21). |
+| Simulator | `sim/`: every rule as a switchable parameter, fourteen rule packages compared on the same dice; package P14 adopted. `sim/BALANCE.md`. |
+| Playtests | 13 agent playtests with real dice across all five houses (`sim/playtests/`), each round followed by fixes; v0.9 had two playtests, a fix round and two verification playtests. |
+| Foundry VTT | An ApplicationV2 system that runs the robbery: rolls, the Mood, the round and the house's turn, the getaway and the warden, Cred, the Robbery Tracker, sheets, packs, Undo, every automation switchable. 180 tests (pure logic, parity with the simulator, a seeded replay, fuzzing, fake-Foundry smoke tests with a Storyteller and two players). Never run in a live Foundry: `TESTING.md` is a two-client script for you. Nothing is released. |
+| Portal | `PORTAL.md` current; the rulebook cover is the card's picture, and the rulebook and the printer-friendly copy are its downloads. |
 
 ## The game in one paragraph
 
-A gang of street cats watched a human carry something into a house. They pick their ways in, and roll a handful of d6, reading the highest die (Flop, Scrape, Clean, two 6s Purrfect). **Being seen isn't being caught — being seen doing something is**: walking and sitting in view are free, anything else in view is a roll, and every seen roll fills one of the house's two meters. **Broom** (naughty) ends in a **Shoo!** out of the nearest door; **Cuddle** (sweet) ends in being **Scooped!** and maybe shut in the Den — and any cat still inside at Lights Out is adopted. Two **instincts** per cat give a Knack and a temptation the Storyteller can dangle. The house fights back with routines, dogs, a parrot, a house cat, a **Prize Clock** that moves and finally takes the prize away, and **Searching** humans once they find it's been touched. Big prizes must be **hauled** room by room, every move a roll.
+A gang of thug street cats watched a human carry something into a house: something **delicious**, **fun**, **shiny**, or a **box**. They pick their ways in and roll a handful of d6, reading the highest die (Flop, Scrape, Clean, two 6s Purrfect). **Being seen isn't being caught — being seen doing something is**: walking and sitting in view are free, anything else in view is a roll, and every seen roll fills one of the house's two meters, **Broom** (ending in a **Shoo!** out of the door) or **Cuddle** (ending in being **Scooped!** and maybe shut in the Den). Two **instincts** per cat give a Knack and a temptation the Storyteller dangles, and shiny things tempt in every room. The house fights back with routines, dogs, a parrot, a house cat, a **Prize Clock**, and **Searching** humans. Then the **getaway**: the loot in pieces, four obstacles to the hideout, and the animal-control warden behind them; any cat still inside, or cornered and caught, is **pinched** and goes to the pound. Showing off — tagging rooms, getting the zoomies from the catnip, showing up the rival gang — scores **Cred**, and the top scorer is the Cat's Whiskers.
 
 ## How it got here
 
-The rules went through eight versions. Each playtest found a cheap line a smart gang could take, and each fix round closed it and re-tuned the houses in the simulator:
-
-| Version | What a playtest (or the simulator) found | What changed |
+| Version | What a playtest, the review or you found | What changed |
 |---|---|---|
-| v0.1–v0.3 | One two-ended Mood track let one charmer cancel the whole gang's mess; actions in view were free; zero dice worked half the time. | Two meters; every action in view is a roll; zero dice keep the lower of two. |
-| v0.4 | The cake (Hard): 23 gaps in the text. | All settled in the book. |
-| v0.5 | The box: won by waiting where no routine went. | Searching humans; the owner fetches the prize. |
-| v0.6 | The box again: won with **0 cat rolls**, hiding with the box and steering Searchers with a decoy. Number 12 (5 cats): every roll under one Distraction. | Hauling is always a roll; carriers can't hide; humans beside a disturbed prize notice it. |
-| v0.7 | The box: a dog's bark lured the Searcher away. The salmon: the chef's routine stranded her outside the kitchen; eating was free; a cuddled cat blinded its holder. | Eating is a roll; holders still see; loiterers in a dog's room are chased out; temptations rotate. |
-| v0.8 | Wendell (5 cats) and the cake: both won by a free round-1 noise that pulled the owner off the prize as it was put down. | The human who puts the prize down stays with it that round; owners' routines visit the prize; the cake wobbles. |
-| v0.8 check | Number 12 with the ready-made gang: a Clean Getaway on 7 rolls, "Easy without being a walkover"; 15 wording issues, no rule gaps. | Wording only. |
+| v0.1–v0.8 | Eight rounds of playtests closed one cheap winning line after another (see the v0.8 report in the history). | Two meters; every action in view a roll; Searching; hauling and eating are rolls; the human who puts the prize down stays with it. |
+| v0.9 review | An outside review: Shoo! could use an entrance the cat couldn't fit; the Cattitude die was a trap; 20 wording gaps; a list of art defects. | Shoo! uses the nearest entrance that fits; no Cattitude die; Cattitude only buys a Push or a resisted temptation; the art redrawn. |
+| v0.9 your direction | "It's a GANG of thug cats … cats love shiny things … the getaway is the real one … keep it comical, keep it light … points for marking territory, catnip, rival gangs." | Shiny prizes; the getaway chapter; pinched (the pound) instead of adopted; Cred; a voice pass through the whole book; new cover and gang art. |
+| v0.9 playtests | Number 12 and Chef Marchetti's: a dodge carried cats over fences they never climbed; the catnip doubled risk-free tags; "all the loot" had no fixed total; Rep's "5 Cred" was ambiguous. | The warden never passes a cat and sprawls when one dodges; tags with the zoomies are rolls; outcomes count the whole prize; Rep needs the gang's Cred to reach 8. |
 
-Two proposals were simulated and declined because they made the game far too hard (a half-empty meter after a Shoo!; Searchers deaf to noise). Letting one cat take the broom on purpose stays legal: it's the cartoon decoy, and it still costs Patience and an entrance.
+Proposals simulated and declined: one portion eaten per cat (to put loot on every getaway; Easy fell to 66%, Hard to 26%); shutting a held cat in the Den when its own roll fills Broom (+10 points of cats lost at the cake).
 
-## Balance (simulator, package P10)
+## Balance (simulator, package P14)
 
 | Gang | Easy | Standard | Hard |
 |---|---|---|---|
 | Target | ~90 | ~75 | 55–60 |
-| 4 cats | 90.3 | 75.3 | 57.9 |
-| 3 cats | 87.9 | 68.6 | 55.8 |
-| 5 cats | 96.8 | 75.8 | 53.0 |
+| 4 cats | 87.4 | 74.0 | 58.9 |
+| 3 cats | 86.4 | 67.2 | 57.6 |
+| 5 cats | 96.3 | 78.3 | 55.5 |
 
-About 12 rolls a robbery; Flops 15%, Purrfects 6%; temptations given in to 82% of the time; a cat is left behind (adopted) in 4% of Easy and 15% of Hard robberies.
-
-Two late fixes: a gang of **five** now gets Patience −1 only (with the Prize Clock a round sooner as well, five cats ran 7 points behind four at Hard). And **clean wins at Hard** turned out to be a choice the players make, not a wall: eating half and running wins most often (15% of those wins are clean), while playing for the whole prize gets a third of its wins clean but wins 11–16 points less often. The target now says "when the gang plays for it".
+About 23 rolls a robbery (13 in the house, the rest on the getaway); Flops 16%, Purrfects 6%; a cat is pinched in 9% of Easy and 30% of Hard robberies. Showing off costs about 1 point played carefully, and 4–5 played greedily.
 
 ## Open issues
 
-- **Sharp players beat the simulator.** Every playtest found a line the simulated gang doesn't take (lures from noisy flaps, parrots, barking dogs). The houses are tuned to the simulator, so a clever table will win more than these numbers say. The last fix round closed the round-1 lure; the next real playtests will show what's left.
+- **Sharp players beat the simulator.** Every playtest found a line the simulated gang doesn't take. The houses are tuned to the simulator, so a clever table will win more than these numbers say.
+- **Eating it all inside makes a quiet getaway.** In the three food houses a gang can eat the whole prize in the house; the getaway then only risks a pinch and Cred. The book says to keep that getaway quick. A rule to force loot onto every getaway wrecked the balance and was dropped.
+- **Cred in play runs higher than in the simulator** (12 and 16 for the two playtest gangs against 3–4 simulated), which is why Rep for Cred needs 8.
 - **Foundry** has only been tested on a pretend table.
-- **Not modelled anywhere yet:** a shut-in cat meowing to lure a human, persuading a human to open a door, toddlers, a campaign beyond Reputation and Lives.
 
 ## Things that are your call
 
-1. **Credits.** Settled: the credits page names only you ("Created by" and "Game design & writing: Richard Moore"), and nothing in the game or the docs names the AI tool or its maker.
-2. **The name.** Settled: *Nine Lives Gang* (your pick, 2026-10-20), after *Cat Burglars* turned out to be taken. The book has a new spray-paint logo, the gang's tag on the cover wall, and stencil chapter titles.
-3. **Names changed for originality:** the Wendells' house cat is **Pom-Pom** (not "Duchess", *The Aristocats*); the Okafors' dog is **Noodle** (it was "Biscuit", which clashed with Big Biscuit).
-4. **Merging, releasing, the art direction:** nothing is merged, released or final without you.
+1. **Credits.** Settled: only "Created by Richard Moore" and "Game design & writing: Richard Moore"; nothing in the game or the docs names the AI tool or its maker.
+2. **The name.** Settled: *Nine Lives Gang*.
+3. **Names made for originality:** the top Cred scorer is "the Cat's Whiskers" (not "Top Cat", a famous cartoon gang); catnip gives "the zoomies" (not "on the nip", which read like being high in a book for ages 8 and up); the rival gangs are the Bin Lid Boys, the Satin Paws, the Canal Street Toms, the Party Crashers and the Fishbone Crew.
+4. **The default branch** is still the experiment branch; the main line is up to date and can be made the default whenever you like.
+5. **Releasing the online version and approving the cover** are yours.
 
 ## How to compare it with your version
 
-Read `docs/CORE-RULES.md` (two pages) side by side with yours, then play **The Chicken at Number 12** with the ready-made gang (Chapter 3): it's the first robbery the book recommends, and it shows the Mood, a dog, a Distraction, a haul and the Prize Clock in under an hour. `sim/BALANCE.md` and the playtest reports show how each rule earned its place.
+Read `docs/CORE-RULES.md` (two pages) side by side with yours, then play **The Chicken at Number 12** with the ready-made gang (Chapter 3): it's the first robbery the book recommends, and it shows the Mood, a dog, a Distraction, the catnip, a tag and the getaway in about an hour. `sim/BALANCE.md` and the playtest reports show how each rule earned its place.
