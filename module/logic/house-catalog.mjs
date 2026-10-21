@@ -27,6 +27,7 @@ const bag = [["streetwise", 1, "open"], ["sneaky", 1]];                // rummag
 export const HOUSES = [
   {
     key: "number-12", name: "The Chicken at Number 12", label: "easy", patience: 4,
+    cred: { catnip: "utility", rivals: "the Bin Lid Boys", rivalTag: "loo", patch: 1 }, // v0.10 (Cred)
     map: {
       floors: [{ name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 2, 2], living: [0, 2, 2, 3], hall: [2, 2, 2, 3], loo: [4, 2, 2, 3] } }],
       entrances: { front: "bottom", flap: "top", window: "top" },
@@ -64,6 +65,7 @@ export const HOUSES = [
   },
   {
     key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 8, // v0.10: 8 (the box has to get over the fences too)
+    cred: { catnip: "kidsroom", rivals: "the Satin Paws", rivalTag: "garage", patch: 2 }, // v0.10 (Cred)
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], garage: [5, 0, 3, 5], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -110,6 +112,7 @@ export const HOUSES = [
   },
   {
     key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 9, // v0.10: 9 (the mouse has to survive the getaway too)
+    cred: { catnip: "bedroom", rivals: "the Canal Street Toms", rivalTag: "cellar", patch: 2 }, // v0.10 (Cred)
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -159,6 +162,7 @@ export const HOUSES = [
   },
   {
     key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 6, scale3: [1, 1], scale5: [-1, 1], // v0.9: the Clock moves 1 round for three cats and for five
+    cred: { catnip: "utility", rivals: "the Party Crashers", rivalTag: "hall", patch: 1 }, // v0.10 (Cred)
     map: {
       floors: [{ name: "Ground floor", rooms: { dining: [0, 0, 3, 3], kitchen: [3, 0, 3, 2], utility: [6, 0, 2, 2], loo: [0, 3, 3, 2], hall: [3, 2, 2, 3], living: [5, 2, 3, 3] } }],
       entrances: { front: "bottom", patio: "left", utilwin: "top" },
@@ -203,6 +207,7 @@ export const HOUSES = [
   },
   {
     key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 7, scale3: [1, 3], // v0.9: three cats get the salmon 3 rounds later
+    cred: { catnip: "study", rivals: "the Fishbone Crew", rivalTag: "utility", patch: 2 }, // v0.10 (Cred)
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 3, 2], living: [0, 2, 3, 3], hall: [3, 2, 4, 3] } },
