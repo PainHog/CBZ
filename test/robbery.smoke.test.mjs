@@ -471,6 +471,7 @@ test("the getaway (Ch 9): a piece dropped on purpose, a Flop, the van, a dodge, 
   // the house part as it ends: the chicken (3 portions for two cats) carried out, nobody caught
   const s = JSON.parse(JSON.stringify(state()));
   Object.assign(s.prize, { withHuman: null, out: true, room: null });
+  s.cred.patch = null; // the Bin Lid Boys stay in tonight (the Cred test has them on the allotments)
   await asUser(gmU, () => game.settings.set("cat-burglars", "robberyState", s));
   await settle();
   await asUser(gmU, () => api().robbery.endRobbery("manual"));

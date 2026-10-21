@@ -80,13 +80,15 @@ async function rollDialog(actor, ctx, approach) {
   const best = ctx.options.find(o => o.approach === approach) ?? [...ctx.options].sort((a, b) => b.rating - a.rating)[0];
   const seenDefault = autoSeen ? ctx.seenBy.length > 0 : false;
   const queued = ctx.helpers.filter(h => h.queued).length;
+  const nip = zoomed(ctx);
   const approaches = ctx.options.map(o => {
     const plan = buildRollPlan({ approach: o.approach, rating: o.rating, knack: o.knack, bodyDie: ctx.bodyDie, helpers: queued,
-      difficulty: o.difficulty, opposition: ctx.opposition, attention: seenDefault ? o.attention : 0 });
+      difficulty: o.difficulty, opposition: ctx.opposition, attention: seenDefault ? o.attention : 0, nip });
     const n = plan.zero ? 0 : plan.total;
     const bits = [`${o.label} ${o.rating}`];
     if (o.difficulty) bits.push(CATB.difficulties[o.difficulty] ?? `−${o.difficulty}`);
     if (o.knack) bits.push(`Knack (${o.knackFrom.join(", ")})`);
+    if (nip) bits.push("the zoomies +1");
     return {
       approach: o.approach, label: o.label, selected: o.approach === best?.approach, text: bits.join(", "),
       diceText: plan.zero ? "0 (keep the lower of 2)" : String(plan.total), works: odds(chanceAtLeast(n, "scrape")), clean: odds(chanceAtLeast(n, "clean"))
@@ -100,7 +102,7 @@ async function rollDialog(actor, ctx, approach) {
       ...[0, 1, 2].map(d => ({ value: String(d), label: CATB.difficulties[d], selected: false }))],
     knacks: [{ value: "auto", label: knackAutoText(ctx), selected: true }, { value: "yes", label: "Yes: an instinct suits it", selected: false }, { value: "no", label: "No", selected: false }],
     helpers: ctx.helpers.map(h => ({ ...h, locked: h.locked ?? ctx.autoHelpers })),
-    bodyDie: ctx.bodyDie, opposition: ctx.opposition,
+    bodyDie: ctx.bodyDie, opposition: ctx.opposition, nip,
     seenChoices: [{ value: "auto", label: autoSeen ? (ctx.seenBy.length ? `As the house is: seen by ${ctx.seenNames.join(", ")}` : "As the house is: nobody sees") : "Not seen (fill in by hand)", selected: true },
       { value: "seen", label: "Seen", selected: false }, { value: "unseen", label: "Not seen", selected: false }],
     attention: seenDefault ? ctx.attention : 0,
@@ -118,6 +120,9 @@ async function rollDialog(actor, ctx, approach) {
     rejectClose: false
   }).then(r => (r && typeof r === "object" ? r : null));
 }
+
+/** Ch 9 "Cred": the zoomies add a die and make the roll a noise — when Cred is automated (the autoCred setting). */
+const zoomed = ctx => !!ctx?.nip && !ctx.getaway && setting(SETTINGS.autoCred) !== false;
 
 function knackAutoText(ctx) {
   const k = ctx.options.filter(o => o.knack);
@@ -154,8 +159,9 @@ export async function makeRoll(actor, ctx, answer, state) {
   const knack = answer.knack === "auto" ? o.knack : answer.knack === "yes";
   const attention = seen && attentionApplies(approach) ? answer.attention : 0;
   // v0.9 (Ch 4): Cattitude no longer buys a die — it pays for a Push or resisting a temptation
+  const nip = zoomed(ctx);
   const plan = buildRollPlan({ approach, rating: Number(actor.system.approaches?.[approach] ?? o.rating), knack, bodyDie: ctx.bodyDie,
-    helpers: answer.helpers.length, difficulty, opposition: answer.opposition, attention });
+    helpers: answer.helpers.length, difficulty, opposition: answer.opposition, attention, nip });
   const roll = await new Roll(`${plan.dice}d6`).evaluate();
   const faces = roll.dice[0].results.map(r => r.result);
   const result = readDice(faces, plan.zero);
@@ -168,6 +174,7 @@ export async function makeRoll(actor, ctx, answer, state) {
     pushes: [], pushed: false, pushedWithMood: false,
     seen, seenBy, seenNames: seenBy.map(k => humanByKey(state ?? { humans: [] }, k)?.name ?? k), kid, attention,
     getaway: !!ctx.getaway, // Ch 9: no meters out here, and a Push is paid with Cattitude only
+    nip, // Ch 9 "Cred": the zoomies — +1 die, and the roll is a noise whatever happens
     helpers: answer.helpers, helperNames: answer.helpers.map(h => ctx.helpers.find(x => x.id === h)?.name ?? h),
     cattitudeSpent: 0, status: "pending", applied: false, appliedText: [], quiet: false
   };
@@ -191,7 +198,7 @@ export async function renderRollCard(card) {
   return render(TEMPLATES.roll, {
     ...card, dice, planText, approachLabel: CATB.approaches[card.approach]?.label ?? card.approach,
     resultKey: card.result, resultLabel: RESULT[card.result]?.label ?? card.result, resultText: RESULT[card.result]?.text ?? "",
-    seenNames: (card.seenNames ?? []).join(", "), moodText: moodText(card), noise: RESULT[card.result]?.noise && !card.quiet,
+    seenNames: (card.seenNames ?? []).join(", "), moodText: moodText(card), noise: (RESULT[card.result]?.noise || card.nip) && !card.quiet,
     pushText: card.pushes?.length ? `Pushed (${card.pushes[0].by === "mood" ? "+1 Mood step" : "1 Cattitude"}): was a ${RESULT[card.firstResult]?.label ?? card.firstResult}.` : "",
     applied: card.appliedText ?? [], statusText: status
   });

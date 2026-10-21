@@ -43,6 +43,9 @@
   "CATB.Settings.autoGetaway.Name": "Run the getaway",
   "CATB.Settings.autoGetaway.Hint": "After the house, the gang legs it over four obstacles with the loot (Chapter 9): getaway rolls move the cats, a Flop drops loot, the warden comes on at the end of each getaway round and corners the stragglers, and the loot that gets home is counted. Off: the tracker still shows the route, but the Storyteller moves the cats, the loot and the warden by hand.",
 
+  "CATB.Settings.autoCred.Name": "Score Cred",
+  "CATB.Settings.autoCred.Hint": "Showing off scores by itself (Chapter 9): tagging a room, getting into the catnip, leading the gang past the rivals and a getaway Purrfect; a cat with the zoomies gets +1 die, every roll it makes is a noise, it can't resist a temptation and its Cred counts double; the outcome names the Cat's Whiskers. Off: tags and the catnip are still noted, but the Storyteller keeps Cred and the zoomies by hand on the tracker.",
+
   "CATB.Settings.trackerForPlayers.Name": "Players can open the tracker",
   "CATB.Settings.trackerForPlayers.Hint": "Players see the Robbery Tracker (the house, the meters, the clock) with buttons for their own cats. Off: only the Storyteller opens it."
 }

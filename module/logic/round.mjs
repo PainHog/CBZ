@@ -24,6 +24,7 @@ import { newPrize, gangScaling, prizeClock, prizePhase, isDisturbed, dropPrize, 
 import { startingCattitude, repBonus } from "./rules.mjs";
 import { humanTraits } from "./house-catalog.mjs";
 import { startGetaway } from "./getaway.mjs";
+import { newCred, getNip, stashHere, credOf, zoomies } from "./cred.mjs";
 
 const R = CATB.rules;
 const LOG_CAP = 200;
@@ -77,6 +78,7 @@ export function newRobbery(house, { id = "robbery", cats = [], gangSize = null, 
       climb: !!e.climb, rounds: e.rounds ? [...e.rounds] : null, one: !!e.one, letOut: !!e.letOut, noisy: !!e.noisy, jam: !!e.jam, open: true })),
     den: house.den,
     getawayRoute: house.getaway ? clone(house.getaway) : null, // Ch 9: the house's getaway route (or the default)
+    cred: newCred(house), // Ch 9 "Cred": the catnip stash, the rivals' tag and patch; tonight's tags
     cats: cats.map(catEntry),
     humans, pets,
     prize: null,
@@ -93,7 +95,8 @@ export function catEntry(c) {
     id: c.id, actorId: c.actorId ?? c.id, name: c.name, img: c.img ?? null,
     r: { sneaky: 1, sweet: 1, savage: 1, streetwise: 1, ...(c.r ?? {}) }, instincts: [...(c.instincts ?? [])], body: c.body ?? "lean",
     where: "outside", status: "outside", hidden: false, carrying: false, riding: null, heldBy: null,
-    moved: false, acted: false, slipped: [], temptUsed: []
+    moved: false, acted: false, slipped: [], temptUsed: [],
+    cred: 0, nip: false // Ch 9: Cred tonight, and the zoomies (on the nip)
   };
 }
 
@@ -433,7 +436,9 @@ export function roomTemptations(s, room) {
  * acted yet, and not a cat that has to deal with a pet in its room this turn
  * (an awake dog or a guarding house cat it hasn't dealt with or slipped past).
  * One per round; the tempted cat decides at once (actions.mjs holds the others
- * back until it answers), and a cat that gives in has acted first.
+ * back until it answers), and a cat that gives in has acted first. The house's
+ * catnip stash (Ch 9 "Cred") tempts every cat in its room, whatever its
+ * instincts, until somebody has had it (instinct "catnip").
  */
 export function temptationOptions(state) {
   if (state.phase !== "robbery" || state.stage !== "cats" || state.temptation) return [];
@@ -451,8 +456,19 @@ export function temptationOptions(state) {
           tempt: shiny ? (i === "knocker" ? "something sparkly on the edge of a table" : "something shiny lying about") : CATB.instincts[i]?.tempt ?? "" });
       }
     }
+    if (stashHere(state, c.where)) {
+      out.push({ catId: c.id, catName: c.name, instinct: "catnip", label: CATB.catnip.label, room: c.where, roomName: roomName(state, c.where), key: `${c.where}:catnip`,
+        tempt: credOf(state).catnipName });
+    }
   }
   return out;
+}
+
+/** What a temptation is called, and what giving in does, in words (an instinct, or the catnip stash). */
+export function temptInfo(state, instinct) {
+  if (instinct === "catnip") return { label: CATB.catnip.label, tempt: credOf(state).catnipName, giveInText: CATB.catnip.giveInText };
+  const i = CATB.instincts[instinct] ?? {};
+  return { label: i.label ?? instinct, tempt: i.tempt ?? "", giveInText: i.giveInText ?? "" };
 }
 
 /** The Storyteller tempts one cat. `pick` is { catId, instinct } (or a d6 face to pick at random). */
@@ -465,7 +481,7 @@ export function tempt(state, pick) {
   if (!choice) throw new Error("That cat can't be tempted now.");
   const c = catById(s, choice.catId);
   c.temptUsed.push(choice.key);
-  s.temptation = { catId: c.id, instinct: choice.instinct, room: choice.room, key: choice.key, round: s.round, choice: null };
+  s.temptation = { catId: c.id, instinct: choice.instinct, label: choice.label, tempt: choice.tempt, room: choice.room, key: choice.key, round: s.round, choice: null };
   const ev = [{ type: "tempted", cat: c.id, instinct: choice.instinct,
     text: `The Storyteller tempts ${c.name} (${choice.label}): ${choice.tempt} in the ${choice.roomName.toLowerCase()}.` }];
   pushLog(s, ev);
@@ -477,7 +493,9 @@ export function tempt(state, pick) {
  * Action, done right away, there, never a roll; a carrier drops the prize in
  * that room first and the other carriers let go too) or resists (−1 Cattitude;
  * with none it must give in). A Lap Cat's player picks the human (`human`).
+ * A cat with the zoomies can't resist anything (Ch 9 "Cred").
  * @param {{choice: "gaveIn"|"resisted", cattitude: number, human?: string}} answer
+ * ctx: { mood, d6, cred } (cred false: the zoomies are kept by hand)
  */
 export function answerTemptation(state, { choice, cattitude = 0, human = null }, ctx = {}) {
   const s = clone(state);
@@ -486,15 +504,16 @@ export function answerTemptation(state, { choice, cattitude = 0, human = null },
   const c = catById(s, t.catId);
   const ev = [];
   const cat = [];
-  let final = choice === "resisted" && cattitude <= 0 ? "gaveIn" : choice;
+  const zoom = zoomies(c, ctx);
+  let final = choice === "resisted" && (cattitude <= 0 || zoom) ? "gaveIn" : choice;
   if (final === "resisted") {
     cat.push({ catId: c.id, delta: -1, why: "resisted a temptation" });
     ev.push({ type: "resisted", cat: c.id, text: `${c.name} resists (−1 Cattitude).` });
   } else {
-    if (choice === "resisted") ev.push({ type: "mustGiveIn", cat: c.id, text: `${c.name} has no Cattitude left to resist with.` });
+    if (choice === "resisted") ev.push({ type: "mustGiveIn", cat: c.id, text: zoom ? `${c.name} has the zoomies: resist? Resist what? Wheee!` : `${c.name} has no Cattitude left to resist with.` });
     cat.push({ catId: c.id, delta: +1, why: "gave in to a temptation" });
-    ev.push({ type: "gaveIn", cat: c.id, instinct: t.instinct, text: `${c.name} gives in (+1 Cattitude): ${CATB.instincts[t.instinct].giveInText}` });
-    giveIn(s, c, t.instinct, ev, ctx.mood ?? "auto", human, ctx.d6);
+    ev.push({ type: "gaveIn", cat: c.id, instinct: t.instinct, text: `${c.name} gives in (+1 Cattitude): ${temptInfo(s, t.instinct).giveInText}` });
+    giveIn(s, c, t.instinct, ev, ctx.mood ?? "auto", human, ctx.d6, ctx);
     c.acted = true;
   }
   t.choice = final;
@@ -510,9 +529,16 @@ export function answerTemptation(state, { choice, cattitude = 0, human = null },
  * Lap Cat's fuss Distracts that human and counts as a distraction of them (the
  * next Distract costs a die more). MUTATES s.
  */
-function giveIn(s, c, instinct, ev, moodMode, pickHumanKey = null, d6 = null) {
-  const g = CATB.instincts[instinct].giveIn;
+function giveIn(s, c, instinct, ev, moodMode, pickHumanKey = null, d6 = null, ctx = {}) {
   const room = c.where;
+  if (instinct === "catnip") {
+    // Ch 9 "Cred": like a Curious cat rummaging — a noise, and +1 Broom if a human sees (never filling the meter)
+    const ws = watchers(s, room);
+    getNip(s, c, ev, ctx);
+    if (ws.length) addMood(s, stepEntry({ side: "broom", steps: 1, cause: `${c.name} rolls about in the catnip in view`, catId: c.id, seenBy: ws.map(h => h.key), kind: "temptation", noFill: true }), ev, moodMode, { d6 });
+    return;
+  }
+  const g = CATB.instincts[instinct].giveIn;
   if (c.carrying) {
     ev.push({ type: "dropped", cat: c.id, text: `${c.name} drops the ${s.prize.name} in the ${roomName(s, room).toLowerCase()}.` });
     dropPrize(s, { ev });

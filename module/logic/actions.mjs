@@ -12,7 +12,7 @@
  *   disabled: reason|null }
  * Ids: move:<room> · enter:<entrance> · exit:<entrance> · meow:<entrance> · reopen:<entrance> ·
  *   open:<wayId> · step · take · eat · drop · hide · noise · ride:<pet> · hopOff ·
- *   distract:<human> · confront:<pet> · cover:<pet> · wriggle · escapeDen · free
+ *   distract:<human> · confront:<pet> · cover:<pet> · wriggle · escapeDen · tag · catnip · free
  */
 import { CATB } from "../config.mjs";
 import { works, makesNoise, hasKnack, knackInstincts, attentionApplies } from "./rules.mjs";
@@ -24,6 +24,7 @@ import { currentStep, canCarry, carryRule, dropPrize } from "./prize.mjs";
 import { clone, addMood, pushLog, markApplied, isApplied, chaseBack, look } from "./round.mjs";
 import { rollEntry } from "./mood.mjs";
 import { inGetaway, getawayOptions, getawayRollContext, applyGetawayRoll, doGetawayAction, getawayHelpers } from "./getaway.mjs";
+import { credOf, tagged, tagWorth, rivalsRoom, stashHere, tagRoom, getNip, zoomies } from "./cred.mjs";
 
 const R = CATB.rules;
 const SIMPLE_IN_VIEW = tags => [["sneaky", 0, ...tags], ["savage", 0, ...tags]];
@@ -203,6 +204,12 @@ export function catOptions(state, catId) {
   if (!c.hidden && s.rooms[room]?.hide !== false && !c.carrying) act({ id: "hide", kind: "hide", label: "Hide", roll: ws.length ? { options: [["sneaky", 0, "hide"]] } : null }, { simple: true }); // Ch 5: a Sneaky roll if somebody sees
   // v0.8 (REVIEW #88): a noise made on purpose is a noise whatever the roll, and leaves a mess (one per room)
   act({ id: "noise", kind: "noise", label: "Make a noise on purpose (a lure: leaves a mess)" }, { simple: true, tags: ["knock"] });
+  // Ch 9 "Cred": tag the room (one tag a room for the whole gang) — unseen a simple thing, in view a roll (+1 if it works)
+  if (!tagged(s, room)) {
+    act({ id: "tag", kind: "tag", label: `Tag the ${low(roomName(s, room))}: leave the gang's mark (${tagWorth(s, room)} Cred${ws.length ? ", +1 if it works in view" : ""}${rivalsRoom(s, room) ? `, over ${credOf(s).rivals ?? "the rivals"}' tag` : ""}; it's a mess)` }, { simple: true });
+  }
+  // Ch 9 "Cred": the house's catnip stash, on purpose (one stash, one cat)
+  if (stashHere(s, room)) act({ id: "catnip", kind: "catnip", label: `Get into the catnip — ${credOf(s).catnipName} (1 Cred, a noise, and the zoomies)` }, { simple: true });
   act({ id: "free", kind: "free", label: "Something else (a free roll)", roll: { options: anyApproach(0) } });
   out.helpTargets = helpTargetsFor(s, c);
   return out;
@@ -301,7 +308,8 @@ export function rollContext(state, catId, optionId = "free") {
     seenBy: seen.map(h => h.key), seenNames: seen.map(h => h.name), attention: highestAttention(seen), kid: kidAmong(seen),
     helpers: helpers.map(x => ({ id: x.id, name: x.name, locked: locked(x.id), queued: queued.includes(x.id) || locked(x.id),
       note: haul && !locked(x.id) ? "helps, but stays here" : null })),
-    autoHelpers: haul
+    autoHelpers: haul,
+    nip: !!c.nip // Ch 9: the zoomies — +1 die (the roll dialog adds it when Cred is automated), and the roll is a noise
   };
 }
 
@@ -313,7 +321,7 @@ export function rollContext(state, catId, optionId = "free") {
  * ctx: { mood }
  */
 export function doAction(state, catId, optionId, args = {}, ctx = {}) {
-  if (inGetaway(state)) return doGetawayAction(state, catId, optionId, args);
+  if (inGetaway(state)) return doGetawayAction(state, catId, optionId, args, ctx);
   const s = clone(state);
   const ev = [];
   const c = catById(s, catId);
@@ -382,7 +390,7 @@ export function applyRoll(state, card, ctx = {}) {
     const group = o.kind === "carry" || (o.kind === "exit" && c.carrying) ? s.prize.carriers.map(id => catById(s, id)).filter(Boolean) : [c];
     for (const x of group) { x.acted = true; }
     ev.push({ type: "stopped", cat: c.id, text: `…but before ${c.name} goes anywhere:` });
-    if (makesNoise(card.result) && !card.quiet && room) addNoise(s, room, `${c.name}'s ${card.result}`, c.id);
+    if ((makesNoise(card.result) || zoomies(c, ctx)) && !card.quiet && room) addNoise(s, room, `${c.name}'s ${card.result}`, c.id);
     addMood(s, entry, ev, ctx.mood ?? "auto", { d6 });
     look(s, ev, ctx.mood ?? "auto", d6);
     pushLog(s, ev);
@@ -400,7 +408,12 @@ export function applyRoll(state, card, ctx = {}) {
   }
   // v0.7: a haul's noise is in the room the prize ends up in; a noise made on purpose already made its own (v0.8)
   const noiseRoom = o?.kind === "carry" && ok && s.prize.room === o.target ? o.target : room;
-  if (makesNoise(card.result) && !card.quiet && noiseRoom && !(performed && o.kind === "noise")) addNoise(s, noiseRoom, `${c.name}'s ${card.result}`, c.id);
+  // Ch 9 "Cred": with the zoomies every roll is a noise, even a Clean (the catnip's own yowl is already one)
+  const zoom = zoomies(c, ctx) && !(performed && o.kind === "catnip");
+  if ((makesNoise(card.result) || zoom) && !card.quiet && noiseRoom && !(performed && (o.kind === "noise" || (o.kind === "catnip" && ok)))) {
+    addNoise(s, noiseRoom, `${c.name}'s ${card.result}${zoom && !makesNoise(card.result) ? " (the zoomies)" : ""}`, c.id);
+    if (zoom && !makesNoise(card.result)) ev.push({ type: "zoomiesNoise", cat: c.id, text: `${c.name} has the zoomies: even a ${CATB.results[card.result]?.label ?? card.result} comes with a yowl — noise!` });
+  }
   if (card.result === "purrfect") cattitude.push({ catId: c.id, delta: +1, why: "a Purrfect" });
   const at = ev.length;
   addMood(s, entry, ev, ctx.mood ?? "auto", { d6 });
@@ -550,6 +563,19 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       mark(c);
       addNoise(s, c.where, `${c.name} on purpose`, c.id, { mess: true });
       ev.push({ type: "lure", cat: c.id, text: `${c.name} knocks something over on purpose: noise, and a mess${ok ? "" : " (and they saw who did it)"}.` });
+      break;
+    }
+    case "tag": {
+      // Ch 9 "Cred": in view, a roll that works — they watched and still couldn't stop it (+1)
+      mark(c);
+      if (!ok) { ev.push({ type: "tagFailed", cat: c.id, text: `${c.name} goes to leave the gang's mark, but gets rumbled mid-scratch: no tag.` }); break; }
+      tagRoom(s, c, { inView: !!o.roll }, ev, ctx);
+      break;
+    }
+    case "catnip": {
+      mark(c);
+      if (!ok) { ev.push({ type: "nipFailed", cat: c.id, text: `${c.name} makes a dive for the catnip and misses it by a whisker.` }); break; }
+      getNip(s, c, ev, ctx);
       break;
     }
     case "ride": {

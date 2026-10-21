@@ -45,8 +45,8 @@ export function knackInstincts(instincts = [], tags = []) {
  * Returns the signed count; 0 or less means "roll two, keep the lower".
  * Same arguments as sim/rules.mjs poolSize.
  */
-export function poolSize({ rating = 0, knack = false, helpers = 0, difficulty = 0, opposition = 0, attention = 0 }) {
-  const bonus = (knack ? R.knackCap : 0) + Math.min(Math.max(0, helpers), R.helpCap);
+export function poolSize({ rating = 0, knack = false, helpers = 0, difficulty = 0, opposition = 0, attention = 0, nip = false }) {
+  const bonus = (knack ? R.knackCap : 0) + Math.min(Math.max(0, helpers), R.helpCap) + (nip ? R.cred.nipDie : 0);
   return Math.min(rating + bonus, R.diceCap) - difficulty - opposition - attention;
 }
 
@@ -62,9 +62,10 @@ export function poolSize({ rating = 0, knack = false, helpers = 0, difficulty = 
  * @param {number} [p.difficulty] 0 plain, 1 Tricky, 2 Hard
  * @param {number} [p.opposition] a pet in the way: its rating
  * @param {number} [p.attention] the highest Attention among the humans watching (used on Sneaky/Sweet only)
+ * @param {boolean} [p.nip]     the zoomies (Ch 9 "Cred"): +1 die, still no more than 5
  */
 export function buildRollPlan({ approach, rating = 0, knack = false, bodyDie = false, helpers = 0,
-  difficulty = 0, opposition = 0, attention = 0 } = {}) {
+  difficulty = 0, opposition = 0, attention = 0, nip = false } = {}) {
   if (!APPROACHES.includes(approach)) throw new Error(`buildRollPlan: unknown approach "${approach}"`);
   const add = [{ key: "rating", label: `${CATB.approaches[approach].label} rating`, value: rating }];
   const extra = knack || bodyDie;
@@ -72,6 +73,7 @@ export function buildRollPlan({ approach, rating = 0, knack = false, bodyDie = f
   const help = Math.min(Math.max(0, helpers), R.helpCap);
   if (help) add.push({ key: "help", label: `Help ×${help}`, value: help });
   if (helpers > R.helpCap) add.push({ key: "helpCapped", label: `Help over +${R.helpCap} doesn't count`, value: 0 });
+  if (nip) add.push({ key: "nip", label: "The zoomies", value: R.cred.nipDie });
   const raw = add.reduce((a, p) => a + p.value, 0);
   const capped = Math.min(raw, R.diceCap);
   const att = attentionApplies(approach) ? Math.max(0, attention) : 0;

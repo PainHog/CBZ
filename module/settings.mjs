@@ -27,6 +27,7 @@ export const SETTING_DEFS = {
   [SETTINGS.autoPrizeClock]: { ...L("autoPrizeClock"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.autoOutcome]: { ...L("autoOutcome"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.autoGetaway]: { ...L("autoGetaway"), scope: "world", config: true, type: Boolean, default: true },
+  [SETTINGS.autoCred]: { ...L("autoCred"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.trackerForPlayers]: { ...L("trackerForPlayers"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.trackerPosition]: { scope: "client", config: false, type: Object, default: {} }
 };
@@ -61,6 +62,7 @@ export function automation() {
     cattitude: setting(SETTINGS.autoCattitude),
     prizeClock: setting(SETTINGS.autoPrizeClock),
     outcome: setting(SETTINGS.autoOutcome),
-    getaway: setting(SETTINGS.autoGetaway)
+    getaway: setting(SETTINGS.autoGetaway),
+    cred: setting(SETTINGS.autoCred)
   };
 }

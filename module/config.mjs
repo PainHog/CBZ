@@ -7,8 +7,8 @@
  * `game`, `ui`, `foundry` or DOM, so `module/logic/` can import it under plain Node.
  *
  * Source of truth: the rulebook (book/src/chapters/, core rules v0.9). The
- * numbers in CATB.rules are the simulator's package P12 (sim/params.mjs; its adopted P13 adds Cred);
- * test/parity.test.mjs keeps the two in step.
+ * numbers in CATB.rules are the simulator's adopted package P13 (sim/params.mjs: the getaway,
+ * shiny loot and Cred); test/parity.test.mjs keeps the two in step.
  */
 
 export const CATB = {};
@@ -85,6 +85,15 @@ CATB.difficulties = Object.freeze({ 0: "Plain", 1: "Tricky", 2: "Hard" });
 /** Prize kinds (Ch 8; d8: 1–2 delicious, 3–4 fun, 5–6 shiny, 7–8 a box). Shiny things are carried like fun ones. */
 CATB.prizeKinds = Object.freeze({ delicious: "Delicious", fun: "Fun", shiny: "Shiny", box: "A box" });
 
+/**
+ * Ch 9 "Cred: showing off": the house's catnip stash, as a temptation the
+ * Storyteller can offer any cat in its room (whatever its instincts).
+ */
+CATB.catnip = Object.freeze({
+  label: "The catnip stash",
+  giveInText: "It dives into the catnip and rolls about in it, yowling (a noise; +1 Broom if a human sees) — 1 Cred, and the zoomies until the house part ends."
+});
+
 /** Sizes (Ch 8): ways and prizes. */
 CATB.waySizes = Object.freeze({ tight: 0, normal: 1, big: 2 });
 CATB.prizeSizes = Object.freeze({ small: 0, medium: 1, large: 2 });
@@ -103,7 +112,7 @@ CATB.petModes = Object.freeze({
 });
 
 /**
- * The rules numbers (core rules v0.9 with the getaway = simulator package P12). Every
+ * The rules numbers (core rules v0.9 with the getaway and Cred = simulator package P13). Every
  * number the automation uses comes from here, so one place follows the book.
  */
 CATB.rules = Object.freeze({
@@ -141,6 +150,11 @@ CATB.rules = Object.freeze({
   dodgeDiff: 0,
   getawayHelpers: 2,
   lootPieces: { small: 1, medium: 2, large: 3 },
+  // Ch 9 "Cred: showing off" (simulator package P13): tag a room 1 (+1 in view if it works, +1 over the
+  // rivals' tag), the nip 1, leading the gang past the rivals on a Clean or a Purrfect 1, a getaway Purrfect 1;
+  // on the nip (the zoomies): +1 die, every roll a noise, no resisting, Cred counts double;
+  // a night with 5 or more Cred that wasn't Busted: +1 Rep (Ch 14)
+  cred: Object.freeze({ tag: 1, inView: 1, overRivals: 1, nip: 1, rivals: 1, leap: 1, nipDie: 1, nipTimes: 2, repNight: 5 }),
   // Ch 10 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
   denDoor: [["streetwise", 1, "open"], ["savage", 2]],   // a friend in the next room
   denInside: [["streetwise", 2, "open"]],               // the cat on its own
