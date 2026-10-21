@@ -198,7 +198,7 @@ const HAND_SPOTS = [];
 const SPOTS = {
   "ch-01": ["spot-paws"], "ch-02": ["spot-curl"], "ch-03": ["spot-bin"], "ch-04": ["spot-purrfect"],
   "ch-05": ["spot-mug"], "ch-06": ["spot-wool"], "ch-07": ["spot-box"], "ch-08": ["spot-fish"],
-  "ch-09": [], "ch-10": [], "ch-11": ["spot-vacuum"], "ch-12": ["spot-broom"], "ch-13": ["spot-door"], "ch-14": [],
+  "ch-09": ["spot-rivals"], "ch-10": [], "ch-11": ["spot-vacuum"], "ch-12": ["spot-broom"], "ch-13": ["spot-door"], "ch-14": [],
   "ch-15": ["spot-pudding"], "ch-16": ["spot-noodle"], "ch-17": ["spot-pompom"], "ch-18": ["spot-parrot"], "ch-19": [],
 };
 const PT_PER_IN = 72;
