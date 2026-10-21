@@ -1,15 +1,15 @@
 # Nine Lives Gang — balance (core rules v0.9)
 
-**Adopted: package P13** (the defaults in `sim/params.mjs`; `docs/CORE-RULES.md` v0.9 describes it). P10 is v0.8, P11 adds the outside review's rule fixes, P12 adds the getaway and shiny temptations, P13 adds Cred (tagging, the catnip stash, the rivals). Random legal gangs of four unless it says otherwise.
+**Adopted: package P14** (the defaults in `sim/params.mjs`; `docs/CORE-RULES.md` v0.9 describes it). P10 is v0.8, P11 adds the outside review's rule fixes, P12 adds the getaway and shiny temptations, P13 adds Cred (tagging, the catnip stash, the rivals), P14 the fixes from the v0.9 playtests. Random legal gangs of four unless it says otherwise.
 
 ## Short version
-- **Gang of 4: Easy 88.1%, Standard 73.5%, Hard 58.8%** (Clean or Messy Getaway, after the getaway; targets ~90 / ~75 / 55–60). All three on target.
-- **Gang size:** three cats 85.1 / 66.5 / 57.7, five cats 96.8 / 77.8 / 55.5 (each house prints its own three- and five-cat numbers).
-- **The ready-made gang** does better than rolled cats: Number 12 95, the Okafors' 74, Grandpa Wendell's 94, the cake 78, the Marchettis' 89 (2,000 robberies each). Grandpa Wendell's depends most on the gang having a charmer.
-- **Pinched** (the "Left behind" column below): at least one cat goes to the pound in 7% of Easy robberies and 28% of Hard ones (32% at Chef Marchetti's). Being pinched replaces being adopted, and the getaway adds to it.
+- **Gang of 4: Easy 87.4%, Standard 74.0%, Hard 58.9%** (Clean or Messy Getaway, after the getaway; targets ~90 / ~75 / 55–60). All three on target.
+- **Gang size:** three cats 86.4 / 67.2 / 57.6, five cats 96.3 / 78.3 / 55.5 (each house prints its own three- and five-cat numbers).
+- **The ready-made gang** does better than rolled cats: Number 12 95, the Okafors' 74, Grandpa Wendell's 94, the cake 78, the Marchettis' 89 (2,000 robberies each, P13). Grandpa Wendell's depends most on the gang having a charmer.
+- **Pinched** (the "Left behind" column below): at least one cat goes to the pound in 9% of Easy robberies and 30% of Hard ones (34% at Chef Marchetti's). Being pinched replaces being adopted, and the getaway adds to it.
 - **Clean wins at Hard stay a choice:** 16% of Hard wins are Clean; eating half and running is the safe play.
-- **Cred is a real choice:** the simulated gang tags carefully (on the way out, or where no human is near) and loses 1–2 points; a gang that tags every room it can loses about 7 at Standard and 4 at Hard (found tags anger the humans). Careful gangs score 5+ Cred (a Rep in a campaign) in 7–69% of robberies, against 0–30% for gangs that don't show off.
-- **About 22 rolls a robbery** (13 in the house, the rest in the getaway); Flops 14%, Purrfects 6%, temptations given in to 72%, 59% of cats spend at least half their Cattitude.
+- **Cred is a real choice:** the simulated gang tags carefully (on the way out, or where no human is near) and loses about 1 point; a gang that tags every room it can loses about 5 at Standard and 4 at Hard (found tags anger the humans). The simulated gangs score 3–4 Cred a night; the two playtest gangs, showing off on purpose, scored 12 and 16, so Rep needs 8 (the gang's total).
+- **About 23 rolls a robbery** (13 in the house, the rest in the getaway); Flops 16%, Purrfects 6%, temptations given in to 71%, 61% of cats spend at least half their Cattitude.
 
 ## What v0.9 changed and why (outside review, then the author's direction)
 | Step | What changed | What the simulator showed |
@@ -18,11 +18,12 @@
 | shiny | Shiny things tempt Curious and Knocker cats in every room | −8 at the Okafors', −6 at the cake, −4 at the Marchettis'; both Hard houses' prize now goes on round 9. |
 | P11 → P12 | **The getaway** (Chapter 9): loot in pieces, a four-obstacle route, the warden, pinched instead of adopted; outcomes count the loot that got home | With the warden arriving at once and a Tricky dodge, 4 in 10 robberies lost a cat even at Number 12. The warden now arrives a round late (two if nobody was caught in the house) and dodging is plain: 8% at Number 12, 32% at the Hard houses. The Okafors' (Patience 8, plainer side gate and road) and Grandpa Wendell's (Patience 9) lost most to the getaway and were re-tuned. |
 | P12 → P13 | **Cred** (Chapter 9): tag a room (a mess), the rivals' tag, the catnip stash (the zoomies: +1 die, every roll a noise, no resisting, Cred ×2), the rivals' patch on the route (dropped loot nicked), Purrfect leaps | Policy matters most. Tagging whenever unseen: Standard 68.2, Hard 54.8 (the Okafors' −11: found tags are +1 Broom each). Tagging on the way out or away from the humans (the adopted policy): Standard 73.5, Hard 58.8. The catnip and the rivals alone move nothing (±0.5). Rivals' Cred to every cat in the group was mostly luck, so it goes to the cat who led. |
+| P13 → P14 | Fixes from the v0.9 playtests: the warden never passes a cat and a dodge keeps the cat where it is (it used to carry cats over obstacles); a dodge sends the warden sprawling (he skips his next move); the warden arrives a round later; a cat carrying loot can't be Sweet; with the zoomies a tag is always a roll; a tag made in view isn't a mess; Number 12's catnip and rivals' tag moved onto Mr Pell's routine | The no-pass warden alone pinched more cats (Easy 12%, Hard 38%); the sprawl and the later arrival bring it back to 9% / 30% with the same win rates. A limit of one portion eaten per cat (to put loot on every getaway) was tried and dropped: Easy fell to 66% and Hard to 26%. |
 | campaign | Rep gives +1 starting Cattitude at 3, 6 and 9 Rep (was +1 to an approach) | Three approach raises took Hard houses from 58% to 83–86%; three Cattitude steps take them to 71–78%. |
 
 The review's own simulator (best of 24 plans, ready-made gang) found Hard houses nearly unlosable and Wendell's hard; ours, with rolled gangs and one sensible policy, doesn't: both are reported here, and the verification playtests decide.
 
-`node sim/packages.mjs --runs 3000 --seed 1 --packages P10,P11,P12,P13`
+`node sim/packages.mjs --runs 3000 --seed 1 --packages P12,P13,P14`
 
 Each package runs every house with gangs of 3, 4 and 5 cats on the same gangs and dice. Win = Clean or Messy Getaway.
 
@@ -31,29 +32,27 @@ Each package runs every house with gangs of 3, 4 and 5 cats on the same gangs an
 | | Easy | Standard | Hard | Clean share Easy / Hard | Caught ≥1 (Std) | Left behind Easy / Hard | Flop | Purrfect | Gave in | Spend ≥ ½ Cattitude | Rolls | Rounds |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **target** | ~90 | ~75 | 55–60 | ≥ 75 / ≥ 33 | ≥ 50 | ≤ 5 / ≥ 10 | 15–25 | 2–6 | ≥ 40 | ≥ 50 | — | — |
-| P10 | 90.3 | 84.7 | 67.6 | 81 / 24 | 44.0 | 3.5 / 14.0 | 15.3 | 5.7 | 82.7 | 82.8 | 12.7 | 9.0 |
-| P11 | 88.6 | 81.1 | 58.7 | 84 / 18 | 48.4 | 2.5 / 19.0 | 18.6 | 3.7 | 71.7 | 53.6 | 13.5 | 9.2 |
 | P12 | 88.6 | 75.2 | 58.7 | 80 / 16 | 48.4 | 8.3 / 31.9 | 14.6 | 5.9 | 71.7 | 60.1 | 21.8 | 9.2 |
-| P13 | 88.1 | 73.5 | 58.8 | 78 / 16 | 54.5 | 7.4 / 27.6 | 14.2 | 6.0 | 72.1 | 59.4 | 21.9 | 9.2 |
+| P13 | 87.4 | 73.5 | 58.8 | 78 / 16 | 54.5 | 7.8 / 27.6 | 14.5 | 5.9 | 70.9 | 61.0 | 21.9 | 9.2 |
+| P14 | 87.4 | 74.0 | 58.9 | 77 / 16 | 54.6 | 8.9 / 30.4 | 16.2 | 5.7 | 70.9 | 60.7 | 23.0 | 9.2 |
 
 ## Gang size (win % Easy / Standard / Hard)
 
 | package | 3 cats | 4 cats | 5 cats |
 |---|---|---|---|
-| P10 | 87.9 / 75.7 / 63.6 | 90.3 / 84.7 / 67.6 | 96.8 / 88.9 / 67.0 |
-| P11 | 86.8 / 72.3 / 57.6 | 88.6 / 81.1 / 58.7 | 96.5 / 83.8 / 55.3 |
 | P12 | 86.8 / 69.0 / 57.6 | 88.6 / 75.2 / 58.7 | 96.5 / 79.7 / 55.3 |
-| P13 | 85.1 / 66.5 / 57.7 | 88.1 / 73.5 / 58.8 | 96.8 / 77.8 / 55.5 |
+| P13 | 86.4 / 66.5 / 57.7 | 87.4 / 73.5 / 58.8 | 96.3 / 77.8 / 55.5 |
+| P14 | 86.4 / 67.2 / 57.6 | 87.4 / 74.0 / 58.9 | 96.3 / 78.3 / 55.5 |
 
 ## Per house, gang of 4 (win · clean · busted · left behind)
 
-| house | label | P10 | P11 | P12 | P13 |
-|---|---|---|---|---|---|
-| The Chicken at Number 12 | easy | 90.3 · 72.7 · 9.7 · 3.5 | 88.6 · 74.9 · 11.4 · 2.5 | 88.6 · 70.5 · 11.4 · 8.3 | 88.1 · 68.9 · 11.9 · 7.4 |
-| The Okafors' Big Box | standard | 84.7 · 84.3 · 15.3 · 5.6 | 81.2 · 80.6 · 18.8 · 8.3 | 73.8 · 61.5 · 26.2 · 12.6 | 70.6 · 58.7 · 29.4 · 13.5 |
-| Grandpa Wendell's Catnip Mouse | standard | 84.8 · 81.3 · 15.2 · 10.0 | 80.9 · 76.4 · 19.1 · 14.6 | 76.6 · 69.3 · 23.4 · 19.5 | 76.3 · 69.5 · 23.7 · 18.1 |
-| The Birthday Cake | hard | 66.0 · 7.2 · 34.0 · 14.7 | 57.8 · 5.3 · 42.2 · 10.5 | 57.8 · 4.8 · 42.2 · 26.5 | 58.2 · 5.0 · 41.8 · 23.6 |
-| Chef Marchetti's Salmon | hard | 69.1 · 25.1 · 30.9 · 13.4 | 59.6 · 15.7 · 40.4 · 27.5 | 59.6 · 13.6 · 40.4 · 37.3 | 59.5 · 14.0 · 40.5 · 31.6 |
+| house | label | P12 | P13 | P14 |
+|---|---|---|---|---|
+| The Chicken at Number 12 | easy | 88.6 · 70.5 · 11.4 · 8.3 | 87.4 · 68.5 · 12.6 · 7.8 | 87.4 · 67.4 · 12.6 · 8.9 |
+| The Okafors' Big Box | standard | 73.8 · 61.5 · 26.2 · 12.6 | 70.6 · 58.7 · 29.4 · 13.5 | 71.3 · 60.4 · 28.7 · 13.9 |
+| Grandpa Wendell's Catnip Mouse | standard | 76.6 · 69.3 · 23.4 · 19.5 | 76.3 · 69.5 · 23.7 · 18.1 | 76.7 · 68.9 · 23.3 · 18.9 |
+| The Birthday Cake | hard | 57.8 · 4.8 · 42.2 · 26.5 | 58.2 · 5.0 · 41.8 · 23.6 | 58.2 · 5.0 · 41.8 · 27.0 |
+| Chef Marchetti's Salmon | hard | 59.6 · 13.6 · 40.4 · 37.3 | 59.5 · 14.0 · 40.5 · 31.6 | 59.6 · 13.8 · 40.4 · 33.8 |
 
 ## How the rules got here
 | Step | What changed | Why (what the simulator showed) |

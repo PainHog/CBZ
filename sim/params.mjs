@@ -32,7 +32,7 @@ export const PARAMS = {
   knockerOneBroom: { def: true, alt: [false], title: "A Knocker give-in seen by a human leaves no mess to find (one Broom per event)", ref: "Ch 7 v0.9 (review D7)", pkg: true, doc: "" },
   hunterNoFight: { def: true, alt: [false], title: "Hunter's Knack is pounce and chase, not fighting animals", ref: "Ch 2 v0.9 (review D7)", pkg: true, doc: "" },
   getaway: { def: true, alt: [false], title: "The getaway after the house (loot in pieces, the warden, pinched)", ref: "Ch 9 v0.10", pkg: true, doc: "" },
-  wardenLag: { def: 1, alt: [0, 2], title: "Getaway: extra rounds before the warden arrives", ref: "Ch 9 v0.10", doc: "" },
+  wardenLag: { def: 2, alt: [0, 1], title: "Getaway: extra rounds before the warden arrives", ref: "Ch 9 v0.10", doc: "" },
   wardenFlop: { def: true, alt: [false], title: "Getaway: a Flop makes the warden move 2", ref: "Ch 9 v0.10", doc: "" },
   dodgeDiff: { def: 0, alt: [1, 2], title: "Getaway: difficulty of dodging the warden", ref: "Ch 9 v0.10", doc: "" },
   shinyTempts: { def: true, alt: [false], title: "Shiny things tempt Curious and Knocker cats in every room", ref: "Ch 7 v0.9 (shiny loot)", pkg: true, doc: "" },
@@ -40,6 +40,12 @@ export const PARAMS = {
     doc: "Turns on the catnip stash and the rivals' patch on the route; tagging itself is the tagPolicy." },
   tagPolicy: { def: "late", alt: ["off", "safe", "greedy", "bold"], title: "Cred: when cats tag a room (policy)", ref: "Ch 9 v0.10 (Cred)",
     doc: "off: never. safe: a free cat with its Action left, unseen, while Broom has 3+ steps of room. late: unseen, and only once the prize is out or in a room no awake human is within a room of. greedy: whenever unseen. bold: also in view (a roll) while Broom has 4+ room." },
+  eatCap: { def: 0, alt: [1, 2], title: "Portions one cat can eat in the house (0 = no limit)", ref: "Ch 8 v0.9 fix round", pkg: true, doc: "A full cat carries instead." },
+  zoomiesTagRoll: { def: true, alt: [false], title: "Cred: with the zoomies a tag is always a roll (and a noise)", ref: "Ch 9 v0.9 fix round (playtests W-06)", pkg: true, doc: "" },
+  seenTagNoMess: { def: true, alt: [false], title: "Cred: a tag made in view isn't a mess (they already know)", ref: "Ch 9 v0.9 fix round (playtests W-08/W-13)", pkg: true, doc: "" },
+  wardenNoPass: { def: true, alt: [false], title: "Getaway: the warden never passes a cat; a dodge keeps the cat where it is", ref: "Ch 9 v0.9 fix round (playtests W-03/W-02)", pkg: true, doc: "" },
+  dodgeStun: { def: true, alt: [false], title: "Getaway: a dodge sends the warden sprawling (he doesn't move next round)", ref: "Ch 9 v0.9 fix round", pkg: true, doc: "" },
+  mouthFull: { def: true, alt: [false], title: "Getaway: a cat carrying loot can't be Sweet", ref: "Ch 9 v0.9 fix round (playtest W-05)", pkg: true, doc: "" },
   tagMess: { def: true, alt: [false], title: "Cred: a tag leaves a mess", ref: "Ch 9 v0.10 (Cred)", pkg: true, doc: "" },
   nipSeek: { def: true, alt: [false], title: "Cred: a cat takes the catnip on purpose when it's in the stash's room unseen (policy)", ref: "Ch 9 v0.10 (Cred)", doc: "" },
   nipDie: { def: 1, alt: [0], title: "Cred: dice a cat on the nip gains", ref: "Ch 9 v0.10 (Cred)", pkg: true, doc: "" },
@@ -136,7 +142,7 @@ export const PRESETS = {
  * The defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false, getaway: false, cred: false, shinyTempts: false, shooKeepLast: false, meterCap: false, heldBroomDen: false, giveInNoFill: false, knockerOneBroom: false, hunterNoFight: false, lapCountsDistract: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
+  livesPerRobbery: 1, cattitudeDie: false, getaway: false, cred: false, eatCap: 0, zoomiesTagRoll: false, seenTagNoMess: false, wardenNoPass: false, dodgeStun: false, mouthFull: false, wardenLag: 1, shinyTempts: false, shooKeepLast: false, meterCap: false, heldBroomDen: false, giveInNoFill: false, knockerOneBroom: false, hunterNoFight: false, lapCountsDistract: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
   scale3: [1, 1], scale3Cat: 0, scale5: [0, -1] }; // the v0.5 gang scaling (used once gangScaling is on)
 export const PACKAGES = {
   P1: { ...OFF },
@@ -162,8 +168,12 @@ export const PACKAGES = {
   P13: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0],
     shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true, shinyTempts: true, getaway: true, cred: true },
+  P14: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0],
+    shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true, shinyTempts: true, getaway: true, cred: true,
+    zoomiesTagRoll: true, seenTagNoMess: true, wardenNoPass: true, dodgeStun: true, mouthFull: true, wardenLag: 2 },
 };
-export const ADOPTED = "P13";
+export const ADOPTED = "P14";
 
 export function makeParams(overrides = {}) {
   return { ...defaults(), ...overrides };

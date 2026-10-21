@@ -107,12 +107,18 @@ function residents(h) {
 
 /** The getaway route (Ch 9): four obstacles from the garden to the hideout. */
 const LOOT = { small: 1, medium: 2, large: 3 };
+// the Knacks a route option's tags call on (sim/character.mjs KNACK); "fight" is the Scrapper's (Hunter's Knack is pounce and chase)
+const ROUTE_KNACK = { climb: "a Climber’s", chase: "a Hunter’s, to bolt", hide: "a Box Sitter’s", charm: "a Lap Cat’s", fight: "a Scrapper’s", open: "a Curious cat’s" };
+function knackText(opts) {
+  const ks = [...new Set(opts.flatMap(o => o.slice(2)).filter(t => ROUTE_KNACK[t]).map(t => ROUTE_KNACK[t]))];
+  return ks.length ? ` (Knack: ${ks.join("; ")})` : "";
+}
 function getaway(h) {
   if (!h.getaway) return "";
   const z = h.prize;
   const loot = z.kind === "delicious" ? "its portions — whatever wasn’t eaten inside" : `${LOOT[z.size]} piece${LOOT[z.size] > 1 ? "s" : ""}`;
   const cr = h.cred;
-  const items = h.getaway.map((o, i) => `<li><strong>${esc(o.name[0].toUpperCase() + o.name.slice(1))}</strong> — ${optText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}${cr?.patch === i ? `. <em>${esc(cr.rivals[0].toUpperCase() + cr.rivals.slice(1))} hang about here, and nick any loot that’s dropped</em>` : ""}.</li>`).join("");
+  const items = h.getaway.map((o, i) => `<li><strong>${esc(o.name[0].toUpperCase() + o.name.slice(1))}</strong> — ${optText(o.opts)}${knackText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}${cr?.patch === i ? `. <em>${esc(cr.rivals[0].toUpperCase() + cr.rivals.slice(1))} hang about here, and nick any loot that’s dropped</em>` : ""}.</li>`).join("");
   const lc = n => /’s\b|'s\b/.test(n) ? n : n.toLowerCase(); // keep "Tayo’s room" capitalised
   const cred = cr ? `<p><strong>Cred</strong> (Chapter 9): the catnip stash is ${esc(cr.catnipName)} (${esc(lc(roomName(h, cr.catnip)))}). ${esc(cr.rivals[0].toUpperCase() + cr.rivals.slice(1))} have already tagged the ${esc(lc(roomName(h, cr.rivalTag)))} — the cheek of it.</p>` : "";
   return `<aside class="box rule getaway-route"><h4>The getaway</h4><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p>${cred}</aside>`;
@@ -122,13 +128,16 @@ function rooms(h) {
   const rows = Object.entries(h.rooms).map(([k, r]) => {
     const doors = h.ways.filter(w => (w[0] === k || w[1] === k) && w[3]).map(w => `door to the ${roomName(h, w[0] === k ? w[1] : w[0]).toLowerCase()} (${optText(w[3])})`);
     const tempt = r.tempt.length ? r.tempt.map(i => INSTINCT[i]).join(", ") : "—";
-    const notes = [k === h.den ? "<strong>the Den</strong>" : null, ...doors].filter(Boolean).join("; ");
+    const cr = h.cred;
+    const notes = [k === h.den ? "<strong>the Den</strong>" : null, ...doors,
+      cr?.catnip === k ? `the catnip stash: ${esc(cr.catnipName)} (tempts every cat)` : null,
+      cr?.rivalTag === k ? `${esc(cr.rivals)}${cr.rivals.endsWith("s") ? "’" : "’s"} tag` : null].filter(Boolean).join("; ");
     return `<tr><td>${esc(r.name)}</td><td>${tempt}</td><td>${notes || "—"}</td></tr>`;
   });
   const SIZE = { tight: "Tight", normal: "Normal", big: "Big" };
-  const ways = h.ways.map(w => `${roomName(h, w[0])}–${roomName(h, w[1])} ${SIZE[w[2]]}${w[3] ? " (door)" : (w[0] === h.den || w[1] === h.den) ? " (the Den’s door: open, shut while a cat is in)" : ""}`).join(" · ");
+  const ways = h.ways.map(w => `${roomName(h, w[0])}–${roomName(h, w[1])} ${SIZE[w[2]]}${w[3] ? " (door)" : (w[0] === h.den || w[1] === h.den) ? " (the Den’s door: open; shut while a cat is shut in)" : ""}`).join(" · ");
   return `<table class="tbl"><thead><tr><th>Room</th><th>Tempts</th><th>Notes</th></tr></thead><tbody>${rows.join("")}</tbody></table>
-  <p class="ways"><strong>Ways between rooms:</strong> ${ways}.</p>`;
+  <p class="ways"><strong>Every room</strong> also has shiny things (Curious, Knocker; Chapter 7). <strong>Ways between rooms:</strong> ${ways}.</p>`;
 }
 
 const LABEL = { easy: "Easy", standard: "Standard", hard: "Hard" };
