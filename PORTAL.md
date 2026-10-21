@@ -1,13 +1,14 @@
-Now: Making the gang rougher and funnier: thug cats after shiny loot, a getaway from animal control, and Cred for showing off
-Next: Finish the funnier words and the new pictures, then fresh playtests with real dice and a new rulebook
-Number: Design decisions made = 46
+Now: Version 0.9 of the rulebook is finished: thug cats, shiny loot, the getaway from animal control and Cred for showing off
+Next: Richard reads version 0.9 and tries the Chicken at Number 12 at a real table
+Number: Design decisions made = 47
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
-Number: Pictures in the rulebook = 50
+Number: Pictures in the rulebook = 48
 
-Screenshot: docs/portal/cover.png = The Nine Lives Gang rulebook cover, the gang outside a lit house at night
-Download: book/dist/Nine_Lives_Gang_v0.8.pdf = The rulebook, version 0.8, a draft (PDF)
+Screenshot: docs/portal/cover.png = The Nine Lives Gang rulebook cover, the gang leaping a fence with the warden and his net close behind
+Download: book/dist/Nine_Lives_Gang_v0.9.pdf = The rulebook, version 0.9, a draft (PDF)
+Download: book/dist/Nine_Lives_Gang_v0.9_printer-friendly.pdf = The rulebook, version 0.9, printer-friendly with white pages (PDF)
 Download: downloads/Nine_Lives_Gang_Foundry_v0.8.0-test.zip = The online version for Foundry VTT, version 0.8 test build, not yet released (unzip into Data/systems)
 
 # Nine Lives Gang plan
@@ -54,9 +55,9 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] The getaway: over the fences with the loot before animal control pinches anyone
 - [x] Cred: points for tagging rooms, getting into the catnip and showing up the rival gangs
 - [x] Print files: a printer-friendly copy and a print-shop cover with a spine
-- [ ] Funnier, lighter words all through the book
-- [ ] New cover and gang pictures: tattoos, bandanas, bling and graffiti
-- [ ] The online version learns the getaway and Cred
-- [ ] Playtests of the new rules with real dice, and their fixes
-- [ ] Rulebook version 0.9
+- [x] Funnier, lighter words all through the book
+- [x] New cover and gang pictures: tattoos, bandanas, bling and graffiti
+- [x] The online version learns the getaway and Cred
+- [x] Playtests of the new rules with real dice, and their fixes
+- [x] Rulebook version 0.9
 - [ ] Richard tries the online version at a real table

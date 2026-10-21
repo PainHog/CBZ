@@ -139,8 +139,9 @@ figure.art svg { display: block; width: 100%; height: auto; }
   font: 500 10.5pt/1.4 var(--sans); color: var(--paper-2);
 }
 .cover .cover-edition {
-  position: absolute; left: 0; right: 0; bottom: 0.5in; margin: 0; text-align: center; z-index: 2;
-  font: 800 11pt var(--sans); letter-spacing: 0.45em; text-transform: uppercase; color: var(--accent-bright);
+  /* bottom right, on the dark road: clear of the van and the warden */
+  position: absolute; left: auto; right: 0.55in; bottom: 0.38in; margin: 0; text-align: right; z-index: 2;
+  font: 800 10pt var(--sans); letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent-bright);
 }
 
 /* chapter epigraph */
