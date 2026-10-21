@@ -36,6 +36,13 @@ export const PARAMS = {
   wardenFlop: { def: true, alt: [false], title: "Getaway: a Flop makes the warden move 2", ref: "Ch 9 v0.10", doc: "" },
   dodgeDiff: { def: 0, alt: [1, 2], title: "Getaway: difficulty of dodging the warden", ref: "Ch 9 v0.10", doc: "" },
   shinyTempts: { def: true, alt: [false], title: "Shiny things tempt Curious and Knocker cats in every room", ref: "Ch 7 v0.9 (shiny loot)", pkg: true, doc: "" },
+  cred: { def: true, alt: [false], title: "Cred: tagging rooms, the catnip stash and the rival gang (Ch 9 v0.10)", ref: "Ch 9 v0.10 (Cred)", pkg: true,
+    doc: "Turns on the catnip stash and the rivals' patch on the route; tagging itself is the tagPolicy." },
+  tagPolicy: { def: "late", alt: ["off", "safe", "greedy", "bold"], title: "Cred: when cats tag a room (policy)", ref: "Ch 9 v0.10 (Cred)",
+    doc: "off: never. safe: a free cat with its Action left, unseen, while Broom has 3+ steps of room. late: unseen, and only once the prize is out or in a room no awake human is within a room of. greedy: whenever unseen. bold: also in view (a roll) while Broom has 4+ room." },
+  tagMess: { def: true, alt: [false], title: "Cred: a tag leaves a mess", ref: "Ch 9 v0.10 (Cred)", pkg: true, doc: "" },
+  nipSeek: { def: true, alt: [false], title: "Cred: a cat takes the catnip on purpose when it's in the stash's room unseen (policy)", ref: "Ch 9 v0.10 (Cred)", doc: "" },
+  nipDie: { def: 1, alt: [0], title: "Cred: dice a cat on the nip gains", ref: "Ch 9 v0.10 (Cred)", pkg: true, doc: "" },
   lapCountsDistract: { def: true, alt: [false], title: "A Lap Cat's fuss counts as a Distraction of that human (for the next one's cost)", ref: "Ch 7 v0.9", pkg: true, doc: "" },
   // ---- noise and humans ----
   noiseRange: { def: 2, alt: [1, 3], title: "How far noise carries (rooms)", ref: "CORE-RULES A round",
@@ -129,7 +136,7 @@ export const PRESETS = {
  * The defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false, getaway: false, shinyTempts: false, shooKeepLast: false, meterCap: false, heldBroomDen: false, giveInNoFill: false, knockerOneBroom: false, hunterNoFight: false, lapCountsDistract: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
+  livesPerRobbery: 1, cattitudeDie: false, getaway: false, cred: false, shinyTempts: false, shooKeepLast: false, meterCap: false, heldBroomDen: false, giveInNoFill: false, knockerOneBroom: false, hunterNoFight: false, lapCountsDistract: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
   scale3: [1, 1], scale3Cat: 0, scale5: [0, -1] }; // the v0.5 gang scaling (used once gangScaling is on)
 export const PACKAGES = {
   P1: { ...OFF },
@@ -148,11 +155,15 @@ export const PACKAGES = {
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0] },
   P11: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0],
-    shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true, shinyTempts: true },  P12: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
+    shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true, shinyTempts: true },
+  P12: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0],
     shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true, shinyTempts: true, getaway: true },
+  P13: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0],
+    shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true, shinyTempts: true, getaway: true, cred: true },
 };
-export const ADOPTED = "P12";
+export const ADOPTED = "P13";
 
 export function makeParams(overrides = {}) {
   return { ...defaults(), ...overrides };

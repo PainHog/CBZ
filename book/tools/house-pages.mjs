@@ -111,8 +111,10 @@ function getaway(h) {
   if (!h.getaway) return "";
   const z = h.prize;
   const loot = z.kind === "delicious" ? "its portions — whatever wasn’t eaten inside" : `${LOOT[z.size]} piece${LOOT[z.size] > 1 ? "s" : ""}`;
-  const items = h.getaway.map((o, i) => `<li><strong>${esc(o.name[0].toUpperCase() + o.name.slice(1))}</strong> — ${optText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}.</li>`).join("");
-  return `<aside class="box rule getaway-route"><h4>The getaway</h4><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p></aside>`;
+  const cr = h.cred;
+  const items = h.getaway.map((o, i) => `<li><strong>${esc(o.name[0].toUpperCase() + o.name.slice(1))}</strong> — ${optText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}${cr?.patch === i ? `. <em>${esc(cr.rivals[0].toUpperCase() + cr.rivals.slice(1))} hang about here, and nick any loot that’s dropped</em>` : ""}.</li>`).join("");
+  const cred = cr ? `<p><strong>Cred</strong> (Chapter 9): the catnip stash is ${esc(cr.catnipName)} (${esc(roomName(h, cr.catnip).toLowerCase())}). ${esc(cr.rivals[0].toUpperCase() + cr.rivals.slice(1))} have tagged the ${esc(roomName(h, cr.rivalTag).toLowerCase())}.</p>` : "";
+  return `<aside class="box rule getaway-route"><h4>The getaway</h4><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p>${cred}</aside>`;
 }
 
 function rooms(h) {
