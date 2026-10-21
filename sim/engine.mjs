@@ -154,6 +154,7 @@ class Robbery {
 
   /** Shoo! / Scooped! (CORE-RULES). */
   trigger(kind, cat) {
+    this.catches = (this.catches ?? 0) + 1; // v0.10: a Shoo! or Scoop gets animal control called sooner
     if (cat && cat.status === "held" && kind === "shoo") {
       // a held cat whose own roll fills Broom: the holder lets go and shoos it outside (CORE-RULES v0.7)
       const holder = this.humans.find(hu => hu.key === cat.heldBy);
@@ -1101,6 +1102,7 @@ class Robbery {
   }
 
   finish(reason) {
+    if (this.p.getaway) return this.finishWithGetaway(reason);
     this.t(`END ${reason}; cats: ${this.cats.map(c => `${c.id}:${c.status}@${c.loc}`).join(" ")}; prize ${JSON.stringify({ room: this.prize.room, down: this.prize.down, left: this.prize.portionsLeft, out: this.prize.out, gone: this.prize.gone })}`);
     const left = this.cats.filter(c => c.status === "in" || c.status === "held" || c.status === "shut");
     const got = this.prizeGot();
@@ -1117,6 +1119,123 @@ class Robbery {
     return out;
   }
 }
+
+// ------------------------------------------------------------ the getaway (v0.10)
+/** Loot pieces by size for a prize that isn't food (food: its portions). */
+const LOOT_PIECES = { small: 1, medium: 2, large: 3 };
+/** A route for a house that prints none (Ch 9 "The Getaway"): four obstacles to the hideout. */
+const DEFAULT_ROUTE = [
+  { name: "the back fence", opts: [["savage", 0, "climb"], ["sneaky", 0, "climb"]] },
+  { name: "next door's garden", opts: [["sneaky", 0, "hide"], ["savage", 0, "chase"]] },
+  { name: "the alley wall", opts: [["savage", 1, "climb"], ["sneaky", 1, "climb"]] },
+  { name: "the road", opts: [["streetwise", 0], ["savage", 0, "chase"]] },
+];
+
+Object.assign(Robbery.prototype, {
+  /** One getaway roll: no Mood out here, but a Push and Cattitude still work. */
+  gRoll(c, opt, extra = {}) {
+    const res = this.roll(c, { approach: opt[0], diff: opt[1] + (extra.diff ?? 0), tags: opt.slice(2), seen: [], important: true,
+      helpers: extra.helpers ?? 0, opposition: extra.opposition ?? 0, why: extra.why ?? "getaway", quiet: true });
+    return res.result;
+  },
+  gChance(c, opt, extra = {}) {
+    const n = poolSize({ rating: c.r[opt[0]], knack: hasKnack(c, opt.slice(2), this.p), helpers: extra.helpers ?? 0,
+      difficulty: opt[1] + (extra.diff ?? 0), opposition: extra.opposition ?? 0 }, this.p);
+    return chanceAtLeast(n, "scrape");
+  },
+  /**
+   * After the house (Ch 9): cats still inside are pinched; everyone outside runs the route with the loot
+   * in pieces; the warden follows; a cat the warden reaches must dodge or be pinched.
+   */
+  finishWithGetaway(reason) {
+    const p = this.p, z = this.prize;
+    const route = this.h.getaway ?? DEFAULT_ROUTE;
+    const pinched = new Set(this.cats.filter(c => ["in", "held", "shut"].includes(c.status)).map(c => c.id));
+    const food = z.kind === "delicious";
+    const total = food ? z.portions : LOOT_PIECES[z.size] ?? 1;
+    const safe = food ? z.eaten : 0;
+    let pieces = z.out ? (food ? z.portionsLeft : total) : 0;
+    const run = this.cats.filter(c => c.status === "out").map(c => ({ c, pos: 0, carry: 0, home: false }));
+    // share the loot out: Chonky cats take two pieces, the others one; what nobody can carry is left behind
+    for (const r of [...run].sort((a, b) => (b.c.body === "chonky") - (a.c.body === "chonky"))) {
+      const take = Math.min(pieces, r.c.body === "chonky" ? 2 : 1); r.carry = take; pieces -= take;
+    }
+    const lostAtStart = pieces;
+    const drops = new Map();
+    let warden = ((this.catches ?? 0) > 0 ? 0 : -1) - (p.wardenLag ?? 0); // the warden's space; below 0 = still on the way
+    const G = route.length; // the cats start on space 0; clearing obstacle k takes a cat from space k to k+1; space G is the hideout
+    let rounds = 0;
+    const active = () => run.filter(r => !r.home && !pinched.has(r.c.id));
+    while (active().length && rounds < 15) {
+      rounds++;
+      let flop = false;
+      for (let pos = G - 1; pos >= 0; pos--) {
+        let here = active().filter(r => r.pos === pos);
+        if (!here.length) continue;
+        const ob = route[pos]; // the obstacle between this space and the next
+        // pick up loot dropped here when the warden isn't close
+        if ((drops.get(pos) ?? 0) > 0 && warden < pos - 1) {
+          for (const r of here) {
+            const cap = (r.c.body === "chonky" ? 2 : 1) - r.carry;
+            while (cap > 0 && (drops.get(pos) ?? 0) > 0 && r.carry < (r.c.body === "chonky" ? 2 : 1)) { r.carry++; drops.set(pos, drops.get(pos) - 1); r.picked = true; }
+          }
+          here = here.filter(r => !r.picked); for (const r of run) r.picked = false;
+        }
+        // go over together in groups of up to three: the best cat leads, the others help
+        while (here.length) {
+          let best = null;
+          for (const r of here) for (const o of ob.opts) {
+            const g = here.filter(x => x !== r).slice(0, 2);
+            const loaded = [r, ...g].some(x => x.carry > (x.c.body === "chonky" ? 1 : 0)) ? 1 : 0; // carrying loot: one die off
+            const ch = this.gChance(r.c, o, { helpers: g.length, diff: loaded, opposition: ob.pet ?? 0 });
+            if (!best || ch > best.ch) best = { r, o, g, loaded, ch };
+          }
+          const group = [best.r, ...best.g];
+          // dropping a piece on purpose to get over (+1 die) when the warden is close and it looks bad
+          let diff = best.loaded;
+          if (diff && best.ch < 0.6 && warden >= pos - 1) {
+            const dropper = group.find(x => x.carry > 0);
+            dropper.carry--; drops.set(pos, (drops.get(pos) ?? 0) + 1); diff = 0; this.rec.event("lootDroppedOnPurpose");
+          }
+          const res = this.gRoll(best.r.c, best.o, { helpers: best.g.length, diff, opposition: ob.pet ?? 0, why: `getaway: ${ob.name}` });
+          if (res === "flop") {
+            flop = true;
+            for (const x of group) if (x.carry > 0) { x.carry--; drops.set(pos, (drops.get(pos) ?? 0) + 1); this.rec.event("lootDropped"); }
+          } else {
+            for (const x of group) { x.pos = pos + 1; if (x.pos >= G) x.home = true; }
+          }
+          here = here.filter(x => !group.includes(x));
+        }
+      }
+      // the warden: on the way in round 1 if nobody was caught tonight; then one space a round, two after a Flop
+      if (warden < 0) warden++; else warden = Math.min(G - 1, warden + 1 + (flop && p.wardenFlop ? 1 : 0));
+      // loot dropped where the warden has been is gone
+      for (const [pos, n] of drops) if (pos <= warden && n) { drops.set(pos, 0); this.rec.event("lootLost"); }
+      // cornered: a cat on or behind the warden's space dodges (Tricky) or is pinched
+      for (const r of active()) {
+        if (r.pos > warden) continue;
+        const dd = p.dodgeDiff ?? 1;
+        const opts = [["sneaky", dd, "hide"], ["savage", dd, "chase"], ["sweet", dd, "charm"]];
+        const o = opts.reduce((a, b) => (this.gChance(r.c, b) > this.gChance(r.c, a) ? b : a));
+        const res = this.gRoll(r.c, o, { why: "dodge the warden" });
+        if (res === "flop") { pinched.add(r.c.id); r.carry = 0; this.rec.event("pinched"); }
+        else { r.pos = warden + 1; if (r.pos >= G) r.home = true; this.rec.event("dodged"); }
+      }
+    }
+    const home = run.filter(r => r.home).reduce((a, r) => a + r.carry, 0);
+    const got = safe + home;
+    let outcome = "busted";
+    if (got >= total && !pinched.size) outcome = "clean";
+    else if (got * 2 >= total) outcome = "messy";
+    this.t(`GETAWAY ${rounds} rounds; loot ${got}/${total} (eaten ${safe}, home ${home}, left at the start ${lostAtStart}); pinched ${[...pinched].join(",") || "none"}`);
+    const out = {
+      outcome, reason, rounds: this.round, getawayRounds: rounds, leftBehind: pinched.size, prizeGot: got >= total, partial: got * 2 >= total && got < total,
+      loot: got, lootTotal: total, everCaught: this.cats.filter(c => c.everCaught).length, cats: this.cats, trace: this.trace,
+    };
+    this.rec.finish(out);
+    return out;
+  },
+});
 
 function nullRecorder() {
   const f = () => {};

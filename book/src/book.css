@@ -334,11 +334,11 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
 #ch-03 .entry .portrait { width: 0.9in; }
 #ch-03 .entry p { margin: 0 0 0.035in; }
 #ch-03 .entry .statline { padding: 0.03in 0.07in; margin: 0.03in 0; }
-/* Chapter 10's pet statblocks flow in the columns: a run of full-width blocks at a chapter's end
+/* Chapter 11's pet statblocks flow in the columns: a run of full-width blocks at a chapter's end
    leaves a page Chromium can't measure or fill */
-#ch-10 .statblock, #ch-14 .statblock, #ch-15 .statblock, #ch-16 .statblock, #ch-17 .statblock, #ch-18 .statblock { column-span: none; }
-#ch-14 .keep:has(> .statblock), #ch-15 .keep:has(> .statblock), #ch-16 .keep:has(> .statblock),
-#ch-17 .keep:has(> .statblock), #ch-18 .keep:has(> .statblock) { column-span: none; }
+#ch-11 .statblock, #ch-15 .statblock, #ch-16 .statblock, #ch-17 .statblock, #ch-18 .statblock, #ch-19 .statblock { column-span: none; }
+#ch-15 .keep:has(> .statblock), #ch-16 .keep:has(> .statblock), #ch-17 .keep:has(> .statblock),
+#ch-18 .keep:has(> .statblock), #ch-19 .keep:has(> .statblock) { column-span: none; }
 .entry .ability, .entry .signature {
   clear: both;
   break-inside: avoid;
