@@ -86,6 +86,7 @@ export function catSnapshot(actor) {
   return {
     id: actor.id, actorId: actor.id, name: actor.name, img: actor.img,
     r: Object.fromEntries(CATB.approachKeys.map(a => [a, Number(s.approaches?.[a] ?? 1)])),
-    instincts: [s.instinct1, s.instinct2].filter(Boolean), body: s.body ?? "lean"
+    instincts: [s.instinct1, s.instinct2].filter(Boolean), body: s.body ?? "lean",
+    rep: Number(s.rep ?? 0) // v0.9 (Ch 13): the gang's Rep gives starting Cattitude
   };
 }

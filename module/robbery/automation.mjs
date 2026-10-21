@@ -27,7 +27,7 @@ export async function applyRollMessage(message) {
   const res = await mutate(s => {
     if (!running(s) || s.id !== card.robberyId) return null;
     if (isApplied(s, card.eventId)) return { state: s, events: [], skipped: true };
-    return applyRoll(s, cardOf(message), { mood: auto.mood, effects: auto.effects });
+    return applyRoll(s, cardOf(message), { mood: auto.mood, effects: auto.effects, d6: auto.d6 });
   });
   if (!res?.state || res.skipped) return res;
   await applyCattitude(res.cattitude);

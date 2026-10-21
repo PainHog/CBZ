@@ -9,9 +9,9 @@
  * plumbing around them, so the rules are unit-tested with `node --test`.
  *
  * Each function cites the rulebook passage it implements (book/src/chapters/,
- * summarised in docs/CORE-RULES.md v0.8). The simulator keeps its own copy of
- * these rules (sim/rules.mjs); test/parity.test.mjs checks the two agree under
- * the adopted package (P10).
+ * core rules v0.9). The simulator keeps its own copy of these rules
+ * (sim/rules.mjs); test/parity.test.mjs checks the two agree under the adopted
+ * package (P11).
  */
 import { CATB } from "../config.mjs";
 
@@ -38,15 +38,15 @@ export function knackInstincts(instincts = [], tags = []) {
 }
 
 /**
- * Dice to roll before reading (Ch 4 "Counting dice"): approach rating, +1 Knack
+ * Dice to roll before reading (Ch 4 "How many dice"): approach rating, +1 Knack
  * (max +1; a Chonky cat's wriggle die counts the same way), +1 per helper (max +2),
- * +1 for a Cattitude token, never more than 5; THEN remove Difficulty, a pet's
- * rating and (Sneaky/Sweet only) the highest watching Attention.
+ * never more than 5; THEN remove Difficulty, a pet's rating and (Sneaky/Sweet
+ * only) the highest watching Attention. (v0.9: Cattitude no longer buys a die.)
  * Returns the signed count; 0 or less means "roll two, keep the lower".
- * Same arguments as sim/rules.mjs poolSize (plus the Cattitude die).
+ * Same arguments as sim/rules.mjs poolSize.
  */
-export function poolSize({ rating = 0, knack = false, helpers = 0, cattitudeDie = false, difficulty = 0, opposition = 0, attention = 0 }) {
-  const bonus = (knack ? R.knackCap : 0) + Math.min(Math.max(0, helpers), R.helpCap) + (cattitudeDie ? 1 : 0);
+export function poolSize({ rating = 0, knack = false, helpers = 0, difficulty = 0, opposition = 0, attention = 0 }) {
+  const bonus = (knack ? R.knackCap : 0) + Math.min(Math.max(0, helpers), R.helpCap);
   return Math.min(rating + bonus, R.diceCap) - difficulty - opposition - attention;
 }
 
@@ -59,12 +59,11 @@ export function poolSize({ rating = 0, knack = false, helpers = 0, cattitudeDie 
  * @param {boolean} [p.knack]   an instinct suits the action
  * @param {boolean} [p.bodyDie] a Chonky cat wriggling free (counts as the one extra die, like a Knack)
  * @param {number} [p.helpers]  cats helping (each +1, max +2)
- * @param {boolean} [p.cattitudeDie] spend 1 Cattitude for +1 die
  * @param {number} [p.difficulty] 0 plain, 1 Tricky, 2 Hard
  * @param {number} [p.opposition] a pet in the way: its rating
  * @param {number} [p.attention] the highest Attention among the humans watching (used on Sneaky/Sweet only)
  */
-export function buildRollPlan({ approach, rating = 0, knack = false, bodyDie = false, helpers = 0, cattitudeDie = false,
+export function buildRollPlan({ approach, rating = 0, knack = false, bodyDie = false, helpers = 0,
   difficulty = 0, opposition = 0, attention = 0 } = {}) {
   if (!APPROACHES.includes(approach)) throw new Error(`buildRollPlan: unknown approach "${approach}"`);
   const add = [{ key: "rating", label: `${CATB.approaches[approach].label} rating`, value: rating }];
@@ -73,7 +72,6 @@ export function buildRollPlan({ approach, rating = 0, knack = false, bodyDie = f
   const help = Math.min(Math.max(0, helpers), R.helpCap);
   if (help) add.push({ key: "help", label: `Help ×${help}`, value: help });
   if (helpers > R.helpCap) add.push({ key: "helpCapped", label: `Help over +${R.helpCap} doesn't count`, value: 0 });
-  if (cattitudeDie) add.push({ key: "cattitude", label: "Cattitude die", value: 1 });
   const raw = add.reduce((a, p) => a + p.value, 0);
   const capped = Math.min(raw, R.diceCap);
   const att = attentionApplies(approach) ? Math.max(0, attention) : 0;
@@ -86,7 +84,6 @@ export function buildRollPlan({ approach, rating = 0, knack = false, bodyDie = f
   return {
     approach, add, remove, raw, capped, overCap: raw > R.diceCap, total, zero,
     dice: zero ? R.zeroDice : total,
-    cattitudeCost: cattitudeDie ? 1 : 0,
     attentionIgnored: !attentionApplies(approach) && attention > 0
   };
 }
@@ -116,20 +113,24 @@ export function readIndex(faces, zero = false) {
 export const works = result => result !== "flop";
 export const makesNoise = result => result === "flop" || result === "scrape";
 
-/** Ch 4 "Push your luck": every die that isn't a 6 is rolled again. */
-export function pushIndices(faces) {
+/**
+ * Ch 4 "Push your luck": every die that isn't a 6 is rolled again. On a zero-dice
+ * roll (two dice, the lower read) a Push rerolls both dice (v0.9).
+ */
+export function pushIndices(faces, zero = false) {
+  if (zero) return faces.map((_, i) => i);
   return faces.map((f, i) => (f === 6 ? -1 : i)).filter(i => i >= 0);
 }
 /** Put the rerolled faces back in place (newFaces in pushIndices order). */
-export function applyPush(faces, newFaces) {
-  const idx = pushIndices(faces);
+export function applyPush(faces, newFaces, zero = false) {
+  const idx = pushIndices(faces, zero);
   if (newFaces.length !== idx.length) throw new Error(`applyPush: expected ${idx.length} new dice, got ${newFaces.length}`);
   const out = [...faces];
   idx.forEach((i, k) => { out[i] = newFaces[k]; });
   return out;
 }
-/** A Push is pointless (and not offered) when every die already shows a 6. */
-export const canPush = faces => pushIndices(faces).length > 0;
+/** A Push is pointless (and not offered) when every die already shows a 6 — except on a zero-dice roll, which rerolls both. */
+export const canPush = (faces, zero = false) => pushIndices(faces, zero).length > 0;
 
 /**
  * The Mood change from one roll (Ch 5 "Mood steps"; CORE-RULES "The Mood"):
@@ -137,9 +138,10 @@ export const canPush = faces => pushIndices(faces).length > 0;
  * - seen Purrfect: nothing;
  * - seen Flop: 2 steps on the fuller meter (the approach's own if they're level);
  * - a kid who saw it doubles its Cuddle steps (once);
- * - a Push paid with the Mood adds 1 step to that roll's meter, seen or not;
+ * - a Push paid with the Mood adds 1 step to that roll's meter, seen or not —
+ *   it always lands, even on a Purrfect, and a kid doesn't double it (v0.9);
  * - one roll, one change.
- * `mood` is the meters before this roll. Mirrors sim/rules.mjs moodDelta (P10).
+ * `mood` is the meters before this roll. Mirrors sim/rules.mjs moodDelta (P11).
  */
 export function moodDelta({ result, approach, seen, mood = { broom: 0, cuddle: 0 }, pushedWithMood = false, kidDoubles = false }) {
   const lean = fillsMeter(approach);
@@ -159,6 +161,29 @@ export function moodDelta({ result, approach, seen, mood = { broom: 0, cuddle: 0
   }
   return { side, steps };
 }
+
+/**
+ * Ch 11 "Ties" (v0.9): pick one of a list with a die, fairly — the faces are
+ * split evenly between them (2: 1–3 / 4–6; 3: 1–2 / 3–4 / 5–6), and with four
+ * or five a face above the count is rolled again. One item needs no die.
+ * Returns { pick, face } (face null when no die was rolled or there's no d6).
+ */
+export function pickByDie(list, d6) {
+  const n = list?.length ?? 0;
+  if (n <= 1 || typeof d6 !== "function") return { pick: list?.[0] ?? null, face: null };
+  let f = d6();
+  if (n > 6) return { pick: list[(f - 1) % n], face: f };
+  if (6 % n === 0) return { pick: list[Math.ceil((f * n) / 6) - 1], face: f };
+  for (let i = 0; f > n && i < 20; i++) f = d6();
+  if (f > n) f = ((f - 1) % n) + 1;
+  return { pick: list[f - 1], face: f };
+}
+
+/** Ch 13 "Rep" (v0.9): the gang's Rep bonus — 1 more starting Cattitude at each of 3, 6 and 9 Rep. */
+export const repBonus = rep => R.repSteps.filter(n => (Number(rep) || 0) >= n).length;
+
+/** Ch 2 §7, Ch 13: a cat's starting Cattitude — 2 (3 in a gang of three) plus the Rep bonus, never above 5. */
+export const startingCattitude = (base, rep = 0) => Math.min(R.cattitudeMax, base + repBonus(rep));
 
 /** Ch 9: the holder's end-of-round d6. */
 export function holderOutcome(face) {
@@ -184,7 +209,7 @@ export function chanceAtLeast(n, result) {
 /** Clamp Cattitude to 0…5 (Ch 2 §7). */
 export const clampCattitude = v => Math.max(0, Math.min(R.cattitudeMax, Math.trunc(Number(v) || 0)));
 
-/** Ch 2 §3: a legal starting spread is 3, 2, 1, 1 (ratings may rise to 4 later through Rep). */
+/** Ch 2 §3: a legal starting spread is 3, 2, 1, 1 (v0.9: Rep no longer raises approaches; 4 stays the sheet's limit). */
 export function validateApproaches(r = {}) {
   const vals = APPROACHES.map(a => Number(r[a] ?? 0));
   const errors = [];

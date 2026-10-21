@@ -20,6 +20,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { HOUSES, humanTraits, optionsText } from "../module/logic/house-catalog.mjs";
 import { CATB } from "../module/config.mjs";
+import { gangScaling } from "../module/logic/prize.mjs";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(ROOT, "packs", "_source");
@@ -54,9 +55,18 @@ export const GANG = [
 function sheet(h) {
   const z = h.prize;
   const portions = z.kind === "delicious" ? `, portions: ${z.perCat} per cat${z.plus ? ` + ${z.plus}` : ""}` : "";
-  return `<p><strong>Difficulty</strong> ${LABEL[h.label]} · <strong>Patience</strong> ${h.patience} · <strong>The prize</strong> ${esc(z.name)} (${z.size[0].toUpperCase() + z.size.slice(1)}${portions}) · <strong>Gone</strong> at the start of round ${z.goneAt} · <strong>Den</strong> ${esc(roomName(h, h.den))}</p>
+  return `<p><strong>House</strong> ${LABEL[h.label]} · <strong>Patience</strong> ${h.patience} · <strong>The prize</strong> ${esc(z.name)} (${z.size[0].toUpperCase() + z.size.slice(1)}${portions}) · <strong>Gone</strong> at the start of round ${z.goneAt} · <strong>Den</strong> ${esc(roomName(h, h.den))}</p>
 <p><strong>Who lives here</strong> ${[...h.humans, ...h.pets].map(x => esc(x.name)).join(", ")}</p>
-<p><em>For four cats. With three: Patience +1, the prize goes 2 rounds later, 3 Cattitude each. With five: Patience −1, the prize goes 1 round sooner. The Robbery Tracker does this for you.</em></p>`;
+<p><em>${gangText(h)} The Robbery Tracker does this for you.</em></p>`;
+}
+
+/** Ch 11 "Gang size" (v0.9): this house's own three- and five-cat numbers, or the general rule. */
+function gangText(h) {
+  const z = h.prize;
+  const s3 = gangScaling(3, h), s5 = gangScaling(5, h);
+  const three = `Patience ${h.patience + s3.patience}, gone at the start of round ${z.goneAt + s3.clock}, Lights Out at the end of round ${z.goneAt + s3.clock + CATB.rules.lightsOut}, ${CATB.rules.cattitudeStart + s3.cattitude} Cattitude each`;
+  const five = `Patience ${Math.max(CATB.rules.minPatience, h.patience + s5.patience)}${s5.clock ? `, gone at the start of round ${z.goneAt + s5.clock}, Lights Out at the end of round ${z.goneAt + s5.clock + CATB.rules.lightsOut}` : ""}`;
+  return `For four cats. With three: ${three}. With five: ${five}.`;
 }
 
 function clock(h) {
@@ -89,7 +99,7 @@ function routineText(h, r) {
     let j = i;
     while (j + 1 < 6 && r[j + 1] === r[i]) j++;
     const face = i === j ? `${i + 1}` : `${i + 1}–${j + 1}`;
-    out.push(`<strong>${face}</strong> ${r[i] === "stay" ? "stays put" : r[i] === "sniff" ? "sniffs one room toward the nearest cat" : esc(roomName(h, r[i]))}`);
+    out.push(`<strong>${face}</strong> ${r[i] === "stay" ? "stays put" : r[i] === "sniff" ? "sniffs one room toward the nearest free cat inside" : esc(roomName(h, r[i]))}`);
     i = j + 1;
   }
   return out.join("; ");
@@ -129,7 +139,7 @@ const RUNNING = h => `<h2>Running ${esc(h.name)} in Foundry</h2>
 <li><strong>Begin round</strong> runs the Prize Clock and, if anyone can be tempted, whispers you one-click <strong>Tempt</strong> buttons.</li>
 <li>Players move and act from the tracker (or roll from their cat sheets). The roll dialog fills in the Knack, help, Difficulty, the pet and who is watching; the card offers Push and Accept, and you can flip Seen.</li>
 <li><strong>End round</strong> rolls the house's turn in the open: pets, noise, routines and Searching, holders, then Finding it.</li>
-<li>The robbery ends at Lights Out, or when no free cat is left inside, and the outcome is posted.</li>
+<li>The robbery ends at Lights Out, or at the end of a round when no free cat is left inside and the prize is got or gone (or when you press <strong>End the robbery</strong> because the gang has gone home), and the outcome is posted.</li>
 </ol>
 <p>Every automation can be switched off in the system settings. The residents of this house are in the <em>Residents</em> compendium; the tracker works without them.</p>`;
 

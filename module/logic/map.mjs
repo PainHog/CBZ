@@ -63,15 +63,44 @@ export function nearestEntrances(state, room) {
   return out;
 }
 
+/** Ch 8: does this entrance work this round? (A front door only in the rounds its house lists.) */
+export const worksThisRound = (state, e) => !e.rounds || e.rounds.includes(state.round);
+
 /**
- * Ch 5 "Shoo!" (v0.8, REVIEW #83): the nearest entrances that work this round
- * (a front door outside its rounds doesn't), all tied at the shortest distance,
- * in house order — the Storyteller picks between ties. If none works this
- * round, every entrance counts.
+ * Ch 5 "Shoo!" (v0.9): the nearest entrances the cat fits through (a Chonky cat
+ * doesn't fit a Tight one) that work this round (a front door only in its
+ * rounds), shut or open — the human opens a shut one to put the cat out — all
+ * tied at the shortest distance, in house order (the Storyteller picks between
+ * ties). If none works for that cat, the nearest it fits through; if none fits,
+ * the nearest of all. The holder's 6 (Ch 9) uses the same choice. `cat` may be
+ * null (any body).
  */
-export function shooEntrances(state, room) {
-  const works = (state.entrances ?? []).filter(e => !e.rounds || e.rounds.includes(state.round));
-  return nearestEntrances(works.length ? { ...state, entrances: works } : state, room);
+export function shooEntrances(state, room, cat = null) {
+  const all = state.entrances ?? [];
+  const fit = all.filter(e => fits(e.size, { body: cat?.body ?? "lean" }));
+  const works = fit.filter(e => worksThisRound(state, e));
+  const pool = works.length ? works : fit.length ? fit : all;
+  return nearestEntrances({ ...state, entrances: pool }, room);
+}
+
+/**
+ * Ch 5 (v0.9): the house's last entrance still open — no other entrance is open
+ * and without a round limit — is left open after a Shoo!.
+ */
+export const lastOpenEntrance = (state, e) => !(state.entrances ?? []).some(x => x !== e && x.key !== e.key && x.open && !x.rounds);
+
+/**
+ * Ch 8 "Meow at a door" (v0.9): any entrance that is a door counts — the front
+ * door in any round, a back, patio or garage door, a door with a cat flap in
+ * it — but not a window, a skylight or a climb. A house entry may say
+ * `door: true|false`; otherwise it's read from the entrance (let-out front
+ * doors, and anything not a climb whose name says door or flap).
+ */
+export function isDoorEntrance(e) {
+  if (typeof e?.door === "boolean") return e.door;
+  if (e?.letOut) return true;
+  if (e?.climb || e?.size === "tight") return false;
+  return /\b(door|flap)\b/i.test(e?.name ?? "");
 }
 
 /**

@@ -99,9 +99,11 @@ test("the prize not where the Clock left it: the owner goes there, stays, finds 
 /* ------------------------------------------------------------ temptation -- */
 
 test("temptation: free cats in a room with one of their instincts' temptations, one per round, never twice", () => {
-  let s = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "kitchen", velvet: "living", mags: "hall" } });
+  let s = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "kitchen", velvet: "living", mags: "hall" }, pets: { pudding: { mode: "hiding", until: 99 } } });
   const opts = temptationOptions(s);
   assert.deepEqual(opts.map(o => `${o.catId}:${o.instinct}`).sort(), ["tilly:climber", "velvet:knocker", "velvet:lapCat"]);
+  assert.ok(!temptationOptions(arrange(s, { pets: { pudding: { mode: "awake", room: "kitchen" } } })).some(o => o.catId === "tilly"),
+    "v0.9: a cat that has to deal with a pet in its room this turn can't be tempted");
   s = tempt(s, { catId: "tilly", instinct: "climber" }).state;
   assert.deepEqual(temptationOptions(s), [], "only one cat per round");
   s = answerTemptation(s, { choice: "resisted", cattitude: 2 }).state;
@@ -114,7 +116,7 @@ test("temptation: free cats in a room with one of their instincts' temptations, 
   const w = arrange(beginRound(robbery("wendell-mouse")).state, { cats: { mags: "hall" }, pets: { roomba: "hall" } });
   assert.ok(roomTemptations(w, "hall").includes("hunter"), "the robot vacuum tempts Hunters");
   assert.ok(temptationOptions(w).some(o => o.catId === "mags" && o.instinct === "hunter"));
-  const fresh = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "kitchen" } });
+  const fresh = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "kitchen" }, pets: { pudding: { mode: "hiding", until: 99 } } });
   const pick = tempt(fresh, 1);
   assert.equal(pick.temptation.catId, "tilly", "a d6 picks at random among the eligible");
 });
@@ -136,7 +138,8 @@ test("resisting costs 1 Cattitude; with none the cat must give in; giving in pay
 
 /** Give in to `instinct` with cat `id` in `room`, Mr Pell watching (or not). */
 function giveIn(id, instinct, room, { watch = true, house = "number-12", setup = {} } = {}) {
-  let s = arrange(beginRound(robbery(house)).state, { cats: { [id]: room }, humans: house === "number-12" ? { pell: watch ? room : "loo" } : {}, ...setup });
+  let s = arrange(beginRound(robbery(house)).state, { cats: { [id]: room }, humans: house === "number-12" ? { pell: watch ? room : "loo" } : {},
+    pets: house === "number-12" ? { pudding: { mode: "hiding", until: 99 } } : {}, ...setup });
   s.rooms[room].tempt = [instinct];
   s = tempt(s, { catId: id, instinct }).state;
   return answerTemptation(s, { choice: "gaveIn" });
@@ -149,8 +152,11 @@ test("giving in, instinct by instinct (Ch 7 table)", () => {
   r = giveIn("tilly", "curious", "hall", { watch: false });
   assert.equal(moodNow(r.state).broom, 0, "unseen: noise only");
   r = giveIn("velvet", "knocker", "living");
-  assert.deepEqual(r.state.messes, ["living"], "a Knocker leaves a mess");
+  assert.deepEqual(r.state.messes, [], "v0.9: a Knocker seen by a human: +1 Broom and no mess");
   assert.equal(moodNow(r.state).broom, 1);
+  r = giveIn("velvet", "knocker", "living", { watch: false });
+  assert.deepEqual(r.state.messes, ["living"], "unseen: a mess for whoever comes");
+  assert.equal(moodNow(r.state).broom, 0);
   r = giveIn("mags", "hunter", "hall");
   assert.equal(r.state.noise.length, 1);
   assert.equal(moodNow(r.state).broom, 0, "chasing a fly looks innocent");
@@ -161,16 +167,16 @@ test("giving in, instinct by instinct (Ch 7 table)", () => {
   assert.equal(cat(r.state, "tilly").hidden, true);
   assert.equal(moodNow(r.state).broom, 0);
   r = giveIn("biscuit", "scrapper", "kitchen");
-  assert.equal(pet(r.state, "pudding").mode, "awake", "v0.6: squaring up is noise, nothing more");
-  assert.equal(moodNow(r.state).broom, 1);
-  assert.equal(r.state.noise.length, 1);
+  assert.equal(moodNow(r.state).broom, 1, "squaring up in view: +1 Broom");
+  assert.equal(r.state.noise.length, 1, "…and noise, nothing more");
 });
 
-test("any room with an awake dog or house cat tempts Scrappers (v0.6)", () => {
+test("any room with an awake dog or house cat tempts Scrappers (v0.6) — not a befriended one; a cat that must deal with it can't be tempted (v0.9)", () => {
   let s = arrange(beginRound(robbery("number-12")).state, { cats: { biscuit: "kitchen" } });
   s.rooms.kitchen.tempt = [];
   assert.ok(roomTemptations(s, "kitchen").includes("scrapper"));
-  assert.ok(temptationOptions(s).some(o => o.catId === "biscuit" && o.instinct === "scrapper"));
+  assert.ok(!temptationOptions(s).some(o => o.catId === "biscuit"), "v0.9: Biscuit has to deal with Pudding this turn first");
+  assert.ok(!roomTemptations(arrange(s, { pets: { pudding: { mode: "friendly" } } }), "kitchen").includes("scrapper"), "v0.9: a befriended dog doesn't");
   s = arrange(s, { pets: { pudding: { mode: "asleep" } } });
   assert.ok(!roomTemptations(s, "kitchen").includes("scrapper"), "a sleeping dog doesn't");
   const w = beginRound(robbery("wendell-mouse")).state;
@@ -275,17 +281,19 @@ test("autoMood confirm: entries wait for the Storyteller; manual: nothing is wri
 
 /* ------------------------------------------------------- the house's turn -- */
 
-test("noise: the closest awake human within two rooms who isn't already there; one each; ties by house order", () => {
+test("noise: the closest awake human within two rooms who isn't already there; one each; ties: the higher Attention, then a die (v0.9)", () => {
   let s = arrange(beginRound(robbery("birthday-cake")).state, { round: 3 });
   s.noise = [{ room: "utility" }, { room: "hall" }, { room: "loo" }];
   s.pets[0].mode = "covered";
   const d = dice(1, 1, 1, 1);
   const { state, events } = endRound(s, { d6: d, routines: false });
   assert.equal(human(state, "dad").room, "utility", "Dad (kitchen) is 1 away from the utility room");
-  assert.equal(human(state, "rosalind").room, "hall", "a tie at 1 room: the first in house order");
-  assert.equal(human(state, "mia").room, "loo");
+  assert.equal(human(state, "rosalind").room, "hall", "a tie at 1 room: Aunt Rosalind has the higher Attention (2)");
+  assert.equal(human(state, "mia").room, "loo", "Mia and Leo: tied on Attention 1, a die (1: Mia)");
   assert.equal(human(state, "leo").room, "living");
-  assert.match(texts(events), /Aunt Rosalind comes to see the noise in the hall \(a tie/);
+  assert.match(texts(events), /Aunt Rosalind comes to see the noise in the hall \(as close as another: the higher Attention goes\)/);
+  assert.match(texts(events), /Mia comes to see the noise in the downstairs loo \(as close as another and tied on Attention: a die, 1\)/);
+  assert.equal(d.left(), 3, "one die for the tie");
 });
 
 test("noise: busy and headphones never answer, asleep humans don't hear, holders don't come; beyond 2 rooms nobody", () => {
@@ -340,8 +348,8 @@ test("Searching: stay with a cat in sight, else step into a next room with one (
   r = endRound(s, { d6: dice() });
   assert.equal(human(r.state, "pell").room, "kitchen", "walks past the hidden cat, to the carrier");
   s = arrange(base, { cats: { tilly: "living", velvet: "kitchen" } });
-  r = endRound(s, { d6: dice(2) });
-  assert.equal(human(r.state, "pell").room, "kitchen", "two rooms with cats: the Storyteller's pick (d6)");
+  r = endRound(s, { d6: dice(4) });
+  assert.equal(human(r.state, "pell").room, "kitchen", "two rooms with cats: the Storyteller's pick (a die: 1–3 the first, 4–6 the second)");
   s = arrange(base, {});
   r = endRound(s, { d6: dice(5) });
   assert.equal(human(r.state, "pell").room, "living", "nobody in sight: the routine");
@@ -474,7 +482,7 @@ test("the end: Lights Out at the end of the second round after the prize goes; o
   s = arrange(s, { round: 4 });
   assert.equal(endCheck(s).due, false, "everyone outside but the prize is still to get: they can come back in");
   s.prize.gone = true;
-  assert.deepEqual(endCheck(s), { due: true, reason: "allOut", text: "No free cat is inside: the robbery is over." });
+  assert.deepEqual(endCheck(s), { due: true, reason: "allOut", text: "No free cat is inside and the rotisserie chicken is gone: the robbery ends at the end of the round." });
   s = arrange(s, { cats: { tilly: "hall" } });
   assert.equal(endCheck(s).due, false);
 });

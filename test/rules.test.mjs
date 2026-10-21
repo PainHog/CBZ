@@ -8,16 +8,18 @@ import {
   hasKnack, knackInstincts, attentionApplies, fillsMeter, clampCattitude, validateApproaches, validateInstincts, chanceAtLeast
 } from "../module/logic/rules.mjs";
 
-test("roll plan: rating + Knack + help + Cattitude die, capped at 5 BEFORE dice are removed", () => {
-  const p = buildRollPlan({ approach: "savage", rating: 3, knack: true, helpers: 2, cattitudeDie: true, difficulty: 1 });
+test("roll plan: rating + Knack + help, capped at 5 BEFORE dice are removed (v0.9: no Cattitude die)", () => {
+  const p = buildRollPlan({ approach: "savage", rating: 4, knack: true, helpers: 2, difficulty: 1 });
   assert.equal(p.raw, 7);
   assert.equal(p.capped, 5);
   assert.equal(p.overCap, true);
   assert.equal(p.total, 4, "the cap bites first, so Difficulty still removes a die");
   assert.equal(p.dice, 4);
-  assert.equal(p.cattitudeCost, 1);
-  assert.deepEqual(p.add.map(a => a.key), ["rating", "knack", "help", "cattitude"]);
+  assert.deepEqual(p.add.map(a => a.key), ["rating", "knack", "help"]);
   assert.deepEqual(p.remove.map(a => a.key), ["difficulty"]);
+  const old = buildRollPlan({ approach: "savage", rating: 2, cattitudeDie: true });
+  assert.equal(old.total, 2, "a Cattitude die asked for is ignored");
+  assert.equal(old.cattitudeCost, undefined);
 });
 
 test("roll plan: help counts at most +2; Knack and the Chonky wriggle die are one extra die between them", () => {
@@ -45,7 +47,8 @@ test("roll plan: 0 or fewer dice → roll two and keep the lower", () => {
   assert.equal(p.dice, 2);
   assert.equal(buildRollPlan({ approach: "sneaky", rating: 2, difficulty: 2 }).zero, true, "exactly 0 is a zero pool");
   assert.throws(() => buildRollPlan({ approach: "fly", rating: 2 }));
-  assert.equal(poolSize({ rating: 4, knack: true, helpers: 2, cattitudeDie: true }), 5);
+  assert.equal(poolSize({ rating: 4, knack: true, helpers: 2 }), 5);
+  assert.equal(poolSize({ rating: 2, cattitudeDie: true }), 2, "v0.9: no Cattitude die");
 });
 
 test("reading the dice: the highest die; two 6s Purrfect; a zero pool keeps the lower, never above Scrape", () => {
@@ -69,6 +72,10 @@ test("Push: every die that isn't a 6 is rolled again", () => {
   assert.throws(() => applyPush([1, 2], [3]));
   assert.equal(canPush([6, 6]), false);
   assert.equal(canPush([6, 1]), true);
+  // v0.9: a Push on a zero-dice roll rerolls both dice
+  assert.deepEqual(pushIndices([6, 2], true), [0, 1]);
+  assert.deepEqual(applyPush([6, 2], [3, 5], true), [3, 5]);
+  assert.equal(canPush([6, 6], true), true);
 });
 
 test("Mood steps (Ch 5): seen Clean/Scrape 1 on the approach's meter, Sneaky Clean 0, Purrfect 0, Flop 2 on the fuller", () => {
@@ -94,6 +101,9 @@ test("Mood steps: a kid doubles Cuddle steps (once); a Push paid with the Mood a
   assert.deepEqual(moodDelta({ result: "flop", approach: "savage", seen: false, mood: { broom: 0, cuddle: 2 }, pushedWithMood: true }), { side: "cuddle", steps: 1 },
     "an unseen pushed Flop pays on the fuller meter");
   assert.deepEqual(moodDelta({ result: "scrape", approach: "sweet", seen: true, mood: m0, pushedWithMood: true }), { side: "cuddle", steps: 2 });
+  // v0.9: the step paid with the Mood always lands — even on a Purrfect — and a kid doesn't double it
+  assert.deepEqual(moodDelta({ result: "purrfect", approach: "sweet", seen: true, mood: m0, pushedWithMood: true, kidDoubles: true }), { side: "cuddle", steps: 1 });
+  assert.deepEqual(moodDelta({ result: "scrape", approach: "sweet", seen: true, mood: m0, pushedWithMood: true, kidDoubles: true }), { side: "cuddle", steps: 3 }, "2 (doubled) + 1 (not)");
 });
 
 test("holder's d6 (Ch 9): 1–3 keeps cuddling, 4–5 the Den, 6 outside", () => {
@@ -103,7 +113,9 @@ test("holder's d6 (Ch 9): 1–3 keeps cuddling, 4–5 the Den, 6 outside", () =>
 test("Knacks, meters, Cattitude and legal cats", () => {
   assert.equal(hasKnack(["curious", "climber"], ["climb"]), true);
   assert.equal(hasKnack(["curious", "climber"], ["food"]), false);
-  assert.deepEqual(knackInstincts(["hunter", "scrapper"], ["fight"]), ["hunter", "scrapper"], "two fit, still one die");
+  assert.deepEqual(knackInstincts(["curious", "knocker"], ["open", "knock"]), ["curious", "knocker"], "two fit, still one die");
+  assert.deepEqual(knackInstincts(["hunter", "scrapper"], ["fight"]), ["scrapper"], "v0.9: Hunter's Knack isn't fighting animals");
+  assert.equal(hasKnack(["hunter", "climber"], ["chase"]), true);
   assert.equal(fillsMeter("sweet"), "cuddle");
   assert.equal(fillsMeter("streetwise"), "broom");
   assert.equal(clampCattitude(7), 5);

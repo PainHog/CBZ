@@ -20,12 +20,19 @@ export function portionsFor(prize, gangSize) {
   return Math.max(1, Math.round((prize.perCat ?? 0) * gangSize + (prize.plus ?? 0)));
 }
 
-/** Ch 11 "Gang size": 3 cats — Patience +1, the prize 2 rounds later, 3 Cattitude each; 5 — Patience −1. */
-export function gangScaling(gangSize) {
+/**
+ * Ch 11 "Gang size": the houses are written for four cats (a gang of one or two
+ * plays as three). The general rule: 3 cats — Patience +1, the prize 2 rounds
+ * later, 3 Cattitude each; 5 — Patience −1. v0.9: a ready-to-run house prints
+ * its own three- and five-cat numbers (catalog `scale3` / `scale5`:
+ * [Patience, Clock]); those win. Only the Gone round (and Lights Out) moves.
+ * @returns {{patience:number, clock:number, cattitude:number, own:boolean}}
+ */
+export function gangScaling(gangSize, house = null) {
   const t = R.gangScaling;
-  if (gangSize <= 3) return t[3];
-  if (gangSize >= 5) return t[5];
-  return t[4];
+  if (gangSize <= 3) return house?.scale3 ? { patience: house.scale3[0], clock: house.scale3[1], cattitude: t[3].cattitude, own: true } : { ...t[3], own: false };
+  if (gangSize >= 5) return house?.scale5 ? { patience: house.scale5[0], clock: house.scale5[1], cattitude: t[5].cattitude, own: true } : { ...t[5], own: false };
+  return { ...t[4], own: false };
 }
 
 /** A fresh prize from a catalog house: it starts in the arms of the human who first puts it down. */
@@ -50,6 +57,8 @@ export function prizeGot(s) {
 }
 /** "get" while there's still a prize to get; "out" once it's got or gone. */
 export const prizePhase = s => (prizeGot(s) || s.prize?.gone ? "out" : "get");
+/** Ch 6 "Searching" (v0.9): the prize is still inside — not outside, not gone, not in a human's arms, and not all eaten. */
+export const prizeInside = s => { const z = s.prize; return !!z && !z.out && !z.gone && !z.withHuman && !!z.room && !prizeGot(s); };
 
 export const stepsDone = z => (z.spotSteps?.length ?? 0) - (z.stepsLeft ?? 0);
 
@@ -90,17 +99,26 @@ export function carryRule(size) {
 /**
  * The carriers let go. `putBack` (Shoo!/Scooped!): the human puts it back where
  * the Clock last put it, wrapped again if it was wrapped (Ch 5: its steps start
- * over). Otherwise (a carrier puts it down, gives in, or is chased by a dog) it
- * lies where it is.
+ * over; eaten portions stay eaten). Otherwise (a carrier puts it down, gives in,
+ * or is chased by a dog) it lies where it is — or in `room`, where the carriers
+ * end up (v0.9: a failed haul in a dog's room).
+ * v0.9 (Ch 8): a prize the gang was still holding when its Gone round came is
+ * gone as soon as they put it down. `ev` gets that event.
  */
-export function dropPrize(s, { putBack = false } = {}) {
+export function dropPrize(s, { putBack = false, room = null, ev = null } = {}) {
   const z = s.prize;
   if (!z?.carriers?.length) return false;
   for (const id of z.carriers) { const c = s.cats.find(x => x.id === id); if (c) c.carrying = false; }
   if (putBack && z.spotRoom) placePrize(z, z.spotRoom, z.spotSteps);
-  else { z.carriers = []; z.down = true; z.stepsLeft = 0; }
+  else { z.carriers = []; z.down = true; z.stepsLeft = 0; if (room && room !== "outside") z.room = room; }
+  if (!z.out && !z.gone && s.round >= (s.clock?.goneAt ?? z.goneAt ?? Infinity)) {
+    z.gone = true;
+    ev?.push({ type: "prizeGone", text: `It's past the ${z.name}'s Gone round, so once it's put down it's gone: ${goneText(z)}.` });
+  }
   return true;
 }
+
+const goneText = z => (z.kind === "delicious" ? "eaten" : z.kind === "box" ? "flattened for the recycling" : "put away");
 
 /**
  * Ch 6 / Ch 8 "Where it goes" (v0.8): the Prize Clock acts at the start of its
@@ -146,7 +164,7 @@ export function prizeClock(s) {
   }
   if (s.round >= s.clock.goneAt && !z.carriers.length && !z.out) {
     z.gone = true;
-    events.push({ type: "prizeGone", text: `The ${z.name} is gone: ${z.kind === "delicious" ? "eaten" : z.kind === "box" ? "flattened for the recycling" : "put away"}.` });
+    events.push({ type: "prizeGone", text: `The ${z.name} is gone: ${goneText(z)}.` });
   }
   return { events, mood };
 }

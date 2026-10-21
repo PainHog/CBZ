@@ -58,7 +58,7 @@ export async function startRobbery(houseRef, { actorIds = null } = {}) {
   await postEventCard({ kind: CARD.robbery, robberyId: state.id, houseKey: house.key }, {
     title: house.name, subtitle: `${({ easy: "Easy", standard: "Standard", hard: "Hard" })[house.label] ?? house.label} · ${actors.length} cats`,
     lines: [
-      `Patience ${state.patience0}. Every cat starts with ${state.cattitudeStart} Cattitude.`,
+      `Patience ${state.patience0}${state.ownScaling ? ` (this house's own number for ${state.gangSize <= 3 ? "three" : "five"} cats)` : ""}. Every cat starts with ${state.cattitudeStart} Cattitude${state.repBonus ? ` (the gang's Rep ${state.rep}: +${state.repBonus})` : ""}.`,
       `The ${house.prize.name} (${house.prize.size}${state.prize.portions ? `, ${state.prize.portions} portions` : ""}) is gone at the start of round ${state.clock.goneAt}; Lights Out at the end of round ${state.clock.lightsOut}.`,
       `Who lives here: ${who}.`,
       `Ways in: ${house.entrances.map(e => e.name).join("; ")}.`,
@@ -73,7 +73,7 @@ export async function beginRound() {
   requireGM();
   await finalizePending();
   const auto = automation();
-  const res = await mutate(s => Round.beginRound(s, { prizeClock: auto.prizeClock, mood: auto.mood }));
+  const res = await mutate(s => Round.beginRound(s, { prizeClock: auto.prizeClock, mood: auto.mood, d6: auto.d6 }));
   const s = res.state;
   await postEventCard({ kind: CARD.round, robberyId: s.id, round: s.round }, { title: `Round ${s.round}`, lines: lines(res.events), meters: metersOf(s) });
   Hooks.callAll(HOOKS.roundBegan, s);
@@ -173,7 +173,7 @@ function outcomeView(s, o, escaped) {
       o.prizeGot ? `The gang got the ${s.prize.name}.` : o.halfEaten ? `At least half the ${s.prize.name} was eaten (${o.eaten} of ${o.portions}).` : `No ${s.prize.name}.`,
       left.length ? `Left behind, and adopted: ${left.map(c => c.name).join(", ")}.` : "Nobody was left behind.",
       ...left.filter(c => escaped.includes(c.id)).map(c => `${c.name} spends a Life and slips out of a window in the night.`),
-      o.result === "clean" ? "Campaign: the gang gets 1 Rep for a Clean Getaway." : ""
+      o.result === "clean" ? "Campaign: the gang gets 1 Rep for a Clean Getaway (at 3, 6 and 9 Rep every cat starts each robbery with 1 more Cattitude)." : ""
     ],
     meters: metersOf(s)
   };
@@ -188,8 +188,9 @@ export async function clearRobbery() {
 /* ------------------------------------------ the Storyteller's overrides -- */
 
 const gmMutate = fn => { requireGM(); return mutate(fn).then(async res => { await postMoodCards(res?.events ?? [], res?.state); return res; }); };
-// v0.8: a change by hand also lets a waiting meter go off (a human with free hands who can see a cat acts at once)
-const moodMode = () => ({ mood: automation().mood });
+// v0.8: a change by hand also lets a waiting meter go off (a human with free hands who can see a cat acts at once);
+// v0.9: a tie between humans is settled by Attention, then a die
+const moodMode = () => ({ mood: automation().mood, d6: automation().d6 });
 export const overrides = {
   moodAdjust: (side, steps) => gmMutate(s => Round.manualMood(s, side, steps, moodMode())),
   moodUndo: () => gmMutate(s => Round.undoMood(s)),
@@ -202,7 +203,7 @@ export const overrides = {
   /** The Storyteller picks the cat a full meter falls on (a meter filled with no roll, or one that was waiting). */
   pickTarget: catId => gmMutate(s => Round.resolvePendingTrigger(s, catId, moodMode())),
   /** The Storyteller does a cat's option by hand, even when it's normally refused. */
-  force: (catId, optionId, args = {}) => gmMutate(s => doAction(s, catId, optionId, { ...args, force: true }, { mood: automation().mood }))
+  force: (catId, optionId, args = {}) => gmMutate(s => doAction(s, catId, optionId, { ...args, force: true }, moodMode()))
 };
 
 /* --------------------------------------------------------------- players -- */
@@ -236,7 +237,7 @@ export function registerRobberyOps() {
     check: catCheck,
     apply: async ({ catId, optionId, helpers, force }, user) => {
       await finalizePending({ catId });
-      const res = await mutate(s => doAction(s, catId, optionId, { helpers, force: !!(user?.isGM && force) }, { mood: automation().mood }));
+      const res = await mutate(s => doAction(s, catId, optionId, { helpers, force: !!(user?.isGM && force) }, moodMode()));
       await postMoodCards(res.events, res.state);
       return { events: lines(res.events), done: res.ok !== false };
     }
@@ -260,7 +261,7 @@ export function registerRobberyOps() {
     apply: async ({ catId, choice, human }) => {
       const actor = game.actors.get(catId);
       const cattitude = setting(SETTINGS.autoCattitude) ? Number(actor.system.cattitude ?? 0) : 1;
-      const res = await mutate(s => Round.answerTemptation(s, { choice, cattitude, human }, { mood: automation().mood }));
+      const res = await mutate(s => Round.answerTemptation(s, { choice, cattitude, human }, moodMode()));
       await applyCattitude(res.cattitude);
       const final = res.state.temptation.choice;
       for (const m of game.messages.filter(x => { const c = cardOf(x); return c?.kind === CARD.temptation && c.robberyId === res.state.id && c.round === res.state.round && c.catId === catId && !c.answered; })) {

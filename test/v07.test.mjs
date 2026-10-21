@@ -94,11 +94,10 @@ test("a cat that ends its turn in an awake dog's room without dealing with it is
   r = endRound(r.state, { d6: dice(1, 1, 1) });
   assert.equal(cat(r.state, "velvet").where, "kitchen");
   assert.equal(cat(r.state, "tilly").where, "kitchen", "slipped past this turn");
-  // a Scrapper squaring up isn't dealing with it
+  // v0.9: a Scrapper that has to deal with the dog this turn can't be tempted by it (so squaring up never replaces dealing with it)
   s = dog(base({ cats: { biscuit: { where: "kitchen", status: "free", cameFrom: "hall" } } }));
   s.rooms.kitchen.tempt = [];
-  s = tempt(s, { catId: "biscuit", instinct: "scrapper" }).state;
-  s = answerTemptation(s, { choice: "gaveIn" }).state;
+  assert.throws(() => tempt(s, { catId: "biscuit", instinct: "scrapper" }), /can't be tempted/);
   r = endRound(s, { d6: dice(1, 1, 1) });
   assert.equal(cat(r.state, "biscuit").where, "hall");
 });
@@ -115,7 +114,7 @@ test("hauling (v0.7): a Knocker's Knack, its noise in the room it ends up in, an
   r = roll(s, "velvet", "move:hall", "savage", "flop", { helpers: ["tilly"] });
   assert.ok(["velvet", "tilly"].every(id => cat(r.state, id).where === "hall"), "a failed haul there: chased back");
   assert.equal(r.state.prize.carriers.length, 0, "…and the prize dropped");
-  assert.equal(r.state.prize.room, "kitchen");
+  assert.equal(r.state.prize.room, "hall", "v0.9: where they end up");
 });
 
 test("the holder's 6: out through the nearest entrance, which stays open; pets pass closed doors", () => {

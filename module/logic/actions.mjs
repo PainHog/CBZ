@@ -16,7 +16,7 @@
  */
 import { CATB } from "../config.mjs";
 import { works, makesNoise, hasKnack, knackInstincts, attentionApplies } from "./rules.mjs";
-import { waysFrom, fits, wayBetween } from "./map.mjs";
+import { waysFrom, fits, wayBetween, isDoorEntrance } from "./map.mjs";
 import {
   watchers, catById, humanByKey, petByKey, roomName, hostilePet, highestAttention, kidAmong, addNoise
 } from "./residents.mjs";
@@ -63,14 +63,16 @@ export function catOptions(state, catId) {
     for (const e of s.entrances) {
       const roll = e.opts.length ? { options: e.opts } : null;
       const uses = roll ? ["move", "action"] : ["move"];
-      // v0.8 (REVIEW #88): a cat can't go out and come back in on the same turn
+      // v0.8 (REVIEW #88): a cat can't go out and come back in on the same turn (a shooed cat: next round at the earliest)
+      // v0.9 (Ch 8): the front door lets one cat a round through, in each round it works; a failed try uses that round's chance
       const why = c.outSerial === s.roundSerial ? "it went out this turn: back in next round"
         : !e.open ? "it's shut" : (e.rounds && !e.rounds.includes(s.round)) ? `only in round ${e.rounds.join(" or ")}`
+        : (e.one && e.usedRound === s.round) ? "one cat a round: it has been tried this round"
         : !fits(e.size, { body: c.body }) ? "too tight for a Chonky cat" : null;
+      // v0.9 (Ch 11): cats outside can't help one coming in — a helper is in the same room, and outside isn't a room
       opt({ id: `enter:${e.key}`, kind: "enter", label: `In through the ${e.name}`, target: e.key, room: e.room, uses, roll,
-        group: !!roll && !e.one, disabled: why ?? need(uses, roll) });
+        group: false, disabled: why ?? need(uses, roll) });
     }
-    out.helpTargets = helpTargetsFor(s, c);
     opt({ id: "free", kind: "free", label: "Something else (a free roll)", uses: ["action"], roll: { options: anyApproach(0) }, disabled: need(["action"], true) });
     return out;
   }
@@ -146,7 +148,9 @@ export function catOptions(state, catId) {
       : (group.some(x => x.moved && x.acted) ? "no Move or Action left" : null);
     opt({ id: `exit:${e.key}`, kind: "exit", label: `Out through the ${e.name}${carry ? ` with the ${z.name}` : ""}${!roll && uses[0] === "action" ? " (as your Action)" : ""}`, target: e.key, uses, roll,
       group: true, disabled: why ?? ((t || s.pendingTrigger) ? need(uses, roll) : (turnOpen(s) ? null : need(uses, roll))) });
-    if (e.letOut) {
+    // v0.9 (Ch 8): meow at any entrance that is a door (the front door in any round, a back, patio or garage
+    // door, a door with a cat flap) where a human is — offered where walking out isn't free (shut, a roll, or a front door)
+    if (isDoorEntrance(e) && (e.letOut || !e.open || e.opts.length || e.rounds)) {
       act({ id: `meow:${e.key}`, kind: "meow", label: `Meow at the ${e.name} to be let out`, target: e.key, uses: ["move", "action"],
         roll: { options: [["sweet", 0, "charm"]] }, allowBlocked: true,
         disabled: c.carrying ? "a cat with its mouth full can't be Sweet" : !ws.length ? "nobody there to let you out" : null });
@@ -179,8 +183,9 @@ export function catOptions(state, catId) {
     // v0.8 (REVIEW #82): nobody can pick it up or eat it until every step of its spot is done (`down`)
     if (z.down && !z.carriers.length && !c.carrying) {
       act({ id: "take", kind: "take", label: `Pick up the ${z.name} (${z.size}: ${carryRule(z.size)})`, group: true }, { simple: true });
-      // v0.7: eating a portion is always a roll, seen or not (Sneaky quietly, Savage wolfing it; a Foodie's Knack either way)
-      if (z.kind === "delicious" && z.portionsLeft > 0) act({ id: "eat", kind: "eat", label: `Eat a portion (${z.portionsLeft} left)`, roll: { options: SIMPLE_IN_VIEW(["food"]) } });
+      // v0.7: eating a portion is always a roll, seen or not (Sneaky quietly, Savage wolfing it; a Foodie's Knack either way);
+      // v0.9: plain unless the house says otherwise (a prize's `eatDiff`)
+      if (z.kind === "delicious" && z.portionsLeft > 0) act({ id: "eat", kind: "eat", label: `Eat a portion (${z.portionsLeft} left)`, roll: { options: [["sneaky", z.eatDiff ?? 0, "food"], ["savage", z.eatDiff ?? 0, "food"]] } });
     }
   } else if (z?.withHuman && z.room === room) {
     out.notes = [`The ${z.name} is still in ${humanByKey(s, z.withHuman)?.name ?? "the human"}'s arms.`];
@@ -203,20 +208,28 @@ export function catOptions(state, catId) {
 
 const anyApproach = d => CATB.approachKeys.map(a => [a, d]);
 
-/** The gang mates this cat could help this round (same room — or both outside — and they haven't acted). */
+/**
+ * The gang mates this cat could help this round: free cats in the same room —
+ * and a held cat there, to wriggle free (v0.9, Ch 9) — if it hasn't acted.
+ * Cats outside can't help (v0.9, Ch 11: outside isn't a room).
+ */
 export function helpTargetsFor(s, c) {
-  if (!c || c.acted || !(c.status === "free" || c.status === "outside")) return [];
-  return s.cats.filter(x => x.id !== c.id && x.status === c.status && x.where === c.where).map(x => ({ id: x.id, name: x.name, queued: s.help?.[c.id] === x.id }));
+  if (!c || c.acted || c.status !== "free") return [];
+  return s.cats.filter(x => x.id !== c.id && (x.status === "free" || x.status === "held") && x.where === c.where)
+    .map(x => ({ id: x.id, name: x.name, queued: s.help?.[c.id] === x.id }));
 }
 
 /**
- * Cats who could help this cat's roll now: same place, not acted (for enter/exit
- * groups also not moved). A haul (v0.8, REVIEW #80): the other carriers (it's
- * their Action anyway), then any other free cat in the room that hasn't acted —
- * it helps (+1 die, its Action) but stays behind: only the carriers move.
+ * Cats who could help this cat's roll now: free cats in the same room that
+ * haven't acted (for exit groups also not moved). Nobody helps from outside
+ * (v0.9, Ch 11); a held cat's wriggle can be helped by the free cats in its
+ * room (v0.9, Ch 9). A haul (v0.8, REVIEW #80): the other carriers are the
+ * helpers (it's their Action anyway), then any other free cat in the room that
+ * hasn't acted — it helps (+1 die, its Action; still +2 at most) but stays
+ * behind: only the carriers move.
  */
 export function eligibleHelpers(s, c, option = null) {
-  if (!c) return [];
+  if (!c || !(c.status === "free" || c.status === "held")) return [];
   // Ch 10: a cat a dog (or house cat) is stopping deals with it before doing anything else — it can help only that roll
   const free = x => {
     const p = x.status === "free" ? hostilePet(s, x.where, x) : null;
@@ -227,8 +240,7 @@ export function eligibleHelpers(s, c, option = null) {
     const others = s.cats.filter(x => x.id !== c.id && x.status === "free" && x.where === c.where && !x.acted && !s.prize.carriers.includes(x.id) && free(x));
     return [...carriers, ...others];
   }
-  return s.cats.filter(x => x.id !== c.id && x.status === c.status && x.where === c.where && !x.acted
-    && (c.status === "free" || c.status === "outside") && free(x)
+  return s.cats.filter(x => x.id !== c.id && x.status === "free" && x.where === c.where && !x.acted && free(x)
     && !(option?.group && ["enter", "exit"].includes(option.kind) && x.moved));
 }
 
@@ -306,7 +318,7 @@ export function doAction(state, catId, optionId, args = {}, ctx = {}) {
   if (o.roll && !args.force) throw new Error(`${o.label}: that needs a roll.`);
   const res = perform(s, c, o, { ...args, result: null, helpers: args.helpers ?? queuedHelpers(s, c) }, ev, ctx);
   for (const id of res.ok ? (args.helpers ?? queuedHelpers(s, c)) : []) delete s.help?.[id];
-  look(s, ev, ctx.mood ?? "auto");
+  look(s, ev, ctx.mood ?? "auto", ctx.d6);
   pushLog(s, ev);
   return { state: s, events: ev, ok: res.ok, cattitude: [] };
 }
@@ -321,7 +333,7 @@ function queuedHelpers(s, c) {
  * the roll's noise, helpers' Actions, hiding, then the Mood (one roll, one
  * change). Idempotent: a card applies once (its eventId is remembered).
  * card: { eventId, catId, optionId, approach, result, seen, seenBy, kid, pushedWithMood, helpers, label, quiet }
- * ctx: { mood: "auto"|"confirm"|"manual", effects: bool }
+ * ctx: { mood: "auto"|"confirm"|"manual", effects: bool, d6: a die for ties between humans (optional) }
  */
 export function applyRoll(state, card, ctx = {}) {
   if (isApplied(state, card.eventId)) return { state, events: [], cattitude: [], skipped: true };
@@ -329,10 +341,11 @@ export function applyRoll(state, card, ctx = {}) {
   const ev = [];
   const cattitude = [];
   const c = catById(s, card.catId);
+  const d6 = ctx.d6 ?? null;
   markApplied(s, card.eventId);
   if (!c) {
-    if (ctx.mood !== "manual") addMood(s, rollEntry(card, { round: s.round }), ev, ctx.mood ?? "auto");
-    look(s, ev, ctx.mood ?? "auto");
+    if (ctx.mood !== "manual") addMood(s, rollEntry(card, { round: s.round }), ev, ctx.mood ?? "auto", { d6 });
+    look(s, ev, ctx.mood ?? "auto", d6);
     pushLog(s, ev);
     return { state: s, events: ev, cattitude };
   }
@@ -355,6 +368,8 @@ export function applyRoll(state, card, ctx = {}) {
   // helpers spend their Actions
   for (const id of card.helpers ?? []) { const h = catById(s, id); if (h) { h.acted = true; delete s.help[id]; } }
   const entry = rollEntry({ ...card, catName: c.name }, { round: s.round });
+  // v0.9 (Ch 5): a Distract that fills Cuddle — the human it was aimed at picks the cat up, and isn't Distracted
+  if (o?.kind === "distract") entry.prefer = o.target;
   if (o && ctx.effects !== false && ok && MOVING.has(o.kind) && wouldTrigger(s, entry, ctx)) {
     // Ch 5 (v0.6): a roll that fills a meter still does what it did, but the Shoo! or Scoop happens
     // before the cat goes anywhere (a carrier drops the prize; the human puts it back)
@@ -362,12 +377,14 @@ export function applyRoll(state, card, ctx = {}) {
     for (const x of group) { x.acted = true; }
     ev.push({ type: "stopped", cat: c.id, text: `…but before ${c.name} goes anywhere:` });
     if (makesNoise(card.result) && !card.quiet && room) addNoise(s, room, `${c.name}'s ${card.result}`, c.id);
-    addMood(s, entry, ev, ctx.mood ?? "auto");
-    look(s, ev, ctx.mood ?? "auto");
+    addMood(s, entry, ev, ctx.mood ?? "auto", { d6 });
+    look(s, ev, ctx.mood ?? "auto", d6);
     pushLog(s, ev);
     return { state: s, events: ev, cattitude: card.result === "purrfect" ? [{ catId: c.id, delta: +1, why: "a Purrfect" }] : [], ok };
   }
   const performed = !!o && ctx.effects !== false;
+  const target = o?.kind === "distract" ? humanByKey(s, o.target) : null;
+  const before = target ? { distractedRound: target.distractedRound, distractions: target.distractions } : null;
   if (performed) {
     perform(s, c, o, { result: card.result, approach: card.approach, helpers: card.helpers ?? [] }, ev, ctx);
   } else {
@@ -379,8 +396,14 @@ export function applyRoll(state, card, ctx = {}) {
   const noiseRoom = o?.kind === "carry" && ok && s.prize.room === o.target ? o.target : room;
   if (makesNoise(card.result) && !card.quiet && noiseRoom && !(performed && o.kind === "noise")) addNoise(s, noiseRoom, `${c.name}'s ${card.result}`, c.id);
   if (card.result === "purrfect") cattitude.push({ catId: c.id, delta: +1, why: "a Purrfect" });
-  addMood(s, entry, ev, ctx.mood ?? "auto");
-  look(s, ev, ctx.mood ?? "auto");
+  const at = ev.length;
+  addMood(s, entry, ev, ctx.mood ?? "auto", { d6 });
+  if (performed && target && ok && ev.slice(at).some(e => e.type === "scooped" && e.cat === c.id)) {
+    // the Scoop wins: the distraction doesn't happen (and isn't counted)
+    Object.assign(target, before);
+    ev.push({ type: "distractScooped", human: target.key, text: `The Scoop wins: ${target.name} picks ${c.name} up instead, and isn't Distracted.` });
+  }
+  look(s, ev, ctx.mood ?? "auto", d6);
   pushLog(s, ev);
   return { state: s, events: ev, cattitude, ok };
 }
@@ -416,7 +439,8 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
     case "carry": {
       const group = z.carriers.map(id => catById(s, id)).filter(Boolean);
       for (const x of group) { if (o.roll) x.acted = true; }
-      if (!ok) { ev.push({ type: "carryFailed", text: `The ${z.name} doesn't budge.` }); failedHaulChase(s, group, ev); break; }
+      if (!ok) { ev.push({ type: "carryFailed", text: `The ${z.name} doesn't budge.` }); failedHaulChase(s, group, ev, c); break; }
+      // a haul into an awake dog's room used the carriers' Actions: they stay and deal with it first thing next turn (arrivedSpent)
       for (const x of group) Object.assign(x, { cameFrom: x.where, where: o.target, moved: true, hidden: false, riding: null, arrivedSpent: o.roll ? s.roundSerial : x.arrivedSpent });
       z.room = o.target;
       ev.push({ type: "carry", to: o.target, text: `${group.map(x => x.name).join(" and ")} carry the ${z.name} to the ${low(roomName(s, o.target))}.` });
@@ -424,9 +448,10 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
     }
     case "enter": {
       const e = s.entrances.find(x => x.key === o.target);
-      const group = [c, ...(o.group ? helpCats.filter(x => x.status === "outside") : [])];
+      const group = [c]; // v0.9 (Ch 11): nobody helps from outside
       for (const x of group) mark(x);
-      if (e.one) e.open = false; // Ch 8: the front door lets in one cat, then it shuts
+      // Ch 8 (v0.9): the front door lets one cat through each round it works; a failed try uses that round's chance
+      if (e.one) e.usedRound = s.round;
       if (!ok) { ev.push({ type: "enterFailed", cat: c.id, text: `${c.name} doesn't get in through the ${e.name}.` }); break; }
       if (e.jam && o.roll) { e.opts = []; ev.push({ type: "jammed", text: `The ${e.name} is jammed open now: no roll for anyone.` }); }
       for (const x of group) Object.assign(x, { where: e.room, status: "free", hidden: false, cameFrom: "outside", enteredSerial: s.roundSerial, enteredBy: e.key, arrivedSpent: o.roll ? s.roundSerial : null });
@@ -442,7 +467,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       else for (const x of group) { if (!x.moved) x.moved = true; else x.acted = true; } // the Move, or else the Action
       if (!ok) {
         ev.push({ type: "exitFailed", cat: c.id, text: `${c.name} doesn't get out through the ${e.name}.` });
-        if (c.carrying) failedHaulChase(s, group, ev);
+        if (c.carrying) failedHaulChase(s, group, ev, c);
         break;
       }
       const withPrize = c.carrying;
@@ -505,8 +530,8 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
     case "drop": {
       mark(c);
       if (!ok) break;
-      dropPrize(s);
       ev.push({ type: "dropped", text: `${c.name} puts the ${z.name} down in the ${low(roomName(s, c.where))}.` });
+      dropPrize(s, { ev });
       break;
     }
     case "hide": {
@@ -585,12 +610,19 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
   return { ok };
 }
 
-/** v0.7: hauling out of an awake dog's room is leaving it; a haul that fails there is chased back and drops the prize. MUTATES s. */
-function failedHaulChase(s, group, ev) {
+/**
+ * v0.7, v0.9 (Ch 8): hauling out of an awake dog's room counts as leaving it
+ * (the dog takes no dice off the haul); a haul that fails there: the dog chases
+ * the carriers back the way they came, and they drop the prize where they end
+ * up (the leader's room). MUTATES s.
+ */
+function failedHaulChase(s, group, ev, leader = group[0]) {
   const room = group[0]?.where;
   const p = room ? hostilePet(s, room) : null;
   if (!p) return;
-  for (const x of group) if (x.status === "free" && x.where === room) chaseBack(s, x, p, ev);
+  const lead = group.includes(leader) ? leader : group[0];
+  if (lead.status === "free" && lead.where === room) chaseBack(s, lead, p, ev, { dropWhereTheyEnd: true });
+  for (const x of group) if (x !== lead && x.status === "free" && x.where === room) chaseBack(s, x, p, ev);
 }
 
 function freeShutCats(s, ev) {
@@ -612,7 +644,9 @@ export function queueHelp(state, helperId, targetId) {
   if (!t || t.id === h.id) throw new Error("Help whom?");
   if (!turnOpen(s)) throw new Error("Wait for the round to begin.");
   if (h.acted) throw new Error(`${h.name} has already acted this round.`);
-  if (!(h.status === t.status && h.where === t.where && (h.status === "free" || h.status === "outside"))) throw new Error(`${h.name} must be with ${t.name} to help.`);
+  // v0.9: a helper is in the same room (outside isn't one, Ch 11); a held cat's wriggle can be helped (Ch 9)
+  if (h.status === "outside") throw new Error(`${h.name} is outside: a helper must be in the same room (outside isn't a room).`);
+  if (!(h.status === "free" && (t.status === "free" || t.status === "held") && h.where === t.where)) throw new Error(`${h.name} must be with ${t.name} to help.`);
   s.help[helperId] = targetId;
   const ev = [{ type: "help", text: `${h.name} will help ${t.name}.` }];
   pushLog(s, ev);

@@ -55,7 +55,7 @@ function humanView(s, h, isGM) {
   if (h.holding) badges.push(`Holding ${s.cats.find(c => c.id === h.holding)?.name ?? "a cat"}`);
   if (h.searching) badges.push("Searching");
   if (h.staysRound === s.round) badges.push("Stays with the prize: answers no noise this round");
-  if (h.shooRound === s.round && h.staysRound !== s.round) badges.push("Stays here this round (shut the entrance)");
+  if (h.shooRound === s.round && h.staysRound !== s.round) badges.push("Stays by the entrance they shooed a cat out of: answers no noise this round");
   if (s.pendingTrigger?.human === h.key) badges.push(`About to ${s.pendingTrigger.side === "broom" ? "chase a cat out" : "pick a cat up"}: the Storyteller's pick`);
   for (const t of h.traits ?? []) badges.push({ kid: "Kid", dozes: "Dozes", busy: "Busy", headphones: "Headphones" }[t] ?? t);
   return {
@@ -71,7 +71,7 @@ function petView(s, p, isGM) {
   if (p.soft) bits.push("soft");
   let mode = CATB.petModes[p.mode] ?? p.mode;
   if (p.mode === "hiding") mode = `${mode} (back at the end of round ${p.until})`;
-  // v0.8: a parrot that saw an unhidden cat at any time this round squawks in the Pets step
+  // v0.8: a parrot that saw an unhidden cat (v0.9: or a held one) at any time this round squawks in the Pets step
   if (p.kind === "parrot" && p.mode !== "covered" && p.sawRound === s.round && s.stage !== "between") mode = `${mode} · saw a cat this round: squawks in the Pets step`;
   return {
     key: p.key, name: p.name, info: bits.join(", "), mode,
@@ -122,7 +122,7 @@ export function trackerView(state, { isGM = false, canControl = () => false, hou
         pets: s.pets.filter(p => p.room === key && p.mode !== "hiding").map(p => petView(s, p, isGM)),
         cats, hasCats: cats.length > 0,
         entrances: s.entrances.filter(e => e.room === key).map(e => ({ key: e.key, name: e.name, open: e.open,
-          text: `${e.name}: ${e.size}${e.climb ? ", a climb (Small things only)" : ""}${e.opts.length ? `, ${optionsText(e.opts)}` : ", no roll"}${e.rounds ? `, round ${e.rounds.join(" or ")} only` : ""}${e.noisy ? ", noisy" : ""}${e.open ? "" : " — SHUT"}` }))
+          text: `${e.name}: ${e.size}${e.climb ? ", a climb (Small things only)" : ""}${e.opts.length ? `, ${optionsText(e.opts)}` : ", no roll"}${e.rounds ? `, round ${e.rounds.join(" or ")} only, one cat a round` : ""}${e.noisy ? ", noisy" : ""}${e.one && e.usedRound === s.round ? " — tried this round" : ""}${e.open ? "" : " — SHUT"}` }))
       };
     })
   }));

@@ -77,8 +77,6 @@ function freeContext(actor) {
 /** Step 2: the roll dialog. Resolves to the player's choices or null. */
 async function rollDialog(actor, ctx, approach) {
   const autoSeen = setting(SETTINGS.autoSeen);
-  const autoCattitude = setting(SETTINGS.autoCattitude);
-  const cattitude = Number(actor.system.cattitude ?? 0);
   const best = ctx.options.find(o => o.approach === approach) ?? [...ctx.options].sort((a, b) => b.rating - a.rating)[0];
   const seenDefault = autoSeen ? ctx.seenBy.length > 0 : false;
   const queued = ctx.helpers.filter(h => h.queued).length;
@@ -102,7 +100,6 @@ async function rollDialog(actor, ctx, approach) {
       ...[0, 1, 2].map(d => ({ value: String(d), label: CATB.difficulties[d], selected: false }))],
     knacks: [{ value: "auto", label: knackAutoText(ctx), selected: true }, { value: "yes", label: "Yes: an instinct suits it", selected: false }, { value: "no", label: "No", selected: false }],
     helpers: ctx.helpers.map(h => ({ ...h, locked: h.locked ?? ctx.autoHelpers })),
-    canCattitude: cattitude > 0 || !autoCattitude, cattitude,
     bodyDie: ctx.bodyDie, opposition: ctx.opposition,
     seenChoices: [{ value: "auto", label: autoSeen ? (ctx.seenBy.length ? `As the house is: seen by ${ctx.seenNames.join(", ")}` : "As the house is: nobody sees") : "Not seen (fill in by hand)", selected: true },
       { value: "seen", label: "Seen", selected: false }, { value: "unseen", label: "Not seen", selected: false }],
@@ -139,7 +136,6 @@ export function readRollForm(form, ctx) {
     difficulty: val("difficulty", "auto"),
     knack: val("knack", "auto"),
     helpers,
-    cattitudeDie: on("cattitudeDie"),
     opposition: Number(val("opposition", ctx.opposition)) || 0,
     seen: val("seen", "auto"),
     attention: Number(val("attention", ctx.attention)) || 0
@@ -157,13 +153,9 @@ export async function makeRoll(actor, ctx, answer, state) {
   const difficulty = answer.difficulty === "auto" ? o.difficulty : Number(answer.difficulty) || 0;
   const knack = answer.knack === "auto" ? o.knack : answer.knack === "yes";
   const attention = seen && attentionApplies(approach) ? answer.attention : 0;
-  const cattitude = Number(actor.system.cattitude ?? 0);
-  const autoCattitude = setting(SETTINGS.autoCattitude);
-  let cattitudeDie = !!answer.cattitudeDie;
-  if (cattitudeDie && autoCattitude && cattitude < 1) { ui.notifications?.warn(`${actor.name} has no Cattitude to spend.`); cattitudeDie = false; }
+  // v0.9 (Ch 4): Cattitude no longer buys a die — it pays for a Push or resisting a temptation
   const plan = buildRollPlan({ approach, rating: Number(actor.system.approaches?.[approach] ?? o.rating), knack, bodyDie: ctx.bodyDie,
-    helpers: answer.helpers.length, cattitudeDie, difficulty, opposition: answer.opposition, attention });
-  if (cattitudeDie && autoCattitude) await actor.update({ "system.cattitude": clampCattitude(cattitude - 1) });
+    helpers: answer.helpers.length, difficulty, opposition: answer.opposition, attention });
   const roll = await new Roll(`${plan.dice}d6`).evaluate();
   const faces = roll.dice[0].results.map(r => r.result);
   const result = readDice(faces, plan.zero);
@@ -176,7 +168,7 @@ export async function makeRoll(actor, ctx, answer, state) {
     pushes: [], pushed: false, pushedWithMood: false,
     seen, seenBy, seenNames: seenBy.map(k => humanByKey(state ?? { humans: [] }, k)?.name ?? k), kid, attention,
     helpers: answer.helpers, helperNames: answer.helpers.map(h => ctx.helpers.find(x => x.id === h)?.name ?? h),
-    cattitudeSpent: cattitudeDie ? 1 : 0, status: "pending", applied: false, appliedText: [], quiet: false
+    cattitudeSpent: 0, status: "pending", applied: false, appliedText: [], quiet: false
   };
   const content = await renderRollCard(card);
   return ChatMessage.create({ _id: id, content, speaker: ChatMessage.getSpeaker({ actor }), rolls: [roll], flags: { [FLAG]: { card } } }, { keepId: true });
@@ -227,12 +219,16 @@ export async function updateRollCard(message, patch) {
 
 /* ------------------------------------------------------------- buttons -- */
 
-/** Ch 4 "Push your luck": once per roll, reroll every die that isn't a 6. Pay 1 Cattitude or 1 Mood step. */
+/**
+ * Ch 4 "Push your luck": once per roll, reroll every die that isn't a 6 (a
+ * zero-dice roll rerolls both, v0.9). Pay 1 Cattitude or 1 Mood step — a step
+ * paid with the Mood always lands, even on a Purrfect, and a kid doesn't double it.
+ */
 export async function push(message, how) {
   const card = cardOf(message);
   if (!card || card.kind !== CARD.roll) throw new Error("Not a roll card.");
   if (card.status !== "pending" || card.pushed) throw new Error("This roll can't be pushed any more.");
-  if (!canPush(card.faces)) throw new Error("Every die is already a 6.");
+  if (!canPush(card.faces, card.zero)) throw new Error("Every die is already a 6.");
   const actor = actorOf(card);
   if (how === "cattitude") {
     const c = Number(actor?.system.cattitude ?? 0);
@@ -241,9 +237,9 @@ export async function push(message, how) {
       await actor.update({ "system.cattitude": clampCattitude(c - 1) });
     }
   }
-  const idx = pushIndices(card.faces);
+  const idx = pushIndices(card.faces, card.zero);
   const roll = await new Roll(`${idx.length}d6`).evaluate();
-  const faces = applyPush(card.faces, roll.dice[0].results.map(r => r.result));
+  const faces = applyPush(card.faces, roll.dice[0].results.map(r => r.result), card.zero);
   const result = readDice(faces, card.zero);
   game.dice3d?.showForRoll?.(roll, game.user, true);
   return updateRollCard(message, {
@@ -292,7 +288,7 @@ function rollButtons(message, card, box) {
   // the player who rolled (or any non-GM owner of the cat); a GM who rolled for a cat counts as its player
   const owner = card.userId === game.user.id || (!!actor?.isOwner && !game.user.isGM);
   if (card.status === "pending" && !card.pushed) {
-    if (owner && canPush(card.faces)) {
+    if (owner && canPush(card.faces, card.zero)) {
       const c = Number(actor?.system.cattitude ?? 0);
       if (c > 0 || !setting(SETTINGS.autoCattitude)) box.appendChild(button("Push (1 Cattitude)", () => push(message, "cattitude"), { cls: "catb-push" }));
       if (card.robberyId) box.appendChild(button("Push (+1 Mood)", () => push(message, "mood"), { cls: "catb-push" }));

@@ -16,9 +16,13 @@
  *
  * Entry kinds:
  *   roll       { approach, result, seen, kid, pushedWithMood }      → moodDelta
- *   step       { side, steps, candidates? }   temptation / mess / discovery / spotted / owner finds it gone / manual
- *   trigger    { side, target }  Shoo! or Scooped!: that meter empties, Patience −1 (min 2)
+ *   step       { side, steps, candidates?, noFill? }   temptation / mess / discovery / spotted / owner finds it gone / manual
+ *              (noFill, v0.9: a give-in's step never fills a meter — it stops one short)
+ *   trigger    { side, target }  Shoo! or Scooped!: that meter empties, Patience −1 (min 2), and the
+ *              other meter drops to one below the new Patience if it's at or above it (v0.9)
  *   set        { broom?, cuddle?, patience? }  the GM sets a value outright
+ * A meter never goes past full: steps beyond it are lost (v0.9), and so are steps on a
+ * full meter that is waiting for a human with free hands.
  * Every entry: { id, eventId, seq, round, kind, cause, catId?, seenBy?, pending?, rejected? }.
  * `pending` entries (autoMood "confirm") wait for the GM's click and don't count yet.
  */
@@ -46,8 +50,10 @@ export function liveEntries(ledger = []) {
 
 /**
  * Replay the ledger.
+ * `resolved[id].steps` is what the entry asked for; `.applied` what the meter took
+ * (a full meter loses the rest, v0.9) and `.lost` the difference.
  * @returns {{broom:number, cuddle:number, patience:number, full:{broom:boolean,cuddle:boolean},
- *   resolved: Object<string,{side:string,steps:number,before:{broom,cuddle}}>, triggers: object[]}}
+ *   resolved: Object<string,{side:string,steps:number,applied:number,lost:number,before:{broom,cuddle}}>, triggers: object[]}}
  */
 export function foldMood(ledger, patience0) {
   let broom = 0, cuddle = 0, patience = Math.max(R.minPatience, patience0);
@@ -60,8 +66,12 @@ export function foldMood(ledger, patience0) {
       if (e.side === "broom") broom = 0; else cuddle = 0;
       patience = Math.max(R.minPatience, patience - R.patienceDrop);
       clamp();
+      // v0.9 (Ch 5): one catch never sets off the other straight away — the other meter drops to one below
+      const other = e.side === "broom" ? "cuddle" : "broom";
+      const dropped = before[other] >= patience;
+      if (dropped) { if (other === "cuddle") cuddle = patience - 1; else broom = patience - 1; }
       triggers.push(e);
-      resolved[e.id] = { side: e.side, steps: 0, before };
+      resolved[e.id] = { side: e.side, steps: 0, applied: 0, lost: 0, before, otherDropped: dropped ? other : null };
       continue;
     }
     if (e.kind === "set") {
@@ -69,16 +79,21 @@ export function foldMood(ledger, patience0) {
       if (Number.isFinite(e.broom)) broom = e.broom;
       if (Number.isFinite(e.cuddle)) cuddle = e.cuddle;
       clamp();
-      resolved[e.id] = { side: null, steps: 0, before };
+      resolved[e.id] = { side: null, steps: 0, applied: 0, lost: 0, before };
       continue;
     }
     const d = e.kind === "roll"
       ? moodDelta({ result: e.result, approach: e.approach, seen: !!e.seen, mood: { broom, cuddle },
         pushedWithMood: !!e.pushedWithMood, kidDoubles: !!e.kid })
       : { side: e.side, steps: Number(e.steps) || 0 };
-    if (d.side === "broom") broom += d.steps; else cuddle += d.steps;
+    const cur = d.side === "broom" ? broom : cuddle;
+    let steps = d.steps;
+    // v0.9 (Ch 7): giving in never sets off a Shoo! or a Scoop — its step stops one short of full
+    if (e.noFill && steps > 0) steps = Math.max(0, Math.min(steps, patience - 1 - cur));
+    if (d.side === "broom") broom += steps; else cuddle += steps;
     clamp();
-    resolved[e.id] = { side: d.side, steps: d.steps, before };
+    const applied = (d.side === "broom" ? broom : cuddle) - cur;
+    resolved[e.id] = { side: d.side, steps: d.steps, applied, lost: Math.max(0, d.steps - applied), stopped: steps < d.steps && !!e.noFill, before };
   }
   return { broom, cuddle, patience, full: { broom: broom >= patience, cuddle: cuddle >= patience }, resolved, triggers };
 }
@@ -115,11 +130,12 @@ export function rollEntry(card, { round = 0, pending = false } = {}) {
   };
 }
 
-/** A fixed step (temptation, mess, discovery, owner finds it gone, manual ±). */
-export function stepEntry({ side, steps, cause, catId = null, candidates = null, seenBy = [], eventId = null, round = 0, kind = "step", pending = false }) {
+/** A fixed step (temptation, mess, discovery, owner finds it gone, manual ±). `noFill`: it never fills the meter (a give-in, v0.9). */
+export function stepEntry({ side, steps, cause, catId = null, candidates = null, seenBy = [], eventId = null, round = 0, kind = "step", pending = false, noFill = false }) {
   if (!SIDES.includes(side)) throw new Error(`stepEntry: bad side ${side}`);
   const e = { kind, side, steps, cause, catId, seenBy: [...seenBy], eventId, round, pending };
   if (candidates) e.candidates = [...candidates]; // v0.7: the cats the human can see, for a meter filled with no roll
+  if (noFill) e.noFill = true;
   return e;
 }
 

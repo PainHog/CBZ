@@ -40,9 +40,17 @@ export function setting(key) {
   catch { return SETTING_DEFS[key]?.default; }
 }
 
-/** The current automation switches as one object (for the pure logic's ctx). */
+/**
+ * A die for a tie between humans outside the house's turn (v0.9, Ch 11 "Ties":
+ * the higher Attention goes; still tied, a die). The face is written into the
+ * event's text. (The house's turn uses its own dice, rolled in the open.)
+ */
+export const tieDie = () => 1 + Math.floor((globalThis.CONFIG?.Dice?.randomUniform ?? Math.random)() * 6);
+
+/** The current automation switches as one object (for the pure logic's ctx), with the tie die. */
 export function automation() {
   return {
+    d6: tieDie,
     mood: setting(SETTINGS.autoMood),
     seen: setting(SETTINGS.autoSeen),
     effects: setting(SETTINGS.autoEffects),

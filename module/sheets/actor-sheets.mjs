@@ -68,7 +68,7 @@ export class CatSheet extends CatBurglarsActorSheet {
       bodyHint: CATB.bodies[s.body]?.hint ?? "",
       warnings: [
         s.instinct1 === s.instinct2 ? "A cat has two different instincts." : null,
-        !s.startingSpread ? "Starting approaches are 3, 2, 1 and 1 (Rep can raise one later, up to 4)." : null
+        !s.startingSpread ? "Starting approaches are 3, 2, 1 and 1 (Rep doesn't raise them: it gives starting Cattitude)." : null
       ].filter(Boolean),
       robbery, cattitudeMax: CATB.rules.cattitudeMax, livesMax: CATB.rules.livesMax
     };
