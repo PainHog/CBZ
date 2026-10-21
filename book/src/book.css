@@ -496,6 +496,11 @@ figure.diagram { break-inside: avoid; margin: 0.04in 0 0.12in; }
 .sheet-grid.meters td { height: 0.38in; text-align: center; vertical-align: middle; }
 .sheet .field.tight { margin-bottom: 0.1in; }
 .sheet-grid.residents tr + tr td { border-top: none; }
+/* the tracker is the fullest sheet: tighter spacing keeps it on one page */
+#sheet-tracker .field { margin-bottom: 0.12in; }
+#sheet-tracker .sheet-grid { margin-bottom: 0.13in; }
+#sheet-tracker .sheet-note { margin-top: 0.12in; }
+#sheet-tracker .residents th { font-size: 7pt; letter-spacing: .02em; }
 /* the quick reference: two columns of small blocks */
 .qr-cols { columns: 2; column-gap: 0.25in; font-size: 8.8pt; line-height: 1.32; }
 .qr-cols .qr-block, .qr-cols .tbl { break-inside: avoid; }
