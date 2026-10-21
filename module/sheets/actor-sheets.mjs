@@ -48,7 +48,19 @@ export class CatSheet extends CatBurglarsActorSheet {
     const state = getState();
     const inRobbery = running(state) && state.cats.find(c => c.id === this.document.id);
     let robbery = null;
-    if (inRobbery) {
+    const r = inRobbery && state.phase === "getaway" ? state.getaway?.cats?.[inRobbery.id] : null;
+    if (r) {
+      // Ch 9: on the getaway
+      const g = state.getaway;
+      robbery = {
+        house: state.name, round: g.round, getaway: true,
+        where: r.state === "home" ? "Home in the hideout" : r.state === "pinched" ? "Pinched — off to the pound" : r.pos === 0 ? "In the garden" : `Past ${g.route[r.pos - 1].name}`,
+        status: r.state === "running" ? (r.acted ? "went this round" : "still to go") : r.state,
+        turn: r.carry ? `Carrying ${r.carry} piece${r.carry > 1 ? "s" : ""} of loot` : "Carrying no loot",
+        hidden: false, carrying: "",
+        rolls: catOptions(state, inRobbery.id).options.filter(o => o.roll && !o.disabled).map(o => o.label)
+      };
+    } else if (inRobbery) {
       const c = inRobbery;
       robbery = {
         house: state.name, round: state.round,

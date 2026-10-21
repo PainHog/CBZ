@@ -169,6 +169,9 @@ export function prizeClock(s) {
   return { events, mood };
 }
 
+/** Ch 8 "The prize": a d8 for what the human carried in — 1–2 delicious, 3–4 fun, 5–6 shiny, 7–8 a box (then a d6 on that table). */
+export const prizeKindByD8 = face => (face <= 2 ? "delicious" : face <= 4 ? "fun" : face <= 6 ? "shiny" : "box");
+
 /** Ch 9 "The loot": a Chonky cat carries two pieces, any other cat one. */
 export const carryCap = c => (c?.body === "chonky" ? 2 : 1);
 

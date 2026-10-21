@@ -117,3 +117,12 @@
 .cat-burglars.catb-tracker .catb-tracker-foot { margin-top: 8px; border-top: 2px solid var(--catb-night); }
 .cat-burglars.catb-tracker .catb-log ol { list-style: none; padding: 0; margin: 0; max-height: 14em; overflow-y: auto; font-size: 0.9em; }
 .cat-burglars.catb-tracker .catb-round { display: inline-block; min-width: 2.2em; color: var(--catb-ink-soft); }
+/* Ch 9: the getaway — the route as a strip of spaces from the garden to the hideout */
+.cat-burglars.catb-tracker .catb-getaway { margin-top: 6px; }
+.cat-burglars.catb-tracker .catb-route { list-style: none; padding: 0; margin: 4px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+.cat-burglars.catb-tracker .catb-space { background: var(--catb-cream); border: 1px solid var(--catb-paper-edge); border-radius: 6px; padding: 6px; }
+.cat-burglars.catb-tracker .catb-space h4 { margin: 0; border: none; }
+.cat-burglars.catb-tracker .catb-space.warden { border-color: var(--catb-broom); box-shadow: 0 0 0 2px var(--catb-broom) inset; }
+.cat-burglars.catb-tracker .catb-space.hideout { background: var(--catb-night); color: var(--catb-cream); }
+.cat-burglars.catb-tracker .catb-space.hideout h4 { color: var(--catb-amber); }
+.cat-burglars.catb-tracker .catb-pinched { margin-top: 6px; color: var(--catb-warn); }

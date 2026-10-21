@@ -52,7 +52,7 @@
 
   {{#if robbery}}
   <section class="catb-in-robbery">
-    <h3>In the robbery at {{robbery.house}} — round {{robbery.round}}</h3>
+    <h3>{{#if robbery.getaway}}On the getaway from {{robbery.house}} — getaway round {{robbery.round}}{{else}}In the robbery at {{robbery.house}} — round {{robbery.round}}{{/if}}</h3>
     <p>{{robbery.where}} ({{robbery.status}}){{#if robbery.hidden}}, hidden{{/if}}{{#if robbery.carrying}}, carrying the {{robbery.carrying}}{{/if}}. {{robbery.turn}}.</p>
     {{#if robbery.rolls.length}}<p class="catb-note">Rolls you could make now: {{#each robbery.rolls}}{{this}}; {{/each}}</p>{{/if}}
     <button type="button" data-action="tracker">Open the Robbery Tracker</button>

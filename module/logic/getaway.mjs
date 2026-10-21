@@ -1,7 +1,7 @@
 /**
  * NINE LIVES GANG — the getaway (pure)
  * -----------------------------------
- * Ch 9 "The Getaway" (core rules v0.10 draft; the simulator's package P12,
+ * Ch 9 "The Getaway" (core rules v0.9 with the getaway — the simulator's v0.10 levers, package P12,
  * sim/engine.mjs finishWithGetaway). When the house part of the robbery ends,
  * any cat still inside is pinched; everyone else runs a route of four
  * obstacles to the hideout with the loot in pieces, the animal warden coming

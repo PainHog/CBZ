@@ -55,8 +55,8 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 2. *See:* moving it is now **Roll: Haul the rotisserie chicken to the …** even when nobody watches; in the roll dialog the other carrier is ticked as a helper ("carrying it too") and can't be unticked.
 3. Haul helpers: leave a third cat (one that hasn't acted) in the room. *See:* the haul's dialog lists it too, unticked, "helps, but stays here". Tick it and roll: the dice preview counts it (+1, at most +2 help in all); when the haul works, only the carriers move with the chicken and the helper stays behind with its Action spent. (A cat a dog is stopping isn't listed: it must deal with the dog first.)
 4. Haul it to the utility room and out of the cat flap (the kitchen window is a climb: "Small things only").
-5. *See:* when the prize is out and no free cat is inside, the round's end posts **Clean Getaway** (or Messy). GM: click **Give the gang +1 Rep (campaign)** → each cat's Rep is 1.
-6. If a cat was left inside, its owner sees **…: spend a Life to escape** on the outcome card; clicking it takes one Life.
+5. *See:* when the prize is out and no free cat is inside, the round's end posts a **Leg it!** card: the getaway starts (section 8). Play it out; when everyone is home or pinched the outcome card says **Clean Getaway** (or Messy, or Busted) with the loot home. GM: click **Give the gang +1 Rep (campaign)** → each cat's Rep is 1.
+6. If a cat was pinched, its owner sees **…: spend a Life to bust out of the pound** on the outcome card; clicking it takes one Life.
 
 ## 6. Core rules v0.8 on other houses (still true in v0.9)
 
@@ -82,16 +82,30 @@ There is no live Foundry in the cloud, so the automated tests run on a fake Foun
 11. **Ties go to the higher Attention, then a die (The Birthday Cake).** Put Dad and Mia in the kitchen (both Attention 1) and make a noise in the utility room (**Noise here**), then **End round**. *See:* "… comes to see the noise in the utility room (as close as another and tied on Attention: a die, N)". With Aunt Rosalind (Attention 2) as close, she goes: "(as close as another: the higher Attention goes)".
 12. **A befriended dog.** Befriend Pudding (Sweet). *See:* at End round no "Pudding barks" with cats in his room, but he still follows his routine; he no longer tempts Scrappers.
 13. **Gang size and Rep.** Start Grandpa Wendell's with three cats. *See:* the start card's "Patience 10 (this house's own number for three cats)", gone at the start of round 11. Then give one cat Rep 3 on its sheet and start a new robbery with four cats. *See:* "Every cat starts with 3 Cattitude (the gang's Rep 3: +1)", and every cat's Cattitude is 3.
-14. **The end.** With the prize got (or gone) and a cat still held, take every other cat outside and **End round**. *See:* the house-turn card's footer "No free cat is inside and the … is got: the robbery ends at the end of the round (still inside, so adopted: …)", then the outcome card. With the prize still to get and everyone outside, nothing ends by itself: **End the robbery** is the gang going home.
+14. **The end.** With the prize got (or gone) and a cat still held, take every other cat outside and **End round**. *See:* the house-turn card's footer "No free cat is inside and the … is out: the house part ends at the end of the round, and the getaway starts (still inside, so pinched: …)", then the **Leg it!** card. With the prize still to get and everyone outside, nothing ends by itself: **End the robbery** is the gang running for it.
 
-## 8. The Storyteller away
+## 8. The getaway (Chapter 9)
+
+Play on from section 5 (the chicken out of the house), or any robbery whose house part has ended.
+1. *See:* the **Leg it!** card: the route (Mr Pell's back fence, the allotments, the alley wall, Station Road), who is pinched (any cat still inside), the loot shared out ("Big Biscuit 2 pieces, …"; what nobody can carry is left in the garden), and when the van pulls up (the end of round 1 if anyone was Shooed or Scooped tonight, else round 2). The tracker now shows the route: the garden, a space past each obstacle, the hideout; the cats with their loot; the warden's line.
+2. Lena: under Tilly, **Roll: Over Mr Pell's back fence (carrying loot: −1 die)**. *See:* the dialog lists the other cats in the garden as helpers ("goes over with them"), says nobody can see this, and has no Attention; tick two of them. The card says "no meters" and offers **Push (1 Cattitude)** but no **Push (+1 Mood)**. On a success the three of them are past the fence.
+3. GM: under Biscuit (2 pieces), **Drop a piece of loot here**. *See:* a card "drops a piece of loot on purpose"; the garden shows "Dropped loot here: 1"; Biscuit's next roll has no loot die (a Chonky cat with one piece runs free).
+4. Roll Biscuit over and get a **Flop** (Push if you like). *See:* "Flop! … is stuck … and drops a piece of loot in the scramble", and once the warden is out, "the warden comes on two spaces this round".
+5. GM: **End the getaway round**. *See:* round 1 with nobody caught: "a van is on its way"; when it arrives, "Screeeech! … the warden jumps out into the garden", and any loot lying on or behind the warden's space is scooped up.
+6. Leave a cat on (or behind) the warden's space and **End the getaway round**. *See:* "Cornered! … must dodge the warden"; that cat's only button is **Roll: Dodge the warden!** (Sneaky, Savage or Sweet, plain), the GM's **End the getaway round** waits, and on a success the cat bolts to the space just ahead of the warden; on a Flop "Pinched! … loot and all".
+7. A cat with room on a space where loot lies: **Grab a dropped piece** (its go for the round).
+8. *See:* when the last cat is home or pinched, the outcome card: "Loot home: N of M", who went to the pound, and for a pinched cat its owner's **spend a Life to bust out of the pound**.
+9. Off switch: **Run the getaway** off. *See:* getaway rolls say the Storyteller moves the gang by hand; **End the getaway round** only moves the round on; use the tracker's **Put:**, **Loot:** and **Warden:** selects, then **Count the loot**.
+10. Shiny things: in any room, a Curious or Knocker cat can be tempted by "something shiny lying about" / "something sparkly on the edge of a table" — even in the downstairs loo.
+
+## 9. The Storyteller away
 
 1. GM: start a new robbery (any house), **Begin round**.
 2. GM: close the GM window (log out).
 3. Lena: make a roll from the tracker and **Accept** it. Try a Move button. *See:* the roll card stays "Final — waiting for the Storyteller's client"; the Move warns "The Storyteller isn't connected — nothing was changed."
 4. GM: log back in. *See:* a notification "applied 1 roll made while the Storyteller was away"; the roll's effect and Mood are in the tracker.
 
-## 9. Switching automations off
+## 10. Switching automations off
 
 In **Configure Settings**, try each and check the "Off" behaviour:
 
@@ -107,6 +121,7 @@ In **Configure Settings**, try each and check the "Off" behaviour:
 | Spend and earn Cattitude | off | Pushes, resisting, giving in and Purrfects don't change any sheet, and a new robbery doesn't reset it |
 | Run the Prize Clock | off | Begin round doesn't put the prize down or take it away (and nobody is held by it: noise draws everyone) |
 | End the robbery by itself | off | No outcome card; end it with **End the robbery** |
+| Run the getaway | off | The getaway's rolls move nobody and the warden stays put; move everyone with the tracker's **Put:** / **Loot:** / **Warden:** and **Count the loot** |
 | Players can open the tracker | off | Lena's tracker button warns that the Storyteller keeps it |
 
 ## What to report

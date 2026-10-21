@@ -11,7 +11,7 @@
  * Each function cites the rulebook passage it implements (book/src/chapters/,
  * core rules v0.9). The simulator keeps its own copy of these rules
  * (sim/rules.mjs); test/parity.test.mjs checks the two agree under the adopted
- * package (P11).
+ * package (P12).
  */
 import { CATB } from "../config.mjs";
 
@@ -141,7 +141,7 @@ export const canPush = (faces, zero = false) => pushIndices(faces, zero).length 
  * - a Push paid with the Mood adds 1 step to that roll's meter, seen or not —
  *   it always lands, even on a Purrfect, and a kid doesn't double it (v0.9);
  * - one roll, one change.
- * `mood` is the meters before this roll. Mirrors sim/rules.mjs moodDelta (P11).
+ * `mood` is the meters before this roll. Mirrors sim/rules.mjs moodDelta (P12).
  */
 export function moodDelta({ result, approach, seen, mood = { broom: 0, cuddle: 0 }, pushedWithMood = false, kidDoubles = false }) {
   const lean = fillsMeter(approach);

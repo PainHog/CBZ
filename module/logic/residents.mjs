@@ -5,7 +5,7 @@
  * turn: pets, noise, routines, Searching and the holders' d6 (Ch 6 "The house's
  * turn", Ch 10, Ch 11; core rules v0.9): pets, noise, routines or Searching,
  * holders, then Finding it. Where the book leaves a choice the readings follow
- * the simulator's engine (sim/engine.mjs, package P11); the "Implementation
+ * the simulator's engine (sim/engine.mjs, package P12); the "Implementation
  * notes" in docs/AUTOMATION.md list them.
  *
  * Internal helpers MUTATE the robbery state they are given (the public

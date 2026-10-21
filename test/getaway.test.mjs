@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { beginRound, finishRobbery, setMood, temptationOptions, newRobbery } from "../module/logic/round.mjs";
 import { applyRoll, catOptions, rollContext, doAction, queueHelp } from "../module/logic/actions.mjs";
 import { endGetawayRound, finishGetaway, placeRunner, setWarden, setCarry, getawayView, DEFAULT_ROUTE, lootDie } from "../module/logic/getaway.mjs";
-import { lootOf, robberyOutcome } from "../module/logic/prize.mjs";
+import { lootOf, robberyOutcome, prizeKindByD8 } from "../module/logic/prize.mjs";
 import { moodNow } from "../module/logic/round.mjs";
 import { findHouse } from "../module/logic/house-catalog.mjs";
 import { robbery, arrange, cat, texts, GANG } from "./fixtures.mjs";
@@ -191,7 +191,8 @@ test("the getaway automation off: rolls and the warden move nothing; the Storyte
   assert.equal(v.spaces[2].warden, true);
 });
 
-test("shiny loot: any room tempts Curious and Knocker cats with something shiny", () => {
+test("shiny loot: the d8 prize roll; any room tempts Curious and Knocker cats with something shiny", () => {
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 8].map(prizeKindByD8), ["delicious", "delicious", "fun", "fun", "shiny", "shiny", "box", "box"]);
   const s = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "loo", velvet: "loo" }, pets: { pudding: { mode: "hiding", until: 99 } } });
   assert.deepEqual(temptationOptions(s).map(o => [o.catId, o.instinct, o.tempt]).sort(), [
     ["tilly", "curious", "something shiny lying about"], ["velvet", "knocker", "something sparkly on the edge of a table"]], "the loo tempts nobody — but shiny things lie about everywhere");
