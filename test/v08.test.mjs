@@ -13,7 +13,7 @@ import { rollContext, applyRoll, findOption, doAction, catOptions } from "../mod
 import { prizeGot } from "../module/logic/prize.mjs";
 import { buildRollPlan } from "../module/logic/rules.mjs";
 import { trackerView } from "../module/apps/tracker-view.mjs";
-import { robbery, dice, arrange, cat, human, pet, texts } from "./fixtures.mjs";
+import { robbery, dice, arrange, cat, human, pet, texts, runHome } from "./fixtures.mjs";
 
 let n = 0;
 function roll(s, id, optionId, approach, result, extra = {}) {
@@ -130,8 +130,8 @@ test("4. nothing is picked up or eaten until every step is done; a part-eaten pr
   e = carrying(arrange(e, { round: 4, cats: { biscuit: { acted: false, moved: false } } }), ["biscuit"], "utility");
   e = roll(e, "biscuit", "exit:flap", "savage", "clean").state;
   assert.equal(prizeGot(e), true);
-  const out = finishRobbery(e).outcome;
-  assert.deepEqual([out.result, out.eaten, out.portions], ["clean", 1, 5]);
+  const out = runHome(e).outcome;
+  assert.deepEqual([out.result, out.eaten, out.portions, out.loot], ["clean", 1, 5, 5], "1 eaten + 4 carried home");
 });
 
 test("5. Shoo!: the nearest entrance that works this round (ties: the Storyteller's pick); the human stays in that room; a prize put back needs every step again", () => {
@@ -205,7 +205,7 @@ test("7. several noises in one room count as one and leave one mess; a Searching
   assert.deepEqual(s.messes, ["hall"], "one mess");
   const r = endRound(s, { d6: dice(), routines: false });
   assert.equal(r.events.filter(e => e.type === "noiseAnswered").length, 1, "one human comes");
-  assert.equal(human(r.state, "dad").room, "hall", "Dad, Rosalind, Mia and Leo are all one room away: the first in house order");
+  assert.equal(human(r.state, "rosalind").room, "hall", "Dad, Rosalind, Mia and Leo are all one room away: v0.9, the higher Attention goes (Aunt Rosalind, 2)");
   assert.equal(moodNow(r.state).broom, 1, "one mess found: +1 Broom");
   // Searching beside the prize, he still goes to see a noise (not in a round the Clock moved him)
   let p = number12({ cats: { tilly: "kitchen" }, humans: { pell: { room: "kitchen", searching: true } } });
@@ -309,12 +309,12 @@ test("10. the Foundry rulings: holders, a held cat's own Broom, dozing, chased b
   assert.deepEqual(rollContext(s, "biscuit", "step").options.map(o => [o.approach, o.knackFrom]), [["streetwise", ["Foodie"]], ["savage", ["Foodie"]]]);
 });
 
-test("11. five cats: Patience −1 and the Prize Clock unchanged (v0.8 final, REVIEW #103)", () => {
+test("11. five cats: Patience −1 and the Prize Clock unchanged (v0.8 final, REVIEW #103) — unless the house prints its own (v0.9: the cake)", () => {
   const five = ["tilly", "biscuit", "velvet", "mags", "pip"];
   for (const key of ["number-12", "wendell-mouse", "birthday-cake", "okafor-box", "marchetti-salmon"]) {
     const four = robbery(key);
     const s = robbery(key, five);
-    assert.equal(s.clock.goneAt, four.clock.goneAt, `${key}: the Clock doesn't move`);
+    assert.equal(s.clock.goneAt, four.clock.goneAt + (key === "birthday-cake" ? 1 : 0), `${key}: the Clock doesn't move (the cake: 1 round later)`);
     assert.equal(s.patience0, Math.max(2, four.patience0 - 1), `${key}: Patience −1`);
     assert.equal(s.clock.lightsOut, s.clock.goneAt + 2, `${key}: Lights Out with it`);
     assert.deepEqual(s.prize.script.map(x => x.round), four.prize.script.map(x => x.round), `${key}: the put-downs don't move`);

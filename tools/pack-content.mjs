@@ -20,6 +20,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { HOUSES, humanTraits, optionsText } from "../module/logic/house-catalog.mjs";
 import { CATB } from "../module/config.mjs";
+import { gangScaling } from "../module/logic/prize.mjs";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(ROOT, "packs", "_source");
@@ -30,23 +31,23 @@ const INSTINCT = k => CATB.instincts[k]?.label ?? k;
 const routineObject = list => Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`r${i}`, list?.[i - 1] ?? "stay"]));
 const roomName = (h, k) => h.rooms[k]?.name ?? k;
 
-/** Chapter 3, "The Ready-Made Gang" (statlines checked against the book by test/packs.test.mjs). */
+/** Chapter 3, "Meet the Gang" (statlines checked against the book by test/packs.test.mjs; quotes and marks as the chapter prints them). */
 export const GANG = [
   { key: "two-bin-tilly", name: "Two-Bin Tilly", approaches: { streetwise: 3, sneaky: 2, sweet: 1, savage: 1 }, instincts: ["curious", "climber"], body: "lean",
-    coat: "Grey tabby", mark: "A red collar with a brass tag", eyes: "Green", quirk: "Never forgets a face",
-    quote: "Every lid on this street has a trick. I know all of them.", role: "the Brains" },
+    coat: "Grey tabby", mark: "A brass stud in her ear, a fishbone tattoo on her right foreleg, and a red collar with a brass tag that says nothing at all", eyes: "Green", quirk: "Never forgets a face",
+    quote: "Every lid on this street has a trick. I invented most of them.", role: "the Brains" },
   { key: "big-biscuit", name: "Big Biscuit", approaches: { savage: 3, streetwise: 2, sweet: 1, sneaky: 1 }, instincts: ["scrapper", "foodie"], body: "chonky",
-    coat: "Big brown tabby with a cream muzzle", mark: "A notch in his left ear", eyes: "Amber", quirk: "Sleeps on the launderette roof",
-    quote: "Excuse me. I'm coming through. Thank you.", role: "the Muscle" },
+    coat: "Big brown tabby with a cream muzzle", mark: "A notch in his left ear, a black bandana on his head, a chunky gold chain, and the gang's sign (a cat's head with a 9) tattooed on his right shoulder", eyes: "Amber", quirk: "Sleeps on the launderette roof",
+    quote: "I'm not saying move. I'm just saying I'm coming through.", role: "the Muscle" },
   { key: "velvet", name: "Velvet", approaches: { sweet: 3, sneaky: 2, savage: 1, streetwise: 1 }, instincts: ["lapCat", "knocker"], body: "lean",
-    coat: "Sleek black", mark: "A white star on her chest and one white sock", eyes: "Amber", quirk: "Was somebody's pet, once",
-    quote: "Hello. Yes. It's me. I know.", role: "the Charmer" },
+    coat: "Sleek black", mark: "A white star on her chest and a white sock on her left forepaw (no bandana, no tattoo: she has to pass for a pet)", eyes: "Amber", quirk: "Was somebody's pet",
+    quote: "I don't break in. I get invited.", role: "the Charmer" },
   { key: "marmalade-mags", name: "Marmalade Mags", approaches: { sneaky: 3, savage: 2, streetwise: 1, sweet: 1 }, instincts: ["boxSitter", "hunter"], body: "lean",
-    coat: "Ginger tabby", mark: "A kink at the very tip of her tail", eyes: "Green", quirk: "Hates the rain",
-    quote: "…", role: "the Shadow" },
+    coat: "Ginger tabby", mark: "A small gold hoop in her left ear, a navy bandana with white dots round her neck, and a kink at the tip of her tail", eyes: "Green", quirk: "Hates the rain",
+    quote: "You didn't see me. Nobody ever does.", role: "the Shadow" },
   { key: "pip", name: "Pip", approaches: { sweet: 3, savage: 2, sneaky: 1, streetwise: 1 }, instincts: ["hunter", "curious"], body: "lean",
-    coat: "Fluffy white calico, a ginger patch over her left eye, a black right ear, black spots and tail tip", mark: "", eyes: "Big and blue", quirk: "Talks to pigeons",
-    quote: "Is that a string? Is that a STRING?", role: "the gang's kitten" }
+    coat: "Fluffy white calico, a ginger patch over her left eye, a black right ear, black spots and tail tip", mark: "A pale blue bandana far too big for her, and a shiny bottle-cap medal", eyes: "Big and blue", quirk: "Talks to pigeons",
+    quote: "I'm the toughest. Is that a STRING?", role: "the gang's kitten" }
 ];
 
 /* ---------------------------------------------------------- the houses -- */
@@ -54,9 +55,18 @@ export const GANG = [
 function sheet(h) {
   const z = h.prize;
   const portions = z.kind === "delicious" ? `, portions: ${z.perCat} per cat${z.plus ? ` + ${z.plus}` : ""}` : "";
-  return `<p><strong>Difficulty</strong> ${LABEL[h.label]} · <strong>Patience</strong> ${h.patience} · <strong>The prize</strong> ${esc(z.name)} (${z.size[0].toUpperCase() + z.size.slice(1)}${portions}) · <strong>Gone</strong> at the start of round ${z.goneAt} · <strong>Den</strong> ${esc(roomName(h, h.den))}</p>
+  return `<p><strong>House</strong> ${LABEL[h.label]} · <strong>Patience</strong> ${h.patience} · <strong>The prize</strong> ${esc(z.name)} (${z.size[0].toUpperCase() + z.size.slice(1)}${portions}) · <strong>Gone</strong> at the start of round ${z.goneAt} · <strong>Den</strong> ${esc(roomName(h, h.den))}</p>
 <p><strong>Who lives here</strong> ${[...h.humans, ...h.pets].map(x => esc(x.name)).join(", ")}</p>
-<p><em>For four cats. With three: Patience +1, the prize goes 2 rounds later, 3 Cattitude each. With five: Patience −1, the prize goes 1 round sooner. The Robbery Tracker does this for you.</em></p>`;
+<p><em>${gangText(h)} The Robbery Tracker does this for you.</em></p>`;
+}
+
+/** Ch 12 "Gang size" (v0.9): this house's own three- and five-cat numbers, or the general rule. */
+function gangText(h) {
+  const z = h.prize;
+  const s3 = gangScaling(3, h), s5 = gangScaling(5, h);
+  const three = `Patience ${h.patience + s3.patience}, gone at the start of round ${z.goneAt + s3.clock}, Lights Out at the end of round ${z.goneAt + s3.clock + CATB.rules.lightsOut}, ${CATB.rules.cattitudeStart + s3.cattitude} Cattitude each`;
+  const five = `Patience ${Math.max(CATB.rules.minPatience, h.patience + s5.patience)}${s5.clock ? `, gone at the start of round ${z.goneAt + s5.clock}, Lights Out at the end of round ${z.goneAt + s5.clock + CATB.rules.lightsOut}` : ""}`;
+  return `For four cats. With three: ${three}. With five: ${five}.`;
 }
 
 function clock(h) {
@@ -67,7 +77,7 @@ function clock(h) {
     return `<tr><td>Start of round ${sc.round}</td><td>${esc(who)} puts it in the ${esc(roomName(h, sc.room).toLowerCase())} and stays there this round. ${steps[0].toUpperCase()}${steps.slice(1)}.</td></tr>`;
   });
   rows.push(`<tr><td>Start of round ${z.goneAt}</td><td>Gone — if the gang isn't holding it.</td></tr>`);
-  rows.push(`<tr><td>End of round ${z.goneAt + CATB.rules.lightsOut}</td><td>Lights Out: any cat still inside is adopted.</td></tr>`);
+  rows.push(`<tr><td>End of round ${z.goneAt + CATB.rules.lightsOut}</td><td>Lights Out: any cat still inside is pinched.</td></tr>`);
   return `<table><thead><tr><th>When</th><th>The prize</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
 }
 
@@ -89,7 +99,7 @@ function routineText(h, r) {
     let j = i;
     while (j + 1 < 6 && r[j + 1] === r[i]) j++;
     const face = i === j ? `${i + 1}` : `${i + 1}–${j + 1}`;
-    out.push(`<strong>${face}</strong> ${r[i] === "stay" ? "stays put" : r[i] === "sniff" ? "sniffs one room toward the nearest cat" : esc(roomName(h, r[i]))}`);
+    out.push(`<strong>${face}</strong> ${r[i] === "stay" ? "stays put" : r[i] === "sniff" ? "sniffs one room toward the nearest free cat inside" : esc(roomName(h, r[i]))}`);
     i = j + 1;
   }
   return out.join("; ");
@@ -110,6 +120,22 @@ function residents(h) {
   return s;
 }
 
+/**
+ * Ch 9: the house's getaway route — four obstacles from the garden to the hideout — its loot, the
+ * rivals' patch and the house's Cred line (as the book's house pages print them).
+ */
+function getaway(h) {
+  if (!h.getaway) return "";
+  const z = h.prize;
+  const cr = h.cred;
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const pieces = CATB.rules.lootPieces[z.size] ?? 1;
+  const loot = z.kind === "delicious" ? "its portions — whatever wasn't eaten inside" : `${pieces} piece${pieces > 1 ? "s" : ""}`;
+  const items = h.getaway.map((o, i) => `<li>${esc(cap(o.name))} — ${optionsText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}${cr?.patch === i ? `. ${esc(cap(cr.rivals))} hang about here, and nick any loot that's dropped` : ""}.</li>`).join("");
+  const cred = cr ? `<p><strong>Cred</strong> (Chapter 9): the catnip stash is ${esc(cr.catnipName)} (${esc(roomName(h, cr.catnip).toLowerCase())}). ${esc(cap(cr.rivals))} have tagged the ${esc(roomName(h, cr.rivalTag).toLowerCase())}.</p>` : "";
+  return `<h3>The getaway</h3><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p>${cred}`;
+}
+
 /** The book's page for a house, with the catalog's tables filled in (as book/tools/house-pages.mjs does). */
 function housePage(h) {
   const file = join(ROOT, "book", "src", "houses", `${h.key}.html`);
@@ -117,7 +143,7 @@ function housePage(h) {
   html = html
     .replace(/<figure[^>]*>[\s\S]*?<\/figure>/g, "")
     .replace(/<p class="chapter-num">[\s\S]*?<\/p>/, "")
-    .replace("{{SHEET}}", sheet(h)).replace("{{CLOCK}}", clock(h)).replace("{{ROOMS}}", rooms(h)).replace("{{RESIDENTS}}", residents(h))
+    .replace("{{SHEET}}", sheet(h)).replace("{{CLOCK}}", clock(h)).replace("{{ROOMS}}", rooms(h)).replace("{{RESIDENTS}}", residents(h)).replace("{{GETAWAY}}", getaway(h))
     .replace("{{MAP}}", "").replace(/\{\{[A-Z]+\}\}/g, "")
     .replace(/\n\s*\n+/g, "\n").trim();
   return html;
@@ -129,7 +155,9 @@ const RUNNING = h => `<h2>Running ${esc(h.name)} in Foundry</h2>
 <li><strong>Begin round</strong> runs the Prize Clock and, if anyone can be tempted, whispers you one-click <strong>Tempt</strong> buttons.</li>
 <li>Players move and act from the tracker (or roll from their cat sheets). The roll dialog fills in the Knack, help, Difficulty, the pet and who is watching; the card offers Push and Accept, and you can flip Seen.</li>
 <li><strong>End round</strong> rolls the house's turn in the open: pets, noise, routines and Searching, holders, then Finding it.</li>
-<li>The robbery ends at Lights Out, or when no free cat is left inside, and the outcome is posted.</li>
+<li>The house part ends at Lights Out, or at the end of a round when no free cat is left inside and the prize is out, eaten or gone (or when you press <strong>End the robbery</strong> because the gang runs for it). Any cat still inside is pinched.</li>
+<li><strong>The getaway</strong> follows in the same tracker: the loot is shared out, each cat rolls over the next obstacle (help a friend and go over together; a Flop drops loot), and <strong>End the getaway round</strong> brings the warden on and corners the stragglers, who dodge or go in the van. When everyone is home or pinched, the loot is counted and the outcome is posted.</li>
+<li><strong>Cred</strong> scores itself: any cat can <strong>Tag</strong> its room (one tag a room for the gang), the catnip stash tempts every cat in its room (or a cat gets into it on purpose) and gives that cat the zoomies, and the rivals wait on the getaway. The tracker keeps each cat's Cred (with − and + for you), and the outcome card names the Cat's Whiskers.</li>
 </ol>
 <p>Every automation can be switched off in the system settings. The residents of this house are in the <em>Residents</em> compendium; the tracker works without them.</p>`;
 
@@ -153,7 +181,7 @@ export function gangDocs() {
       instinct1: c.instincts[0], instinct2: c.instincts[1], body: c.body,
       cattitude: CATB.rules.cattitudeStart, lives: CATB.rules.livesMax, rep: 0,
       coat: c.coat, mark: c.mark, eyes: c.eyes, quirk: c.quirk,
-      notes: `“${c.quote}” ${c.name} is ${c.role}. (The Ready-Made Gang, Chapter 3.)`
+      notes: `“${c.quote}” ${c.name} is ${c.role}. (Meet the Gang, Chapter 3.)`
     },
     flags: { [FLAG]: { gang: c.key } }
   }));

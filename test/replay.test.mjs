@@ -1,6 +1,6 @@
 /**
  * A whole robbery at The Chicken at Number 12, replayed through the pure logic
- * with fixed dice (AUTOMATION.md §9), under core rules v0.8: every roll is built
+ * with fixed dice (AUTOMATION.md §9), under core rules v0.9: every roll is built
  * with the roll plan from the robbery state (approach, Knack, help, Difficulty,
  * pet, Attention), read from scripted faces, and applied as a final roll card
  * would be; the house's turns use scripted d6s.
@@ -10,16 +10,16 @@ import assert from "node:assert/strict";
 import { buildRollPlan, readDice } from "../module/logic/rules.mjs";
 import { beginRound, endRound, tempt, answerTemptation, moodNow, finishRobbery } from "../module/logic/round.mjs";
 import { rollContext, applyRoll, doAction, findOption, queueHelp } from "../module/logic/actions.mjs";
-import { robbery, dice, cat, human, pet } from "./fixtures.mjs";
+import { robbery, dice, cat, human, pet, runHome } from "./fixtures.mjs";
 
 let ev = 0;
 /** Roll for an option with these faces; checks the pool is what the state says it should be. */
-function rollWith(s, id, optionId, approach, faces, { helpers = null, cattitudeDie = false, expectDice } = {}) {
+function rollWith(s, id, optionId, approach, faces, { helpers = null, expectDice } = {}) {
   const ctx = rollContext(s, id, optionId);
   const o = ctx.options.find(x => x.approach === approach);
   assert.ok(o, `${optionId} offers ${approach}`);
   const help = helpers ?? ctx.helpers.filter(h => h.locked).map(h => h.id); // a haul's other carriers are locked in
-  const plan = buildRollPlan({ approach, rating: o.rating, knack: o.knack, bodyDie: ctx.bodyDie, helpers: help.length, cattitudeDie,
+  const plan = buildRollPlan({ approach, rating: o.rating, knack: o.knack, bodyDie: ctx.bodyDie, helpers: help.length,
     difficulty: o.difficulty, opposition: ctx.opposition, attention: ctx.seenBy.length ? o.attention : 0 });
   if (expectDice !== undefined) assert.equal(plan.total, expectDice, `${id} ${optionId}: dice`);
   assert.equal(faces.length, plan.dice, `${id} ${optionId}: ${plan.dice} dice to roll`);
@@ -27,7 +27,7 @@ function rollWith(s, id, optionId, approach, faces, { helpers = null, cattitudeD
   return applyRoll(s, { eventId: `r${++ev}`, catId: id, optionId, approach, result, seen: ctx.seenBy.length > 0, seenBy: ctx.seenBy, kid: ctx.kid, helpers: help });
 }
 
-test("a whole robbery at Number 12 (v0.8) ends in a Clean Getaway, with every rule applied on the way", () => {
+test("a whole robbery at Number 12 (v0.9) ends in a Clean Getaway, with every rule applied on the way", () => {
   const log = [];
   const keep = r => { log.push(...r.events.map(e => e.text)); return r.state; };
   let s = robbery("number-12");
@@ -122,12 +122,13 @@ test("a whole robbery at Number 12 (v0.8) ends in a Clean Getaway, with every ru
   const end = endRound(s, { d6: dice(1, 1) });
   s = keep(end);
   assert.deepEqual([end.end.due, end.end.reason], [true, "allOut"]);
-  const fin = finishRobbery(s, end.end.reason);
+  const fin = runHome(s, { reason: end.end.reason }); // the getaway settled by hand: everyone gets home with the loot
   log.push(...fin.events.map(e => e.text));
   assert.equal(fin.outcome.result, "clean");
   assert.equal(fin.outcome.label, "Clean Getaway");
+  assert.deepEqual([fin.outcome.loot, fin.outcome.lootTotal], [5, 5]);
   const f = moodNow(fin.state);
   assert.deepEqual([f.broom, f.cuddle, f.patience], [2, 2, 4]);
-  assert.match(log.join("\n"), /Clean Getaway! Nobody was left behind/);
+  assert.match(log.join("\n"), /Clean Getaway! Loot home: 5 of 5\. Nobody was pinched/);
   assert.equal(fin.state.log.length, log.length + 1, "the robbery log has every event (plus the start line)");
 });
