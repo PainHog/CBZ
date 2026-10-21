@@ -36,7 +36,8 @@ export class CatSheet extends CatBurglarsActorSheet {
     classes: ["catb-cat"],
     actions: {
       roll: CatSheet.#roll,
-      tracker: () => game.catBurglars?.openTracker?.()
+      tracker: () => game.catBurglars?.openTracker?.(),
+      zoomies: CatSheet.#zoomies
     }
   };
   static PARTS = { sheet: { template: tpl("cat-sheet") } };
@@ -58,7 +59,8 @@ export class CatSheet extends CatBurglarsActorSheet {
         status: r.state === "running" ? (r.acted ? "went this round" : "still to go") : r.state,
         turn: r.carry ? `Carrying ${r.carry} piece${r.carry > 1 ? "s" : ""} of loot` : "Carrying no loot",
         hidden: false, carrying: "",
-        rolls: catOptions(state, inRobbery.id).options.filter(o => o.roll && !o.disabled).map(o => o.label)
+        rolls: catOptions(state, inRobbery.id).options.filter(o => o.roll && !o.disabled).map(o => o.label),
+        cred: inRobbery.cred ?? 0, nip: false, nipEditable: false, nipNote: "worn off by the back fence"
       };
     } else if (inRobbery) {
       const c = inRobbery;
@@ -68,7 +70,10 @@ export class CatSheet extends CatBurglarsActorSheet {
         status: { outside: "outside", free: "free", held: "Held", shut: "Shut in the Den" }[c.status] ?? c.status,
         turn: state.stage === "cats" ? `${c.moved ? "Moved" : "Move left"} · ${c.acted ? "Acted" : "Action left"}` : "Between turns",
         hidden: c.hidden, carrying: c.carrying ? state.prize.name : "",
-        rolls: catOptions(state, c.id).options.filter(o => o.roll && !o.disabled && o.id !== "free").map(o => o.label)
+        rolls: catOptions(state, c.id).options.filter(o => o.roll && !o.disabled && o.id !== "free").map(o => o.label),
+        // Ch 9 "Cred": tonight's points and the zoomies (the Storyteller ticks the box by hand)
+        cred: c.cred ?? 0, nip: !!c.nip, nipEditable: !!game.user?.isGM,
+        nipNote: c.nip ? "+1 die, every roll a noise, no resisting, Cred ×2 — until the house part ends" : ""
       };
     }
     return {
@@ -88,6 +93,12 @@ export class CatSheet extends CatBurglarsActorSheet {
 
   static async #roll(event, target) {
     return rollFor(this.document, { approach: target.dataset.approach });
+  }
+
+  /** The Zoomies box (Storyteller): the zoomies on or off in the robbery (Ch 9 "Cred"). */
+  static async #zoomies(event, target) {
+    if (!game.user?.isGM) return null;
+    return game.catBurglars?.robbery?.overrides?.zoomies?.(this.document.id, !!target.checked);
   }
 }
 

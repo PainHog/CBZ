@@ -10,6 +10,7 @@
       <li class="catb-space{{#if this.warden}} warden{{/if}}{{#if this.hideout}} hideout{{/if}}">
         <h4>{{this.name}}{{#if this.warden}} <span class="catb-badge">The warden!</span>{{/if}}</h4>
         {{#if this.obstacle}}<p class="catb-tempt">{{this.obstacle}}</p>{{/if}}
+        {{#if this.rivals}}<p class="catb-cred">{{this.rivals}}</p>{{/if}}
         {{#if this.loot}}<p class="catb-prize">Dropped loot here: {{this.loot}}</p>{{/if}}
         {{#each this.cats}}
         <div class="catb-cat">
@@ -21,7 +22,8 @@
           </div>
           {{#if this.hasBlocked}}<details class="catb-blocked"><summary>Not now</summary><ul>{{#each this.blocked}}<li>{{this.label}}: {{this.reason}}</li>{{/each}}</ul></details>{{/if}}
           {{#if this.isGM}}<label class="catb-place">Put: <select data-change="runner" data-cat="{{this.id}}">{{#each this.spots}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>
-          <label class="catb-place">Loot: <select data-change="carry" data-cat="{{this.id}}">{{#each this.carries}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+          <label class="catb-place">Loot: <select data-change="carry" data-cat="{{this.id}}">{{#each this.carries}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>
+          <span class="catb-place">Cred {{this.cred}} <button type="button" class="catb-gm" data-action="cred" data-cat="{{this.id}}" data-steps="1">+1</button><button type="button" class="catb-gm" data-action="cred" data-cat="{{this.id}}" data-steps="-1">−1</button></span>{{/if}}
         </div>
         {{/each}}
       </li>
@@ -46,7 +48,9 @@
         {{#each this.helpTargets}}<button type="button" class="catb-opt" data-action="help" data-cat="{{../id}}" data-target="{{this.id}}" data-queued="{{this.queued}}">{{this.label}}</button>{{/each}}
       </div>
       {{#if this.hasBlocked}}<details class="catb-blocked"><summary>Not now</summary><ul>{{#each this.blocked}}<li>{{this.label}}: {{this.reason}}</li>{{/each}}</ul></details>{{/if}}
-      {{#if this.isGM}}<label class="catb-place">Put: <select data-change="place" data-cat="{{this.id}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+      {{#if this.isGM}}<label class="catb-place">Put: <select data-change="place" data-cat="{{this.id}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>
+      <span class="catb-place">Cred {{this.cred}} <button type="button" class="catb-gm" data-action="cred" data-cat="{{this.id}}" data-steps="1">+1</button><button type="button" class="catb-gm" data-action="cred" data-cat="{{this.id}}" data-steps="-1">−1</button></span>
+      <button type="button" class="catb-opt catb-gm" data-action="zoomies" data-cat="{{this.id}}" data-on="{{#if this.nip}}false{{else}}true{{/if}}">{{this.zoomiesLabel}}</button>{{/if}}
     </div>
     {{/each}}
   </div>
@@ -59,6 +63,7 @@
         <header>
           <h4>{{this.name}}{{#if this.isDen}} <span class="catb-badge">Den</span>{{/if}}</h4>
           {{#if this.tempt}}<p class="catb-tempt">Tempts: {{this.tempt}}</p>{{/if}}
+          {{#if this.credNotes}}<p class="catb-cred">{{this.credNotes}}</p>{{/if}}
           {{#if this.noHide}}<p class="catb-note">No hiding spots.</p>{{/if}}
           {{#if this.noise}}<p class="catb-noise">Noise here this round</p>{{/if}}
           {{#if this.mess}}<p class="catb-noise">A mess, waiting to be found</p>{{/if}}
@@ -91,9 +96,11 @@
             {{#each this.helpTargets}}<button type="button" class="catb-opt" data-action="help" data-cat="{{../id}}" data-target="{{this.id}}" data-queued="{{this.queued}}">{{this.label}}</button>{{/each}}
             {{#if this.mine}}<button type="button" class="catb-opt" data-action="acted" data-cat="{{this.id}}">I'm done this round</button>{{/if}}
             {{#if this.isGM}}<button type="button" class="catb-opt catb-gm" data-action="giveBack" data-cat="{{this.id}}">Give back Move and Action</button>{{/if}}
+            {{#if this.isGM}}<button type="button" class="catb-opt catb-gm" data-action="zoomies" data-cat="{{this.id}}" data-on="{{#if this.nip}}false{{else}}true{{/if}}">{{this.zoomiesLabel}}</button>{{/if}}
           </div>
           {{#if this.hasBlocked}}<details class="catb-blocked"><summary>Not now</summary><ul>{{#each this.blocked}}<li>{{this.label}}: {{this.reason}}</li>{{/each}}</ul></details>{{/if}}
-          {{#if this.isGM}}<label class="catb-place">Put: <select data-change="place" data-cat="{{this.id}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+          {{#if this.isGM}}<label class="catb-place">Put: <select data-change="place" data-cat="{{this.id}}">{{#each this.places}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>
+          <span class="catb-place">Cred {{this.cred}} <button type="button" class="catb-gm" data-action="cred" data-cat="{{this.id}}" data-steps="1">+1</button><button type="button" class="catb-gm" data-action="cred" data-cat="{{this.id}}" data-steps="-1">−1</button></span>{{/if}}
         </div>
         {{/each}}
         {{#if ../../isGM}}<p class="catb-gm-tools"><button type="button" data-action="noise" data-room="{{this.key}}">Noise here</button><button type="button" data-action="noise" data-room="{{this.key}}" data-mess="true">A mess here</button></p>{{/if}}

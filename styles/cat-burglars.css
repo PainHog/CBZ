@@ -126,3 +126,8 @@
 .cat-burglars.catb-tracker .catb-space.hideout { background: var(--catb-night); color: var(--catb-cream); }
 .cat-burglars.catb-tracker .catb-space.hideout h4 { color: var(--catb-amber); }
 .cat-burglars.catb-tracker .catb-pinched { margin-top: 6px; color: var(--catb-warn); }
+
+/* Ch 9 "Cred": showing off */
+.cat-burglars .catb-cred { margin: 0; font-size: 0.85em; color: var(--catb-good); }
+.cat-burglars.catb-card.catb-cred { border-color: var(--catb-amber); }
+.cat-burglars.catb-tracker .catb-place button { padding: 0 4px; line-height: 1.4; }

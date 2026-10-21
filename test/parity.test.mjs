@@ -1,8 +1,8 @@
 /**
  * Parity: the table's rules (module/logic/) and the simulator's (sim/) must
- * agree on the package the system follows (P12: core rules v0.9 with the getaway and shiny loot;
- * the simulator's ADOPTED P13 adds only Cred, which the system doesn't follow yet), and the house
- * catalog must be an exact copy of sim/houses.mjs (AUTOMATION.md §9).
+ * agree on the package the system follows (the simulator's ADOPTED P13: core rules v0.9 with the
+ * getaway, shiny loot and Cred), and the house catalog must be an exact copy of sim/houses.mjs
+ * (AUTOMATION.md §9).
  * module/ never imports from sim/; this test is the only bridge.
  */
 import test from "node:test";
@@ -17,12 +17,13 @@ import { CATB } from "../module/config.mjs";
 import { foldMood, upsertEntry } from "../module/logic/mood.mjs";
 import { gangScaling } from "../module/logic/prize.mjs";
 
-const p = makeParams(PACKAGES.P12); // the getaway and shiny loot; Cred (P13) comes in its own brief
+const p = makeParams(PACKAGES.P13); // the getaway, shiny loot and Cred
 
-test("the system follows package P12; the simulator's adopted P13 adds only Cred (not built yet)", () => {
+test("the system follows the simulator's adopted package P13 (core rules v0.9 with the getaway, shiny loot and Cred)", () => {
   assert.equal(ADOPTED, "P13");
-  assert.deepEqual(PACKAGES.P13, { ...PACKAGES.P12, cred: true }, "P13 is P12 plus Cred: anything else needs building here first");
-  assert.equal(p.cred, false);
+  assert.equal(p.cred, true, "Ch 9 Cred: tags, the catnip stash, the rivals (test/cred.test.mjs)");
+  assert.equal(p.tagMess, true, "a tag is a mess");
+  assert.equal(p.nipDie, CATB.rules.cred.nipDie, "the zoomies: +1 die");
   assert.equal(p.getaway, true, "v0.10 (Ch 9): the getaway");
   assert.equal(p.shinyTempts, true, "shiny things tempt Curious and Knocker cats in every room");
   assert.deepEqual([p.wardenLag, p.wardenFlop, p.dodgeDiff], [1, true, 0], "the warden: arrives a round later if nobody was caught, 2 spaces after a Flop; dodges are plain");
@@ -40,7 +41,7 @@ test("the system follows package P12; the simulator's adopted P13 adds only Cred
   assert.equal(p.heldBroomDen, false, "a held cat whose own roll fills Broom is still put outside");
   assert.equal(p.searchHold, false, "declined: a Searching human beside the prize still answers noise");
   assert.equal(p.resetTo, "calm", "a trigger empties its meter");
-  for (const [k, v] of Object.entries(PACKAGES.P12)) assert.deepEqual(p[k], v, k);
+  for (const [k, v] of Object.entries(PACKAGES.P13)) assert.deepEqual(p[k], v, k);
 });
 
 test("the rules numbers in config match the simulator's adopted parameters", () => {
@@ -95,7 +96,7 @@ test("dice reading agrees on every roll of 1–5 dice and on the zero pool", () 
   assert.equal(count, 6 + 36 + 216 + 1296 + 7776);
 });
 
-test("pool size agrees over the whole input grid (v0.9: no Cattitude die on either side)", () => {
+test("pool size agrees over the whole input grid (v0.9: no Cattitude die on either side; the zoomies' die is the simulator's nipDie on the rating)", () => {
   for (let rating = 1; rating <= 4; rating++)
     for (const knack of [false, true])
       for (let helpers = 0; helpers <= 4; helpers++)
@@ -105,6 +106,8 @@ test("pool size agrees over the whole input grid (v0.9: no Cattitude die on eith
               const args = { rating, knack, helpers, difficulty, opposition, attention };
               assert.equal(table.poolSize(args), sim.poolSize(args, p), JSON.stringify(args));
               assert.equal(table.poolSize({ ...args, cattitudeDie: true }), table.poolSize(args), "a Cattitude die is ignored");
+              assert.equal(table.poolSize({ ...args, nip: true }), sim.poolSize({ ...args, rating: rating + p.nipDie }, p), `the zoomies ${JSON.stringify(args)}`);
+              assert.equal(table.buildRollPlan({ approach: "sneaky", ...args, nip: true }).total, sim.poolSize({ ...args, rating: rating + p.nipDie }, p));
               const plan = table.buildRollPlan({ approach: "sneaky", ...args });
               assert.equal(plan.total, sim.poolSize(args, p));
               assert.equal(plan.dice, plan.total <= 0 ? 2 : plan.total);

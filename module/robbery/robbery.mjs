@@ -16,12 +16,13 @@ import { findOption, doAction, queueHelp, markTurn as markTurnPure } from "../lo
 import { findHouse, HOUSES } from "../logic/house-catalog.mjs";
 import { catById, humanByKey, roomName } from "../logic/residents.mjs";
 import * as Getaway from "../logic/getaway.mjs";
+import * as Cred from "../logic/cred.mjs";
 import { clampCattitude } from "../logic/rules.mjs";
 import { catSnapshot } from "../data/actor-data.mjs";
 import { getState, running, onGetaway, mutate } from "./store.mjs";
 import { gm, isActiveGM, owns } from "./gm-ops.mjs";
 import { finalizePending, applyCattitude, applyRollMessage } from "./automation.mjs";
-import { postMoodCards, metersOf, outcomeView, postGetawayCards, postOutcome } from "./announce.mjs";
+import { postMoodCards, metersOf, outcomeView, postGetawayCards, postOutcome, postCredCard } from "./announce.mjs";
 import { postEventCard, rerenderEvent, cardOf, registerButtons, button } from "../chat/cards.mjs";
 import { rollFor, updateRollCard } from "../dice/roll.mjs";
 import { automation, setting } from "../settings.mjs";
@@ -55,6 +56,13 @@ export async function startRobbery(houseRef, { actorIds = null } = {}) {
   await mutate(() => ({ state }));
   if (setting(SETTINGS.autoCattitude)) for (const a of actors) await a.update({ "system.cattitude": clampCattitude(state.cattitudeStart) });
   const who = [...house.humans.map(h => h.name), ...house.pets.map(p => p.name)].join(", ");
+  const cr = state.cred;
+  const route = house.getaway ?? Getaway.DEFAULT_ROUTE;
+  const credBits = [
+    cr?.catnip ? `the catnip stash is ${cr.catnipName} (the ${roomName(state, cr.catnip).toLowerCase()})` : "",
+    cr?.rivals ? `${cr.rivals}${cr.rivalTag ? ` have tagged the ${roomName(state, cr.rivalTag).toLowerCase()}` : " are about"}${Number.isInteger(cr.patch) && route[cr.patch] ? `, and hang about at ${route[cr.patch].name} on the getaway` : ""}` : ""
+  ].filter(Boolean);
+  const credLine = `Cred: ${credBits.length ? credBits.join("; ") : "tag a room for 1 (one tag a room for the whole gang)"}. Show off!`;
   await postEventCard({ kind: CARD.robbery, robberyId: state.id, houseKey: house.key }, {
     title: house.name, subtitle: `${({ easy: "Easy", standard: "Standard", hard: "Hard" })[house.label] ?? house.label} · ${actors.length} cats`,
     lines: [
@@ -62,7 +70,8 @@ export async function startRobbery(houseRef, { actorIds = null } = {}) {
       `The ${house.prize.name} (${house.prize.size}${state.prize.portions ? `, ${state.prize.portions} portions` : ""}) is gone at the start of round ${state.clock.goneAt}; Lights Out at the end of round ${state.clock.lightsOut}.`,
       `Who lives here: ${who}.`,
       `Ways in: ${house.entrances.map(e => e.name).join("; ")}.`,
-      `The gang: ${actors.map(a => a.name).join(", ")} — all outside.`
+      `The gang: ${actors.map(a => a.name).join(", ")} — all outside.`,
+      credLine
     ]
   });
   return state;
@@ -102,11 +111,12 @@ export async function temptCat(pick) {
   const res = await mutate(s => Round.tempt(s, p));
   const t = res.temptation;
   const c = catById(res.state, t.catId);
-  const ins = CATB.instincts[t.instinct];
+  const ins = Round.temptInfo(res.state, t.instinct);
+  const zoom = Cred.zoomies(c, { cred: automation().cred });
   await postEventCard({ kind: CARD.temptation, robberyId: res.state.id, round: res.state.round, catId: t.catId, instinct: t.instinct, answered: null }, {
-    title: `Temptation: ${c.name}`, subtitle: `${ins.label} — ${ins.tempt}, in the ${roomName(res.state, t.room).toLowerCase()}`,
+    title: `Temptation: ${c.name}`, subtitle: `${ins.label} — ${t.tempt ?? ins.tempt}, in the ${roomName(res.state, t.room).toLowerCase()}`,
     lines: [`Give in: +1 Cattitude. ${ins.giveInText} It's ${c.name}'s Action this round, done before it moves${c.carrying ? ", and it drops the prize first" : ""}.`,
-      "Resist: spend 1 Cattitude (with none, you must give in).", `${c.name} goes first this round.`]
+      zoom ? `Resist? ${c.name} has the zoomies: it can't resist anything.` : "Resist: spend 1 Cattitude (with none, you must give in).", `${c.name} goes first this round.`]
   });
   return res;
 }
@@ -194,7 +204,7 @@ export async function clearRobbery() {
 const gmMutate = fn => { requireGM(); return mutate(fn).then(async res => { await postMoodCards(res?.events ?? [], res?.state); return res; }); };
 // v0.8: a change by hand also lets a waiting meter go off (a human with free hands who can see a cat acts at once);
 // v0.9: a tie between humans is settled by Attention, then a die
-const moodMode = () => ({ mood: automation().mood, d6: automation().d6 });
+const moodMode = () => ({ mood: automation().mood, d6: automation().d6, cred: automation().cred });
 export const overrides = {
   moodAdjust: (side, steps) => gmMutate(s => Round.manualMood(s, side, steps, moodMode())),
   moodUndo: () => gmMutate(s => Round.undoMood(s)),
@@ -211,7 +221,10 @@ export const overrides = {
   /** The getaway by hand (Ch 9): a cat to a space (0–3), "home" or "pinched"; the warden to a space (or "none"); a cat's loot. */
   runner: (catId, where) => getawayMutate(s => Getaway.placeRunner(s, catId, where)),
   warden: pos => getawayMutate(s => Getaway.setWarden(s, pos)),
-  carry: (catId, n) => getawayMutate(s => Getaway.setCarry(s, catId, n))
+  carry: (catId, n) => getawayMutate(s => Getaway.setCarry(s, catId, n)),
+  /** Cred by hand (Ch 9): a cat's Cred tonight, and the zoomies on or off. */
+  cred: (catId, n) => gmMutate(s => Cred.setCred(s, catId, n)),
+  zoomies: (catId, on) => gmMutate(s => Cred.setZoomies(s, catId, on))
 };
 function getawayMutate(fn) {
   requireGM();
@@ -250,6 +263,7 @@ export function registerRobberyOps() {
     apply: async ({ catId, optionId, helpers, force }, user) => {
       await finalizePending({ catId });
       const res = await mutate(s => doAction(s, catId, optionId, { helpers, force: !!(user?.isGM && force) }, moodMode()));
+      await postCredCard(res.events, res.state);
       await postMoodCards(res.events, res.state);
       await postGetawayCards(res.events, res.state);
       return { events: lines(res.events), done: res.ok !== false };
@@ -337,6 +351,8 @@ export function registerRobberyButtons() {
       else box.appendChild(button("Give in (+1 Cattitude)", () => answerTemptation(card.catId, "gaveIn")));
     } else box.appendChild(button("Give in (+1 Cattitude)", () => answerTemptation(card.catId, "gaveIn")));
     const cat = Number(actor?.system.cattitude ?? 0);
+    // Ch 9 "Cred": a cat with the zoomies can't resist anything
+    if (Cred.zoomies(c, { cred: setting(SETTINGS.autoCred) })) return;
     if (cat > 0 || !setting(SETTINGS.autoCattitude)) box.appendChild(button("Resist (1 Cattitude)", () => answerTemptation(card.catId, "resisted")));
   });
   registerButtons(CARD.temptPrompt, (message, card, box) => {
@@ -349,9 +365,11 @@ export function registerRobberyButtons() {
   });
   registerButtons(CARD.outcome, (message, card, box) => {
     const s = getState();
-    if (game.user.isGM && card.result === "clean" && !card.repGiven) {
-      box.appendChild(button("Give the gang +1 Rep (campaign)", async () => {
-        for (const c of s?.cats ?? []) { const a = game.actors.get(c.id); if (a) await a.update({ "system.rep": Number(a.system.rep ?? 0) + 1 }); }
+    // Ch 14: 1 Rep for a Clean Getaway, and 1 for a night with 5 or more Cred that wasn't Busted (Ch 9)
+    const rep = card.rep ?? (card.result === "clean" ? 1 : 0);
+    if (game.user.isGM && rep > 0 && !card.repGiven) {
+      box.appendChild(button(`Give the gang +${rep} Rep (campaign${card.repWhy?.length ? `: ${card.repWhy.join(" and ")}` : ""})`, async () => {
+        for (const c of s?.cats ?? []) { const a = game.actors.get(c.id); if (a) await a.update({ "system.rep": Number(a.system.rep ?? 0) + rep }); }
         await message.update({ [`flags.${FLAG}.card.repGiven`]: true });
       }));
     }

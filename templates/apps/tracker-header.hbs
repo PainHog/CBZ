@@ -49,6 +49,7 @@
   {{/if}}
   {{#if pick}}<p class="catb-end-due">{{pick.text}} {{#each pick.cats}}<button type="button" data-action="pickTarget" data-cat="{{this.id}}">{{this.name}}</button>{{/each}}</p>{{/if}}
   {{#if temptation}}<p class="catb-temptation">{{temptation}}</p>{{/if}}
+  {{#if credText}}<p class="catb-cred">{{credText}}</p>{{/if}}
   {{#if endDue}}<p class="catb-end-due">{{endDue}}{{#if isGM}} <button type="button" data-action="endRobbery">End it now</button>{{/if}}</p>{{/if}}
   {{#if outcome}}<p class="catb-outcome">{{outcome}}</p>{{/if}}
   {{else}}

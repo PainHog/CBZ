@@ -54,6 +54,12 @@ export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleWay: guard((event, target) => R.overrides.setOpen({ way: target.dataset.way, open: target.dataset.open !== "true" })),
       toggleEntrance: guard((event, target) => R.overrides.setOpen({ entrance: target.dataset.entrance, open: target.dataset.open !== "true" })),
       noise: guard((event, target) => R.overrides.markNoise(target.dataset.room, { mess: target.dataset.mess === "true" })),
+      // Cred by hand (Ch 9)
+      cred: guard((event, target) => {
+        const c = getState()?.cats?.find(x => x.id === target.dataset.cat);
+        return R.overrides.cred(target.dataset.cat, Math.max(0, (c?.cred ?? 0) + Number(target.dataset.steps)));
+      }),
+      zoomies: guard((event, target) => R.overrides.zoomies(target.dataset.cat, target.dataset.on === "true")),
       openSheet: guard((event, target) => game.actors.get(target.dataset.cat)?.sheet?.render(true))
     }
   };

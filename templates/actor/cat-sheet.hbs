@@ -55,6 +55,9 @@
     <h3>{{#if robbery.getaway}}On the getaway from {{robbery.house}} — getaway round {{robbery.round}}{{else}}In the robbery at {{robbery.house}} — round {{robbery.round}}{{/if}}</h3>
     <p>{{robbery.where}} ({{robbery.status}}){{#if robbery.hidden}}, hidden{{/if}}{{#if robbery.carrying}}, carrying the {{robbery.carrying}}{{/if}}. {{robbery.turn}}.</p>
     {{#if robbery.rolls.length}}<p class="catb-note">Rolls you could make now: {{#each robbery.rolls}}{{this}}; {{/each}}</p>{{/if}}
+    <p class="catb-cred">Cred tonight: <strong>{{robbery.cred}}</strong>
+      <label class="checkbox"><input type="checkbox" data-action="zoomies" {{#if robbery.nip}}checked{{/if}} {{#unless robbery.nipEditable}}disabled{{/unless}}> Zoomies</label>
+      {{#if robbery.nipNote}}<span class="catb-note">({{robbery.nipNote}})</span>{{/if}}</p>
     <button type="button" data-action="tracker">Open the Robbery Tracker</button>
   </section>
   {{/if}}

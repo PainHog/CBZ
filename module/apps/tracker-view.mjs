@@ -12,6 +12,7 @@ import { watchers, isAsleep, isDistracted, roomName, hasTrait, humanByKey } from
 import { optionsText } from "../logic/house-catalog.mjs";
 import { OUTCOME_LABEL, carryCap } from "../logic/prize.mjs";
 import { getawayView } from "../logic/getaway.mjs";
+import { credOf, credSummary, tagged, rivalsRoom, rivalsName } from "../logic/cred.mjs";
 
 const STATUS = { outside: "Outside", free: "In the house", held: "Held", shut: "Shut in the Den" };
 const STAGE = { cats: "The cats' turn", house: "The house's turn", between: "Between rounds", getaway: "The getaway" };
@@ -38,6 +39,9 @@ function catView(s, c, { canControl, isGM }) {
   if (c.status === "shut" && !r) badges.push("Shut in the Den");
   if (s.phase === "robbery" && s.stage === "cats" && s.round >= 1) { badges.push(c.moved ? "Moved" : "Move left"); badges.push(c.acted ? "Acted" : "Action left"); }
   if (s.temptation?.catId === c.id && !s.temptation.choice) badges.push("Tempted: answer first");
+  // Ch 9 "Cred"
+  if (c.nip) badges.push("Zoomies!");
+  if (c.cred) badges.push(`Cred ${c.cred}`);
   const mine = canControl(c.id);
   const opts = mine || isGM ? catOptions(s, c.id) : null;
   const options = (opts?.options ?? []).filter(o => o.id !== "free" || mine).map(o => ({
@@ -58,7 +62,9 @@ function catView(s, c, { canControl, isGM }) {
     spots: isGM && r ? [...s.getaway.route.map((o, i) => ({ value: String(i), label: i === 0 ? "The garden" : `Past ${s.getaway.route[i - 1].name}`, selected: r.state === "running" && r.pos === i })),
       { value: "home", label: "Home", selected: r.state === "home" }, { value: "pinched", label: "Pinched", selected: r.state === "pinched" }] : [],
     carries: isGM && r ? Array.from({ length: carryCap(c) + 1 }, (_, n) => ({ value: String(n), label: `${n} piece${n === 1 ? "" : "s"}`, selected: r.carry === n })) : [],
-    onRoute: !!r
+    onRoute: !!r,
+    // Cred by hand (GM): − / + and the zoomies
+    cred: c.cred ?? 0, nip: !!c.nip, zoomiesLabel: c.nip ? "Zoomies: off" : "Zoomies: on"
   };
 }
 
@@ -73,6 +79,7 @@ function getawaySection(s, { canControl, isGM }) {
     spaces: v.spaces.map(sp => ({
       name: sp.name, next: sp.next, hideout: sp.next === null, warden: sp.warden, loot: sp.loot,
       obstacle: sp.next ? `Next: ${sp.next} — ${optionsText(sp.opts)}${sp.pet ? `; it takes ${sp.pet} ${sp.pet > 1 ? "dice" : "die"} off` : ""}` : "",
+      rivals: sp.rivals ? `${sp.rivals[0].toUpperCase()}${sp.rivals.slice(1)} hang about here: dropped loot is nicked at once; lead the gang past them on a Clean or a Purrfect for 1 Cred.` : "",
       cats: sp.cats.map(x => catView(s, s.cats.find(c => c.id === x.id), { canControl, isGM }))
     })),
     pinched: v.pinched.map(x => catView(s, s.cats.find(c => c.id === x.id), { canControl, isGM })),
@@ -127,6 +134,13 @@ function prizeText(s) {
   return `The ${z.name} (${z.size}): ${bits.join("; ")}`;
 }
 
+/** Ch 9 "Cred": tonight's points, and who is the Cat's Whiskers so far (or at the end). */
+function credText(s) {
+  const sum = s.outcome?.cred ?? credSummary(s, s.outcome?.result ?? null);
+  const top = sum.cats.filter(c => sum.whiskers.includes(c.id)).map(c => c.name);
+  return `Cred tonight: ${sum.cats.map(c => `${c.name} ${c.cred}`).join(" · ")} (${sum.total} for the gang)${top.length ? ` — the Cat's Whiskers${s.phase === "ended" ? "" : " so far"}: ${top.join(" and ")}` : ""}.`;
+}
+
 /**
  * @param {object|null} state the robbery
  * @param {{ isGM: boolean, canControl: (catId) => boolean, houses?: object[] }} viewer
@@ -146,9 +160,16 @@ export function trackerView(state, { isGM = false, canControl = () => false, hou
     rooms: Object.keys(fl.rooms).filter(k => s.rooms[k]).map(key => {
       const r = s.rooms[key];
       const tempt = roomTemptations(s, key).map(i => CATB.instincts[i]?.label ?? i).join(", ");
+      // Ch 9 "Cred": the gang's tag, the rivals' tag, the catnip stash
+      const cr = credOf(s);
+      const credNotes = [
+        tagged(s, key) ? "Tagged by the gang" : "",
+        rivalsRoom(s, key) ? `${rivalsName(s)}' tag${tagged(s, key) ? " (tagged over!)" : ": tag over it for +1 Cred"}` : "",
+        cr.catnip === key ? (cr.nipBy ? `The catnip stash: ${s.cats.find(c => c.id === cr.nipBy)?.name ?? "a cat"} has had it` : `The catnip stash: ${cr.catnipName} (tempts every cat in here)`) : ""
+      ].filter(Boolean).join(" · ");
       const cats = s.cats.filter(c => c.where === key).map(c => catView(s, c, { canControl, isGM }));
       return {
-        key, name: r.name, tempt, isDen: key === s.den, noHide: r.hide === false,
+        key, name: r.name, tempt, credNotes, isDen: key === s.den, noHide: r.hide === false,
         watched: watchers(s, key).length > 0, noise: (s.noise ?? []).some(n => n.room === key), mess: (s.messes ?? []).includes(key),
         prize: z.room === key && !z.out && !z.gone ? prizeText(s) : "",
         spot: z.spotRoom === key && z.room !== key && !z.out && !z.gone,
@@ -177,7 +198,8 @@ export function trackerView(state, { isGM = false, canControl = () => false, hou
       text: `${s.pendingTrigger.side === "broom" ? "Broom" : "Cuddle"} is full: the Storyteller picks which cat ${humanByKey(s, s.pendingTrigger.human)?.name ?? "the human"} ${s.pendingTrigger.side === "broom" ? "chases out" : "picks up"}.`,
       cats: isGM ? s.pendingTrigger.candidates.map(id => ({ id, name: s.cats.find(c => c.id === id)?.name ?? id })) : []
     } : null,
-    temptation: t ? `${s.cats.find(c => c.id === t.catId)?.name} was tempted (${CATB.instincts[t.instinct]?.label})${t.choice ? (t.choice === "gaveIn" ? ": gave in." : ": resisted.") : ": waiting for an answer."}` : "",
+    temptation: t ? `${s.cats.find(c => c.id === t.catId)?.name} was tempted (${t.label ?? CATB.instincts[t.instinct]?.label ?? t.instinct})${t.choice ? (t.choice === "gaveIn" ? ": gave in." : ": resisted.") : ": waiting for an answer."}` : "",
+    credText: credText(s),
     temptOpts: temptOpts.map(o => ({ ...o, text: `Tempt ${o.catName}: ${o.label} (${o.roomName})` })), canTempt: temptOpts.length > 0,
     endDue: end.due ? end.text : "",
     outcome: s.outcome ? `${OUTCOME_LABEL[s.outcome.result]}${s.outcome.lootTotal ? ` — loot home: ${s.outcome.loot} of ${s.outcome.lootTotal}` : ""}${s.outcome.leftBehind.length ? ` — pinched: ${s.outcome.leftBehind.map(id => s.cats.find(c => c.id === id)?.name).join(", ")}` : ""}` : "",

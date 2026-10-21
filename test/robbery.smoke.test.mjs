@@ -255,8 +255,8 @@ test("a GM and two players rob Number 12 (core rules v0.9) from start to Clean G
   const out = lastCard("outcome");
   assert.match(out.content, /Clean Getaway/);
   assert.match(out.content, /Loot home: 5 of 5/);
-  assert.deepEqual(buttonLabels(out, gmU), ["Give the gang +1 Rep (campaign)"]);
-  await click(out, gmU, "Give the gang +1 Rep (campaign)");
+  assert.deepEqual(buttonLabels(out, gmU), ["Give the gang +1 Rep (campaign: a Clean Getaway)"]);
+  await click(out, gmU, "Give the gang +1 Rep (campaign: a Clean Getaway)");
   assert.equal(tilly.system.rep, 1);
   assert.equal(flags(out).repGiven, true);
 

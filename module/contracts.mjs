@@ -45,6 +45,7 @@ export const CARD = Object.freeze({
   moodPick: "moodPick",     // whispered to the Storyteller: a meter filled with no roll — which cat in sight gets it
   robbery: "robbery",       // a robbery starts
   getaway: "getaway",       // the getaway (Ch 9): the start, the warden, cornered cats, drops, pinches
+  cred: "cred",             // showing off (Ch 9 "Cred"): a tag or the catnip with no roll, and the Cred it scored
   outcome: "outcome"        // Clean Getaway / Messy / Busted, with the campaign buttons
 });
 
