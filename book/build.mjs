@@ -20,6 +20,7 @@
  * Playwright's own default browser.
  */
 import { chromium } from "playwright-core";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -45,6 +46,8 @@ const DRAFT = process.argv.includes("--draft");
 // --print: print-on-demand files — an interior with 0.125in bleed on every edge
 // (no covers, even page count) plus separate front and back covers with bleed.
 const PRINT = process.argv.includes("--print");
+// --white: a printer-friendly copy — white pages, light part pages and sheets, the covers as they are
+const WHITE = process.argv.includes("--white");
 const BLEED_IN = PRINT ? 0.125 : 0;
 const CHROME = process.env.CHROME_PATH ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 
@@ -246,6 +249,17 @@ const PRINT_CSS = `
 @page blankp { @bottom-center { content: none; } }
 `;
 
+// Printer-friendly overrides (--white): the page colours become white or near-white; art keeps its colours.
+const WHITE_CSS = `
+:root { --paper: #ffffff; --paper-2: #f4f1ea; --paper-light: #ffffff; }
+html, body { background: #ffffff; }
+@page { background: #ffffff; } @page toc { background: #ffffff; } @page credits { background: #ffffff; } @page sheet { background: #ffffff; }
+@page part { background: #ffffff; }
+.part { background: #ffffff; color: var(--dark-deep); }
+.part h1 { color: var(--dark-deep); } .part-lede { color: var(--ink-soft); } .part-kicker { color: var(--accent-deep); }
+.part .tag { color: var(--accent-deep); }
+`;
+
 const sectionOf = (html, cls) => (html.match(new RegExp(`<section class="${cls}"[\\s\\S]*?<\\/section>`)) ?? [null])[0];
 
 function page(pages, markers, spots = {}, { only = null, padBlank = false } = {}) {
@@ -284,6 +298,7 @@ function page(pages, markers, spots = {}, { only = null, padBlank = false } = {}
 <style>${css}</style>
 <style>${FOOTER_CSS}</style>
 ${PRINT ? `<style>${PRINT_CSS}</style>` : ""}
+${WHITE ? `<style>${WHITE_CSS}</style>` : ""}
 </head><body>
 ${content}
 </body></html>`;
@@ -360,9 +375,9 @@ try {
     if (shifted.length && !moved.length) spots = {};
   }
 
-  const out = join(DIST, PRINT ? `${FILE_STEM}_v${VERSION}_print-interior.pdf` : `${FILE_STEM}_v${VERSION}.pdf`);
+  const out = join(DIST, PRINT ? `${FILE_STEM}_v${VERSION}_print-interior.pdf` : WHITE ? `${FILE_STEM}_v${VERSION}_printer-friendly.pdf` : `${FILE_STEM}_v${VERSION}.pdf`);
   let html = page(p1.found, false, spots);
-  if (!PRINT) writeFileSync(join(DIST, HTML_NAME), html);
+  if (!PRINT && !WHITE) writeFileSync(join(DIST, HTML_NAME), html);
   await printPdf(browser, html, out);
   let { pages } = await pageMap(out);
   if (pages !== p1.pages) throw new Error("pass 1 and the final pass paginated differently — TOC numbers may be wrong");
@@ -379,6 +394,16 @@ try {
       await printPdf(browser, page(null, false, {}, { only: cls }), f);
       console.log(`Built ${relative(ROOT, f)} (${8.5 + 2 * BLEED_IN}in × ${11 + 2 * BLEED_IN}in, bleed included).`);
     }
+  }
+  // finishing touches (book/tools/pdf-finish.py): PDF properties, and in --print the one-piece cover spread
+  try {
+    const finish = join(BOOK, "tools", "pdf-finish.py");
+    const built = [out];
+    if (PRINT) for (const n of ["front", "back"]) { const f = join(DIST, `${FILE_STEM}_v${VERSION}_print-cover-${n}.pdf`); if (existsSync(f)) built.push(f); }
+    execFileSync("python3", [finish, "meta", ...built], { stdio: "inherit" });
+    if (PRINT) execFileSync("python3", [finish, "spread", out, built[1], built[2], join(DIST, `${FILE_STEM}_v${VERSION}_print-cover-spread.pdf`)], { stdio: "inherit" });
+  } catch (e) {
+    console.warn(`  ! PDF finishing skipped (needs python3 with PyMuPDF): ${e.message.split("\n")[0]}`);
   }
   for (const e of entries) {
     const sp = spots[e.id];

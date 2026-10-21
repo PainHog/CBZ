@@ -163,7 +163,10 @@ figure.art svg { display: block; width: 100%; height: auto; }
 .toc-list { list-style: none; margin: 0 auto; padding: 0; max-width: 5.6in; }
 .toc-list a { display: flex; align-items: baseline; gap: 6px; color: inherit; text-decoration: none; }
 .toc-list .toc-title { flex: 0 1 auto; }
-.toc-list a::after { content: ""; order: 2; flex: 1 1 auto; border-bottom: 1.2px dotted var(--paper-edge); transform: translateY(-3px); }
+/* dot leaders as a background, not a dotted border: Chromium paints dotted borders as thousands of tiny squares,
+   repeated off-page on every page of the PDF (the review found ~3,400 a page) */
+.toc-list a::after { content: ""; order: 2; flex: 1 1 auto; height: 2px; align-self: flex-end; margin-bottom: 4px;
+  background: radial-gradient(circle, var(--paper-edge) 0.9px, transparent 1.1px) left center / 5px 2px repeat-x; }
 .toc-list .toc-page { order: 3; font: 700 10.5pt var(--sans); letter-spacing: 0; color: var(--dark); font-variant-numeric: lining-nums; }
 .toc-part { margin: 0.3in 0 0.1in; }
 .toc-part a { font: 800 11pt var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--dark); }
