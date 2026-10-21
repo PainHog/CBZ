@@ -101,7 +101,7 @@ export const HOUSES = [
       { name: "the side gate, left on the latch", opts: [["streetwise", 0, "open"], ["savage", 0, "climb"]] },
       { name: "next door's terrier", pet: 1, opts: [["savage", 0, "fight"], ["sneaky", 0, "hide"], ["sweet", 0, "charm"]] },
       { name: "the garage roofs", opts: [["savage", 1, "climb"], ["sneaky", 1, "climb"]] },
-      { name: "the main road", opts: [["streetwise", 1], ["savage", 1, "chase"]] },
+      { name: "the main road", opts: [["streetwise", 0], ["savage", 0, "chase"]] },
     ],
     prize: {
       kind: "box", name: "big delivery box", size: "large",
@@ -109,7 +109,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 8, scale3: [2, 2], // v0.9: three cats get Patience +2 here
+    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 9, // v0.10: 9 (the mouse has to survive the getaway too)
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
