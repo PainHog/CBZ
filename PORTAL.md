@@ -1,6 +1,6 @@
-Now: The game has a new name, Nine Lives Gang, with a spray-paint logo and the gang's sign on the cover
-Next: Richard reviews the rulebook and tries the online version at a real table
-Number: Design decisions made = 41
+Now: Making the gang rougher and funnier: thug cats after shiny loot, a getaway from animal control, and Cred for showing off
+Next: Finish the funnier words and the new pictures, then fresh playtests with real dice and a new rulebook
+Number: Design decisions made = 46
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
@@ -49,4 +49,14 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] Online version that runs the rules for the table (built and tested on a pretend table)
 - [x] Last fixes: games with five cats evened out, the house pages tidied, and a print-ready edition of the rulebook
 - [x] A new name and look: Nine Lives Gang, with a spray-paint logo, stencil chapter titles and the gang's sign on the cover
+- [x] An outside review of the rulebook, and the rules fixes it asked for
+- [x] Thug cats who love shiny things: shiny loot is a fourth kind of prize
+- [x] The getaway: over the fences with the loot before animal control pinches anyone
+- [x] Cred: points for tagging rooms, getting into the catnip and showing up the rival gangs
+- [x] Print files: a printer-friendly copy and a print-shop cover with a spine
+- [ ] Funnier, lighter words all through the book
+- [ ] New cover and gang pictures: tattoos, bandanas, bling and graffiti
+- [ ] The online version learns the getaway and Cred
+- [ ] Playtests of the new rules with real dice, and their fixes
+- [ ] Rulebook version 0.9
 - [ ] Richard tries the online version at a real table
