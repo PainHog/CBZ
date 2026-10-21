@@ -95,10 +95,12 @@ export class CatSheet extends CatBurglarsActorSheet {
     return rollFor(this.document, { approach: target.dataset.approach });
   }
 
-  /** The Zoomies box (Storyteller): the zoomies on or off in the robbery (Ch 9 "Cred"). */
-  static async #zoomies(event, target) {
+  /** The Zoomies box (Storyteller): a click turns the zoomies on or off in the robbery (Ch 9 "Cred"). */
+  static async #zoomies() {
     if (!game.user?.isGM) return null;
-    return game.catBurglars?.robbery?.overrides?.zoomies?.(this.document.id, !!target.checked);
+    const c = getState()?.cats?.find(x => x.id === this.document.id);
+    if (!c) return null;
+    return game.catBurglars?.robbery?.overrides?.zoomies?.(this.document.id, !c.nip);
   }
 }
 

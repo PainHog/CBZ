@@ -538,3 +538,124 @@ test("the getaway (Ch 9): a piece dropped on purpose, a Flop, the van, a dodge, 
   assert.match(lastCard("outcome").content, /Wisp spends a Life and busts out of the pound in the night/);
   assert.deepEqual(log.errors, []);
 });
+
+test("Cred (Ch 9): a tag over the rivals', a tag in view, the catnip and the zoomies, Cred by hand, the rivals on the getaway and the Cat's Whiskers", async () => {
+  const set = (k, v) => asUser(gmU, () => game.settings.set("cat-burglars", k, v));
+  const scruff = await makeCat("Scruff", p1, { approaches: { savage: 3, sneaky: 2, sweet: 1, streetwise: 1 }, instinct1: "scrapper", instinct2: "climber", body: "lean" });
+  const mitts = await makeCat("Mittens", p2, { approaches: { sneaky: 3, savage: 2, sweet: 1, streetwise: 1 }, instinct1: "foodie", instinct2: "boxSitter", body: "lean" });
+  const duke = await makeCat("The Duke", p1, { approaches: { streetwise: 3, sweet: 2, sneaky: 1, savage: 1 }, instinct1: "curious", instinct2: "hunter", body: "chonky" });
+  await asUser(gmU, () => api().robbery.startRobbery("number-12", { actorIds: [scruff.id, mitts.id, duke.id] }));
+  assert.match(lastCard("robbery").content, /Cred: the catnip stash is a bag of catnip behind the washing machine \(the utility room\); the Bin Lid Boys have tagged the downstairs loo, and hang about at the allotments on the getaway\. Show off!/);
+  await set("autoHouseTurn", "manual");
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  await asUser(gmU, () => api().robbery.overrides.patch("pudding", { mode: "hiding", until: 99 }));
+  await trackerAction(gmU, "place", { cat: scruff.id, to: "loo" });
+  await trackerAction(gmU, "place", { cat: mitts.id, to: "utility" });
+  await trackerAction(gmU, "place", { cat: duke.id, to: "hall" }); // with Mr Pell
+
+  // Scruff tags the loo, over the Bin Lid Boys' tag: nobody sees, so no roll
+  await trackerAction(p1, "act", { cat: scruff.id, option: "tag" });
+  let card = lastCard("cred");
+  assert.match(card.content, /Showing off!/);
+  assert.match(card.content, /slap over the Bin Lid Boys(&#x27;|') tag\. Take that!/);
+  assert.match(card.content, /Scruff \+2 Cred for tagging the downstairs loo over the Bin Lid Boys/);
+  assert.equal(catOf(scruff.id).cred, 2);
+  assert.ok(state().messes.includes("loo"), "a tag is a mess");
+  const app = asUser(p1, () => api().openTracker());
+  await settle();
+  assert.match(app.element.innerHTML, /Tagged by the gang · The Bin Lid Boys(&#x27;|') tag \(tagged over!\)/);
+  assert.match(app.element.innerHTML, /Cred tonight: Scruff 2 · Mittens 0 · The Duke 0 \(2 for the gang\) — the Cat(&#x27;|')s Whiskers so far: Scruff/);
+
+  // The Duke tags the hall under Mr Pell's nose: a roll (Sneaky or Savage), +1 when it works
+  let m = await rollAs(p1, duke, "tag", { approach: "savage" }, [6]);
+  await click(m, p1, "Accept");
+  assert.equal(catOf(duke.id).cred, 2, "1, +1: he watched and couldn't stop it");
+  assert.ok(flags(m).appliedText.some(t => /right under their noses/.test(t)));
+
+  // the catnip stash tempts Mittens (a Foodie and a Box Sitter) all the same
+  await trackerAction(gmU, "tempt", { cat: mitts.id, instinct: "catnip" });
+  card = lastCard("temptation");
+  assert.match(card.content, /The catnip stash — a bag of catnip behind the washing machine, in the utility room/);
+  await click(card, p2, "Give in (+1 Cattitude)");
+  assert.equal(catOf(mitts.id).nip, true, "the zoomies");
+  assert.equal(catOf(mitts.id).cred, 1);
+  assert.equal(mitts.system.cattitude, 4);
+  assert.ok(state().noise.some(x => x.room === "utility"), "yowling");
+  const { CatSheet } = await import("../module/sheets/actor-sheets.mjs");
+  const sheet = new CatSheet({ document: mitts });
+  await asUser(p2, () => sheet.render(true));
+  assert.match(sheet.element.innerHTML, /Cred tonight: <strong>1<\/strong>/);
+  assert.match(sheet.element.innerHTML, /checked disabled> Zoomies/, "the player sees the box ticked; only the Storyteller changes it");
+
+  // next round: with the zoomies, +1 die and even a Clean is a noise
+  await houseTurn([]);
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  m = await rollAs(p2, mitts, "free", { approach: "sneaky" }, [6, 1, 1, 1]); // Sneaky 3 + the zoomies
+  assert.equal(flags(m).plan.total, 4);
+  assert.ok(flags(m).plan.add.some(a => a.key === "nip"));
+  assert.match(m.content, /Noise in the Utility room/);
+  await click(m, p2, "Accept");
+  assert.ok(state().noise.some(x => x.room === "utility"));
+
+  // a round later, a temptation: no Resist button for a cat with the zoomies
+  await houseTurn([]);
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  await trackerAction(gmU, "place", { cat: mitts.id, to: "kitchen" });
+  await trackerAction(gmU, "tempt", { cat: mitts.id, instinct: "foodie" });
+  card = lastCard("temptation");
+  assert.match(card.content, /Mittens has the zoomies: it can(&#x27;|')t resist anything/);
+  assert.deepEqual(buttonLabels(card, p2), ["Give in (+1 Cattitude)"]);
+  await click(card, p2, "Give in (+1 Cattitude)");
+
+  // the Storyteller by hand: the sheet's Zoomies box, the tracker's Zoomies and Cred buttons
+  const gmSheet = new CatSheet({ document: mitts });
+  await asUser(gmU, () => gmSheet.render(true));
+  assert.match(gmSheet.element.innerHTML, /checked > Zoomies/);
+  await asUser(gmU, () => gmSheet.runAction("zoomies"));
+  await settle();
+  assert.equal(catOf(mitts.id).nip, false);
+  await trackerAction(gmU, "zoomies", { cat: mitts.id, on: "true" });
+  assert.equal(catOf(mitts.id).nip, true);
+  await trackerAction(gmU, "cred", { cat: duke.id, steps: "1" });
+  assert.equal(catOf(duke.id).cred, 3);
+
+  // everyone out with the chicken (4 portions): the getaway
+  const s = JSON.parse(JSON.stringify(state()));
+  Object.assign(s.prize, { withHuman: null, out: true, room: null, carriers: [], portions: 4, portionsLeft: 4, eaten: 0 });
+  for (const c of s.cats) Object.assign(c, { where: "outside", status: "outside", carrying: false, hidden: false });
+  await asUser(gmU, () => game.settings.set("cat-burglars", "robberyState", s));
+  await settle();
+  await asUser(gmU, () => api().robbery.endRobbery("manual"));
+  await settle();
+  card = lastCard("getaway");
+  assert.match(card.content, /The Bin Lid Boys hang about at the allotments/);
+  assert.match(card.content, /By the back fence Mittens(&#x27;|')s zoomies have worn off/);
+  assert.equal(catOf(mitts.id).nip, false);
+  // round 1: The Duke leads them over the back fence with a Purrfect — what a leap
+  m = await rollAs(p1, duke, "over", { approach: "savage", [`help-${scruff.id}`]: true, [`help-${mitts.id}`]: true }, [6, 6]); // Savage 1 + 2 helpers − his two pieces
+  await click(m, p1, "Accept");
+  assert.equal(catOf(duke.id).cred, 4);
+  await trackerAction(gmU, "endGetawayRound");
+  // round 2: past the Bin Lid Boys on the allotments with a Clean
+  const tracker = asUser(p2, () => api().openTracker());
+  await settle();
+  assert.match(tracker.element.innerHTML, /The Bin Lid Boys hang about here: dropped loot is nicked at once/);
+  m = await rollAs(p1, scruff, "over", { approach: "sneaky", [`help-${duke.id}`]: true, [`help-${mitts.id}`]: true }, [6, 2, 1]); // Sneaky 2 + 2 helpers − his piece
+  await click(m, p1, "Accept");
+  assert.equal(catOf(scruff.id).cred, 3);
+  assert.ok(flags(m).appliedText.some(t => /Scruff leads the gang right past the Bin Lid Boys, tail high/.test(t)));
+  for (const c of [scruff, mitts, duke]) await trackerAction(gmU, "place", { change: "runner", cat: c.id, to: "home" });
+  assert.equal(state().phase, "ended");
+  const out = lastCard("outcome");
+  assert.match(out.content, /Clean Getaway/);
+  assert.match(out.content, /Cred tonight: Scruff 3, Mittens 1, The Duke 4 — 8 for the gang\./);
+  assert.match(out.content, /The Duke is the Cat(&#x27;|')s Whiskers with 4 Cred/);
+  assert.deepEqual(buttonLabels(out, gmU), ["Give the gang +2 Rep (campaign: a Clean Getaway and 8 Cred tonight)"]);
+  await click(out, gmU, "Give the gang +2 Rep (campaign: a Clean Getaway and 8 Cred tonight)");
+  assert.deepEqual([scruff, mitts, duke].map(c => c.system.rep), [2, 2, 2]);
+  await set("autoHouseTurn", "prompt");
+  assert.deepEqual(log.errors, []);
+});
