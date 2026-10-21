@@ -447,7 +447,13 @@ class Robbery {
     if (p.tagPolicy === "off" || this.tags.has(c.loc)) return;
     const room = side => this.room(side);
     let inView = false;
-    if (seen) {
+    if (c.nip && p.zoomiesTagRoll) {
+      // with the zoomies a tag is always a roll (and, like every roll it makes, a noise)
+      if (room("broom") < 3) return;
+      c.acted = true;
+      if (!this.simpleInView(c, "tag (zoomies)", [], true)) return;
+      inView = seen;
+    } else if (seen) {
       if (p.tagPolicy !== "bold" || room("broom") < 4) return;
       c.acted = true;
       if (!this.simpleInView(c, "tag in view", [], true)) return;
@@ -459,11 +465,11 @@ class Robbery {
       c.acted = true;
     }
     this.tags.add(c.loc); this.rec.event("tag");
-    if (p.tagMess) (this.messes ??= new Set()).add(c.loc);
+    if (p.tagMess && !(inView && p.seenTagNoMess)) (this.messes ??= new Set()).add(c.loc); // a tag they saw isn't a mess: they already know
     this.addCred(c, 1 + (inView ? 1 : 0) + (this.h.cred?.rivalTag === c.loc ? 1 : 0), "tag");
   }
   addCred(c, n, why) {
-    const pts = n * (c.nip ? 2 : 1); c.cred += pts; this.rec.event(`cred:${why}`);
+    const pts = n * (c.nip && why !== "nip" ? 2 : 1); c.cred += pts; this.rec.event(`cred:${why}`);
     this.t(`${c.name}(${c.id}) +${pts} Cred (${why})`);
   }
   getNip(c, seen, giveInSteps) {
@@ -715,10 +721,11 @@ class Robbery {
       res.apply();
       return;
     }
-    if (z.kind === "delicious" && this.wantsToCarryFood(c)) return this.tryPickUp(c);
+    const full = this.p.eatCap > 0 && (c.ate ?? 0) >= this.p.eatCap; // a cat can only eat so much (eatCap)
+    if (z.kind === "delicious" && (full || this.wantsToCarryFood(c))) return this.tryPickUp(c);
     if (z.kind === "delicious") {
       c.acted = true;
-      if (this.simpleInView(c, "eat", ["food"], this.tr("eat")) && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; this.markDisturbed(); this.rec.event("ate"); }
+      if (this.simpleInView(c, "eat", ["food"], this.tr("eat")) && z.portionsLeft > 0) { z.portionsLeft--; z.eaten++; c.ate = (c.ate ?? 0) + 1; this.markDisturbed(); this.rec.event("ate"); }
       return;
     }
     this.tryPickUp(c);
@@ -1208,7 +1215,7 @@ Object.assign(Robbery.prototype, {
     const drops = new Map();
     let warden = ((this.catches ?? 0) > 0 ? 0 : -1) - (p.wardenLag ?? 0); // the warden's space; below 0 = still on the way
     const G = route.length; // the cats start on space 0; clearing obstacle k takes a cat from space k to k+1; space G is the hideout
-    let rounds = 0;
+    let rounds = 0, stunned = false; // dodgeStun: a dodge sends the warden sprawling; he doesn't move next round
     const active = () => run.filter(r => !r.home && !pinched.has(r.c.id));
     while (active().length && rounds < 15) {
       rounds++;
@@ -1229,6 +1236,7 @@ Object.assign(Robbery.prototype, {
         while (here.length) {
           let best = null;
           for (const r of here) for (const o of ob.opts) {
+            if (p.mouthFull && o[0] === "sweet" && r.carry > 0) continue; // mouth full: no Sweet
             const g = here.filter(x => x !== r).slice(0, 2);
             const loaded = [r, ...g].some(x => x.carry > (x.c.body === "chonky" ? 1 : 0)) ? 1 : 0; // carrying loot: one die off
             const ch = this.gChance(r.c, o, { helpers: g.length, diff: loaded, opposition: ob.pet ?? 0 });
@@ -1254,18 +1262,19 @@ Object.assign(Robbery.prototype, {
         }
       }
       // the warden: on the way in round 1 if nobody was caught tonight; then one space a round, two after a Flop
-      if (warden < 0) warden++; else warden = Math.min(G - 1, warden + 1 + (flop && p.wardenFlop ? 1 : 0));
+      if (warden < 0) warden++; else if (stunned) stunned = false; else warden = Math.min(G - 1, warden + 1 + (flop && p.wardenFlop ? 1 : 0));
+      if (p.wardenNoPass && warden >= 0 && active().length) warden = Math.min(warden, Math.min(...active().map(r => r.pos))); // he never gets past a cat
       // loot dropped where the warden has been is gone
       for (const [pos, n] of drops) if (pos <= warden && n) { drops.set(pos, 0); this.rec.event("lootLost"); }
       // cornered: a cat on or behind the warden's space dodges (Tricky) or is pinched
       for (const r of active()) {
         if (r.pos > warden) continue;
         const dd = p.dodgeDiff ?? 1;
-        const opts = [["sneaky", dd, "hide"], ["savage", dd, "chase"], ["sweet", dd, "charm"]];
+        const opts = [["sneaky", dd, "hide"], ["savage", dd, "chase"], ...(p.mouthFull && r.carry > 0 ? [] : [["sweet", dd, "charm"]])]; // mouth full: no Sweet
         const o = opts.reduce((a, b) => (this.gChance(r.c, b) > this.gChance(r.c, a) ? b : a));
         const res = this.gRoll(r.c, o, { why: "dodge the warden" });
         if (res === "flop") { pinched.add(r.c.id); r.carry = 0; this.rec.event("pinched"); }
-        else { r.pos = warden + 1; if (r.pos >= G) r.home = true; this.rec.event("dodged"); }
+        else { if (!p.wardenNoPass) { r.pos = warden + 1; if (r.pos >= G) r.home = true; } if (p.dodgeStun) stunned = true; this.rec.event("dodged"); } // wardenNoPass: the net swishes past; the cat stays put
       }
     }
     const home = run.filter(r => r.home).reduce((a, r) => a + r.carry, 0);

@@ -52,18 +52,39 @@ scenes too sparse on detail. Every one of those classes of mistake applies here.
     coat, markings, eye colour and any scars or collars everywhere.
     **Original characters only:** never echo famous cartoon or film cats (Garfield, Tom,
     Top Cat, Puss in Boots' film design, the Aristocats, Hello Kitty and the like).
+    **One silhouette, no seams** (the author, 2026-10-21): a side-view cat or dog is one
+    continuous outline from nose to tail; no line crosses the body where a leg, the neck or
+    the tail joins it, so it never looks like a jointed animatronic. Check every animal at
+    100% zoom for joins at the shoulders and hips. A running or leaping cat stretches its
+    legs and tail, not its body: the body stays about 2.5–3 heads long.
+    **Sides:** every one-sided mark or piece of gear (a notched ear, a sock, a patch, a stud,
+    a hoop, a tattoo) is on the cat's own correct side for the way it faces: facing right a
+    cat shows its right side, facing left its left side; from the front its left is on the
+    viewer's right (README, "The gang's gear").
 12. **Scale:** consistent within a scene and across the book (a character is the same size
-    next to the same furniture everywhere).
+    next to the same furniture everywhere; README "Scale"). No visible part of a person is
+    taller than a door; a kitten is smaller than an adult; a large cat or dog is clearly larger.
 
 ## Colour & legibility
-13. Palette only (`book/art/README.md`; currently a PLACEHOLDER palette — art direction TBD).
+13. Palette only (`book/art/README.md`).
     **Dark subjects on dark grounds need separation:** a rim light, a lighter backdrop, or a
     light outline so the silhouette reads in print.
 14. Danger colours are for danger; keep the meaning of each accent colour consistent
-    across the book (assignments to be decided with the palette).
+    across the book: red-orange is Broom, pink is Cuddle, amber is light.
 
 ## Text
-15. No garbled pseudo-text; squiggles may stand in for writing.
+15. No garbled pseudo-text; squiggles may stand in for writing. Real words only where they
+    belong (a van's livery, a label, the gang's throw-ups), and always whole: never a word
+    cut by the frame or half hidden so that a fragment reads on its own. Every piece of text
+    is set in the book's faces (Alegreya Sans, Fraunces, the spray-paint face), never a
+    generic family alone; map labels are at least 7pt in print.
+
+## Tone and the street
+16. **Comical and light** (the author, 2026-10-21): the gang are thugs played for laughs —
+    tough looks that don't quite work, swagger, slapstick, daft tattoos, too-big kerchiefs,
+    too-heavy bling. Nothing menacing, nothing gory; the chasers are comic too.
+17. **Graffiti outdoors only**, in the allowed forms and colours (README "Graffiti"): never
+    inside a home, never in Broom red-orange or Cuddle pink, only the words MEOW, 9 LIVES and NLG.
 
 ## How to audit (mandatory method)
 For each piece, write an **object table**: every object (including small props, crumbs,
@@ -71,6 +92,7 @@ tools, furniture and each character's feet), its contact point(s), and what is d
 underneath or holding each contact point. Any row where an end, edge or foot has nothing
 under it — or where the object sits outside the outline of what supports it — is a defect.
 Add a **character row** for each figure: eyes, ears, arms, legs, fingers per hand, tail —
-counted, not glanced at — and, for a recurring character, a check against its reference.
+counted, not glanced at — and, for a recurring character, a check against its reference
+(every mark and piece of gear, on the correct side for the way it faces).
 Looking at the picture as a whole is not enough; the mistakes the author found were all
 small props at the edges of scenes.

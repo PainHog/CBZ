@@ -27,7 +27,7 @@ const bag = [["streetwise", 1, "open"], ["sneaky", 1]];                // rummag
 export const HOUSES = [
   {
     key: "number-12", name: "The Chicken at Number 12", label: "easy", patience: 4,
-    cred: { catnip: "utility", catnipName: "a bag of catnip behind the washing machine", rivals: "the Bin Lid Boys", rivalTag: "loo", patch: 1 }, // v0.10 (Cred)
+    cred: { catnip: "living", catnipName: "a catnip cushion on Mr Pell’s armchair", rivals: "the Bin Lid Boys", rivalTag: "kitchen", patch: 1 }, // v0.10 (Cred)
     map: {
       floors: [{ name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 2, 2], living: [0, 2, 2, 3], hall: [2, 2, 2, 3], loo: [4, 2, 2, 3] } }],
       entrances: { front: "bottom", flap: "top", window: "top" },
