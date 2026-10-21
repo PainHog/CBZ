@@ -469,7 +469,7 @@ export function getawayView(state) {
   const spaces = [...g.route.map((o, i) => ({ index: i, name: i === 0 ? "The garden" : `Past ${g.route[i - 1].name}`, next: o.name, pet: o.pet ?? 0, opts: o.opts })), { index: g.route.length, name: "The hideout", next: null }];
   return {
     round: g.round, stage: g.stage, warden: g.warden, arrives: g.arrives,
-    wardenText: g.warden === null ? `The van pulls up at the end of round ${g.arrives}.` : `The warden is at ${g.route[g.warden].name}${g.warden === 0 ? " (the garden)" : ""}.`,
+    wardenText: g.warden === null ? `The van pulls up at the end of round ${g.arrives}.` : `The warden is at ${g.route[g.warden].name}${g.warden === 0 ? " (the garden)" : ""}${g.stunned ? ", sprawled in the hedge: he won't move this round" : ""}. He never gets past a cat.`,
     loot: g.loot, drops: g.drops, cornered: g.cornered,
     patch: g.patch ?? null, rivals: g.rivals ?? null,
     spaces: spaces.map(sp => ({
