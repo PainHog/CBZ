@@ -19,7 +19,7 @@ export const C = {
   wall: "#e9d7b4", wallDeep: "#cdb58a", floor: "#b9875a", floorDeep: "#8e6340", wood: "#9a6a43", woodDeep: "#6e4a2e",
   brick: "#9b4a3a", brickDeep: "#6f3127", leaf: "#5f7d4f", leafDeep: "#3f5a36", sky: "#26305a",
   ginger: "#d9823b", gingerDeep: "#a85a22", cream: "#f2dcae", creamDeep: "#d3b47d",
-  grey: "#8d93a3", greyDeep: "#5f6577", black: "#2b2933", blackSoft: "#47444f", white: "#fbf7ee", whiteDeep: "#ddd4c3",
+  grey: "#8d93a3", greyDeep: "#5f6577", silver: "#bfc3cc", silverDeep: "#959aa8", black: "#2b2933", blackSoft: "#47444f", white: "#fbf7ee", whiteDeep: "#ddd4c3",
   brown: "#8a6748", brownDeep: "#5f442e", pink: "#e8a3b4", pinkDeep: "#c06f86", eyeGreen: "#8fbf4f", eyeAmber: "#e8b23a", eyeBlue: "#7fb3d9",
   cuddle: "#c25a7c", broom: "#a83722",
 };
@@ -205,6 +205,19 @@ export function furTicks(pts, len = 7, every = 12, side = 1, st = C.ink, sw = 2,
   }
   return `<path d="${d}" stroke="${st}" stroke-width="${sw}" stroke-linecap="round" fill="none"/>`;
 }
+
+/**
+ * The Nine Lives Gang's sign, centred on (0, 0), about 130 wide and 100 tall at scale 1: a cat's head
+ * with two ears, a 9 inside, whiskers both sides, two drips under the chin. The sprayed tag on the
+ * cover and part pages (scenes/pages.mjs gangTag) and Big Biscuit's shoulder tattoo (cats.mjs) both
+ * draw these same strokes, so the mark is identical everywhere.
+ */
+export const GANG_SIGN = {
+  head: "M-40 -6Q-42 30 0 34Q42 30 40 -6L36 -44L14 -24Q0 -28 -14 -24L-36 -44Z",
+  nine: "M11 -4A11 11 0 1 1 11 -5M11 -4Q12 18 -6 22",
+  whiskers: "M-48 6H-62M-47 15L-60 19M48 6H62M47 15L60 19",
+  drips: "M-18 32V44M22 31V38",
+};
 
 // A merged puff cloud (smoke, dust, foliage) from circles [[x,y,r],...]
 export function cloud(list, fill = C.paper, sw = 2.6) {

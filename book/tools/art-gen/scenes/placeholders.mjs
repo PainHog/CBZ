@@ -18,8 +18,8 @@ function panel(w, h, label, sub, { dark = false, id = "ph" } = {}) {
   // generous width estimate for a generic sans (the label must never touch its box)
   const bw = Math.round(Math.max(label.length * (fs * 0.74 + 2), sub.length * fs * 0.55 * 0.58) + fs * 1.4), bh = Math.round(fs * 2.9);
   s += `<rect x="${n((w - bw) / 2)}" y="${n(h / 2 - bh / 2)}" width="${bw}" height="${bh}" rx="${n(fs * 0.3)}" fill="${bg}" stroke="${fg}" stroke-width="2"/>`;
-  s += `<text x="${n(w / 2)}" y="${n(h / 2 - fs * 0.1)}" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="${fs}" letter-spacing="2" fill="${fg}">${label}</text>`;
-  s += `<text x="${n(w / 2)}" y="${n(h / 2 + fs * 0.95)}" text-anchor="middle" font-family="sans-serif" font-size="${n(fs * 0.55)}" fill="${fg}">${sub}</text>`;
+  s += `<text x="${n(w / 2)}" y="${n(h / 2 - fs * 0.1)}" text-anchor="middle" font-family="Alegreya Sans, sans-serif" font-weight="700" font-size="${fs}" letter-spacing="2" fill="${fg}">${label}</text>`;
+  s += `<text x="${n(w / 2)}" y="${n(h / 2 + fs * 0.95)}" text-anchor="middle" font-family="Alegreya Sans, sans-serif" font-size="${n(fs * 0.55)}" fill="${fg}">${sub}</text>`;
   return s;
 }
 

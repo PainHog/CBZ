@@ -4,6 +4,13 @@
  * Writes <outDir>/<name>.png for each SVG (all of book/art/*.svg when no names
  * are given) on a page-coloured ground at print-ish size, plus <outDir>/_sheet.png
  * (a labelled contact sheet). Fails if any SVG is not well-formed XML.
+ *
+ * Zoomed crops, for checking small props at the edges (ART-CHECKLIST "How to audit"):
+ *   node book/tools/preview-art.mjs <outDir> name@x,y,w,h …
+ * renders that part of the piece's viewBox, 1200 px wide, to <outDir>/name@x,y,w,h.png.
+ *
+ * Chapter heads (SVGs with overflow="visible") are also rendered as the book shows them, in the
+ * 7.14in × 1.8in chapter-head box with the side bleed showing: <outDir>/<name>.box.png.
  * Look at every PNG yourself and audit it against book/art/ART-CHECKLIST.md.
  */
 import { chromium } from "playwright-core";
@@ -13,18 +20,29 @@ import { fileURLToPath } from "node:url";
 
 const ART = join(dirname(fileURLToPath(import.meta.url)), "..", "art");
 const PAPER = "#f7f0e1";   // page colour (book/src/book.css --paper)
+const PAPER2 = "#efe2c7";  // (book/src/book.css --paper-2): the chapter-head box
 const EDGE = "#d8c6a1";    // (book/src/book.css --paper-edge)
 const [outDir, ...names] = process.argv.slice(2);
-if (!outDir) { console.error("usage: node book/tools/preview-art.mjs <outDir> [name ...]"); process.exit(2); }
+if (!outDir) { console.error("usage: node book/tools/preview-art.mjs <outDir> [name[@x,y,w,h] ...]"); process.exit(2); }
 mkdirSync(outDir, { recursive: true });
 const list = names.length ? names : readdirSync(ART).filter(f => f.endsWith(".svg")).map(f => f.slice(0, -4)).sort();
 
+// The book's typefaces (the same @fontsource files book/build.mjs embeds), inlined so SVG text in
+// the art (map labels, lettering) renders here exactly as it prints.
+const FONT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "node_modules", "@fontsource");
+const face = (family, pkg, weight, style = "normal") => {
+  const f = join(FONT_DIR, pkg, "files", `${pkg}-latin-${weight}-${style}.woff2`);
+  return existsSync(f) ? `@font-face{font-family:"${family}";src:url(data:font/woff2;base64,${readFileSync(f).toString("base64")}) format("woff2");font-weight:${weight};font-style:${style};}` : "";
+};
+const FONTS = `<style>${[400, 700, 900].map(w => face("Fraunces", "fraunces", w)).join("")}${[400, 500, 700, 800].map(w => face("Alegreya Sans", "alegreya-sans", w) + face("Alegreya Sans", "alegreya-sans", w, "italic")).join("")}${face("Alegreya", "alegreya", 400)}${face("Rubik Spray Paint", "rubik-spray-paint", 400)}${face("Saira Stencil One", "saira-stencil-one", 400)}</style>`;
+
 const CHROME = process.env.CHROME_PATH ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
-const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
+const page = await browser.newPage({ viewport: { width: 1300, height: 900 } });
 let bad = 0;
 const cells = [];
-for (const name of list) {
+for (const item of list) {
+  const [name, crop] = item.split("@");
   const svg = readFileSync(join(ART, `${name}.svg`), "utf8");
   // Well-formedness check via the browser's XML parser.
   const err = await page.evaluate(s => {
@@ -32,16 +50,31 @@ for (const name of list) {
     const e = d.querySelector("parsererror"); return e ? e.textContent.slice(0, 200) : null;
   }, svg);
   if (err) { console.error(`✗ ${name}: ${err}`); bad++; continue; }
-  await page.setContent(`<body style="margin:0;background:${PAPER};display:grid;place-items:center;min-height:100vh">
+  if (crop) {
+    const [x, y, w, h] = crop.split(",").map(Number);
+    const cropped = svg.replace(/viewBox="[^"]*"/, `viewBox="${x} ${y} ${w} ${h}"`).replace(/ overflow="visible"/, "");
+    await page.setContent(`${FONTS}<body style="margin:0;background:${PAPER}"><div id="a" style="width:1200px;overflow:hidden">${cropped}</div></body>`); await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => { const s = document.querySelector("#a svg"); s.style.width = "100%"; s.style.height = "auto"; s.style.display = "block"; });
+    await page.locator("#a").screenshot({ path: join(outDir, `${item}.png`) });
+    console.log(`✓ ${item}`);
+    continue;
+  }
+  await page.setContent(`${FONTS}<body style="margin:0;background:${PAPER};display:grid;place-items:center;min-height:100vh">
     <div id="a" style="width:800px;max-height:860px">${svg}</div></body>`);
-  await page.evaluate(() => { const s = document.querySelector("#a svg"); s.style.width = "100%"; s.style.height = "auto"; s.style.maxHeight = "860px"; });
+  await page.evaluate(async () => { await document.fonts.ready; const s = document.querySelector("#a svg"); s.style.width = "100%"; s.style.height = "auto"; s.style.maxHeight = "860px"; });
   await page.locator("#a").screenshot({ path: join(outDir, `${name}.png`) });
+  if (svg.includes('overflow="visible"')) {
+    // as printed: the chapter-head box (7.14in × 1.8in at 160 px/in), the art centred with its bleed showing
+    await page.setContent(`${FONTS}<body style="margin:0;background:${PAPER};padding:20px"><div id="a" style="width:1142px;height:288px;overflow:hidden;border-radius:6px;border:1.5px solid ${EDGE};background:${PAPER2}">${svg}</div></body>`);
+    await page.evaluate(() => { const s = document.querySelector("#a svg"); s.style.width = "100%"; s.style.height = "100%"; s.style.display = "block"; });
+    await page.locator("#a").screenshot({ path: join(outDir, `${name}.box.png`) });
+  }
   cells.push(`<figure style="margin:0;background:${PAPER};padding:6px;border:1px solid ${EDGE}"><div style="height:200px;display:grid;place-items:center">${svg.replace(/<svg/, '<svg style="max-width:100%;max-height:200px;width:auto;height:auto"')}</div><figcaption style="font:12px sans-serif;text-align:center">${name}</figcaption></figure>`);
   console.log(`✓ ${name}`);
 }
 if (cells.length) {
   await page.setViewportSize({ width: 1400, height: 900 });
-  await page.setContent(`<body style="margin:8px;background:#fff;display:grid;grid-template-columns:repeat(6,1fr);align-items:start;gap:8px">${cells.join("")}</body>`);
+  await page.setContent(`${FONTS}<body style="margin:8px;background:#fff;display:grid;grid-template-columns:repeat(6,1fr);align-items:start;gap:8px">${cells.join("")}</body>`);
   await page.screenshot({ path: join(outDir, "_sheet.png"), fullPage: true });
 }
 await browser.close();
