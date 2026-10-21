@@ -31,6 +31,7 @@ export const PARAMS = {
   giveInNoFill: { def: true, alt: [false], title: "A give-in's Mood steps never fill a meter", ref: "Ch 7 v0.9 (review D5)", pkg: true, doc: "" },
   knockerOneBroom: { def: true, alt: [false], title: "A Knocker give-in seen by a human leaves no mess to find (one Broom per event)", ref: "Ch 7 v0.9 (review D7)", pkg: true, doc: "" },
   hunterNoFight: { def: true, alt: [false], title: "Hunter's Knack is pounce and chase, not fighting animals", ref: "Ch 2 v0.9 (review D7)", pkg: true, doc: "" },
+  shinyTempts: { def: true, alt: [false], title: "Shiny things tempt Curious and Knocker cats in every room", ref: "Ch 7 v0.9 (shiny loot)", pkg: true, doc: "" },
   lapCountsDistract: { def: true, alt: [false], title: "A Lap Cat's fuss counts as a Distraction of that human (for the next one's cost)", ref: "Ch 7 v0.9", pkg: true, doc: "" },
   // ---- noise and humans ----
   noiseRange: { def: 2, alt: [1, 3], title: "How far noise carries (rooms)", ref: "CORE-RULES A round",
@@ -124,7 +125,7 @@ export const PRESETS = {
  * The defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false, shooKeepLast: false, meterCap: false, heldBroomDen: false, giveInNoFill: false, knockerOneBroom: false, hunterNoFight: false, lapCountsDistract: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
+  livesPerRobbery: 1, cattitudeDie: false, shinyTempts: false, shooKeepLast: false, meterCap: false, heldBroomDen: false, giveInNoFill: false, knockerOneBroom: false, hunterNoFight: false, lapCountsDistract: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
   scale3: [1, 1], scale3Cat: 0, scale5: [0, -1] }; // the v0.5 gang scaling (used once gangScaling is on)
 export const PACKAGES = {
   P1: { ...OFF },
@@ -143,7 +144,7 @@ export const PACKAGES = {
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0] },
   P11: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0],
-    shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true },
+    shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true, shinyTempts: true },
 };
 export const ADOPTED = "P11";
 

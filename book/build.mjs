@@ -34,7 +34,7 @@ const DIST = join(BOOK, "dist");
 const BOOK_TITLE = "Nine Lives Gang";             // curly apostrophe, as in the chapters
 const BOOK_DESCRIPTION = "A tabletop roleplaying game of street cats, sticky paws and getting away with it";
 const AUTHOR = "Richard Moore";
-const VERSION = "0.8";
+const VERSION = "0.9";
 const FILE_STEM = "Nine_Lives_Gang";        // → Nine_Lives_Gang_v0.1.pdf
 const HTML_NAME = "nine-lives-gang.html";   // the self-contained print HTML (digital build only)
 // An ornament anchored in the top-left corner of the Table of Contents page
@@ -382,7 +382,8 @@ try {
   }
   for (const e of entries) {
     const sp = spots[e.id];
-    console.log(`  p${String(p1.found[e.id]).padStart(3)}  ${e.label ? e.label + " — " : ""}${e.title}${sp ? `   [+ ${sp.art} ${sp.h}in]` : ""}`);
+    const end = p1.ends[e.id];
+    console.log(`  p${String(p1.found[e.id]).padStart(3)}  ${e.label ? e.label + " — " : ""}${e.title}${end ? `  (ends p${end.page}, ${end.freeIn.toFixed(1)}in free)` : ""}${sp ? `   [+ ${sp.art} ${sp.h}in]` : ""}`);
   }
   const gaps = Object.entries(p1.ends).filter(([id, v]) => !spots[id] && v.freeIn > 3 && v.freeIn <= TEXT_H_IN - 0.3).map(([id, v]) => `${id} (${v.freeIn.toFixed(1)}in free)`);
   if (gaps.length) console.warn(`  ! large gaps with no spot: ${gaps.join(", ")}`);

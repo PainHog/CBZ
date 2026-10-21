@@ -174,7 +174,7 @@ export const HOUSES = [
     pets: [{ key: "captain", name: "Captain the parrot", kind: "parrot", start: "dining" }],
     prize: {
       kind: "delicious", name: "birthday cake", size: "medium", perCat: 2, plus: 0, haulDiff: 1, // it wobbles: hauling it is Tricky
-      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "dad" }, { round: 5, room: "dining", steps: [climb], by: "dad" }], goneAt: 8,
+      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "dad" }, { round: 5, room: "dining", steps: [climb], by: "dad" }], goneAt: 9,
     },
   },
   {
@@ -217,7 +217,7 @@ export const HOUSES = [
     ],
     prize: {
       kind: "delicious", name: "whole salmon", size: "medium", perCat: 1, plus: 2,
-      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 8,
+      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 9,
     },
   },
 ];

@@ -353,6 +353,7 @@ class Robbery {
       for (const c of this.freeInside()) {
         if (c.tempted) continue;
         const here = [...(this.h.rooms[c.loc]?.tempt ?? [])];
+        if (this.p.shinyTempts) for (const i of ["curious", "knocker"]) if (!here.includes(i)) here.push(i); // v0.9: shiny things lie about in every room
         if (this.pets.some(pt => pt.kind === "vacuum" && pt.room === c.loc)) here.push("hunter");
         if (this.p.carrierRules && this.pets.some(pt => pt.room === c.loc && (pt.kind === "dog" || pt.kind === "housecat") && pt.mode !== "asleep" && pt.mode !== "hiding")) here.push("scrapper");
         for (const i of c.instincts) {
