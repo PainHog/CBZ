@@ -6,7 +6,7 @@ Number: Ready-to-play houses = 5
 Number: Robberies simulated per balance check = 45000
 Number: Pictures in the rulebook = 50
 
-Screenshot: docs/portal/cover.png = The rulebook cover: the gang outside a lit house at night, their sign sprayed on the wall
+Screenshot: docs/portal/cover.png = The Nine Lives Gang rulebook cover, the gang outside a lit house at night
 Download: book/dist/Nine_Lives_Gang_v0.8.pdf = The rulebook, version 0.8, a draft (PDF)
 Download: downloads/Nine_Lives_Gang_Foundry_v0.8.0-test.zip = The online version for Foundry VTT, version 0.8 test build, not yet released (unzip into Data/systems)
 

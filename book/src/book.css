@@ -24,7 +24,7 @@
   --paper-light: #fffaf0;   /* lightest fill: example boxes, sheet fields */
   --ink: #1b1a24;           /* body text, linework (blue-black) */
   --ink-soft: #5b566a;      /* captions, quiet text */
-  --footer: #8c8270;        /* running footer */
+  --footer: #6f6553;        /* running footer (darker: v0.9, readable on cream) */
   --accent: #e3a03a;        /* streetlight amber: rules, list markers, borders */
   --accent-deep: #a8641c;   /* deep amber: labels on light */
   --accent-bright: #ffe6a6; /* window glow: labels on dark */
@@ -63,8 +63,8 @@ html { background: var(--paper); }
 body {
   margin: 0;
   font-family: var(--text);
-  font-size: 10.2pt;
-  line-height: 1.34;
+  font-size: 10.1pt;
+  line-height: 1.32;
   color: var(--ink);
   font-variant-numeric: lining-nums proportional-nums;
   hyphens: auto;
@@ -163,7 +163,10 @@ figure.art svg { display: block; width: 100%; height: auto; }
 .toc-list { list-style: none; margin: 0 auto; padding: 0; max-width: 5.6in; }
 .toc-list a { display: flex; align-items: baseline; gap: 6px; color: inherit; text-decoration: none; }
 .toc-list .toc-title { flex: 0 1 auto; }
-.toc-list a::after { content: ""; order: 2; flex: 1 1 auto; border-bottom: 1.2px dotted var(--paper-edge); transform: translateY(-3px); }
+/* dot leaders as a background, not a dotted border: Chromium paints dotted borders as thousands of tiny squares,
+   repeated off-page on every page of the PDF (the review found ~3,400 a page) */
+.toc-list a::after { content: ""; order: 2; flex: 1 1 auto; height: 2px; align-self: flex-end; margin-bottom: 4px;
+  background: radial-gradient(circle, var(--paper-edge) 0.9px, transparent 1.1px) left center / 5px 2px repeat-x; }
 .toc-list .toc-page { order: 3; font: 700 10.5pt var(--sans); letter-spacing: 0; color: var(--dark); font-variant-numeric: lining-nums; }
 .toc-part { margin: 0.3in 0 0.1in; }
 .toc-part a { font: 800 11pt var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--dark); }
@@ -208,7 +211,7 @@ figure.art svg { display: block; width: 100%; height: auto; }
   overflow: hidden;
   border: 1.5px solid var(--paper-edge);
   box-shadow: 0 2px 0 var(--paper-edge);
-  height: 1.8in;
+  height: 1.6in;
   background: var(--paper-2);
 }
 .chapter-head .chapter-art svg { width: 100%; height: 100%; }
@@ -334,11 +337,11 @@ p.opener::first-line { font-variant: small-caps; letter-spacing: .03em; font-wei
 #ch-03 .entry .portrait { width: 0.9in; }
 #ch-03 .entry p { margin: 0 0 0.035in; }
 #ch-03 .entry .statline { padding: 0.03in 0.07in; margin: 0.03in 0; }
-/* Chapter 10's pet statblocks flow in the columns: a run of full-width blocks at a chapter's end
+/* Chapter 11's pet statblocks flow in the columns: a run of full-width blocks at a chapter's end
    leaves a page Chromium can't measure or fill */
-#ch-10 .statblock, #ch-14 .statblock, #ch-15 .statblock, #ch-16 .statblock, #ch-17 .statblock, #ch-18 .statblock { column-span: none; }
-#ch-14 .keep:has(> .statblock), #ch-15 .keep:has(> .statblock), #ch-16 .keep:has(> .statblock),
-#ch-17 .keep:has(> .statblock), #ch-18 .keep:has(> .statblock) { column-span: none; }
+#ch-11 .statblock, #ch-15 .statblock, #ch-16 .statblock, #ch-17 .statblock, #ch-18 .statblock, #ch-19 .statblock { column-span: none; }
+#ch-15 .keep:has(> .statblock), #ch-16 .keep:has(> .statblock), #ch-17 .keep:has(> .statblock),
+#ch-18 .keep:has(> .statblock), #ch-19 .keep:has(> .statblock) { column-span: none; }
 .entry .ability, .entry .signature {
   clear: both;
   break-inside: avoid;
@@ -474,6 +477,32 @@ figure.diagram { break-inside: avoid; margin: 0.04in 0 0.12in; }
   border: 1.6px solid var(--accent); border-radius: 50%; background: var(--paper-light);
 }
 .sheet-note { margin-top: 0.22in; padding-top: 0.1in; border-top: 1.5px solid var(--paper-edge); font-size: 9pt; color: var(--ink-soft); text-align: center; }
+/* the cat sheet: a box to draw your cat beside the name fields */
+.sheet-split { display: flex; gap: 0.25in; align-items: stretch; margin-bottom: 0.1in; }
+.sheet-split .sheet-fields { flex: 1 1 auto; margin: 0; }
+.sheet-draw { flex: 0 0 2.1in; min-height: 2.25in; border: 1.6px dashed var(--dark); border-radius: 8px; position: relative; }
+.sheet-draw span { position: absolute; left: 0; right: 0; bottom: 0.08in; text-align: center; font: 800 8pt var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.sheet-hint { margin: -0.06in 0 0; font-size: 8.6pt; line-height: 1.35; color: var(--ink-soft); }
+.sheet .blank.short { flex: 0 0 0.45in; min-width: 0.45in; }
+/* the tracker: the round row needs a wide label column */
+.sheet-grid.rounds col.label { width: 0.95in; }
+.sheet-grid.rounds th { padding: 0.05in 0; }
+.sheet-grid.rounds td { height: 0.3in; }
+.sheet-grid .row-label { font: 700 8pt var(--sans); color: var(--dark); padding: 0 0.04in; vertical-align: middle; }
+.sheet-grid.residents col.wide { width: 18%; }
+.sheet-grid.residents td { height: 0.27in; }
+.sheet-grid.compact td { height: 0.3in; }
+.sheet-grid.compact-tall td { height: 0.42in; }
+.sheet-grid.meters td { height: 0.38in; text-align: center; vertical-align: middle; }
+.sheet .field.tight { margin-bottom: 0.1in; }
+.sheet-grid.residents tr + tr td { border-top: none; }
+/* the quick reference: two columns of small blocks */
+.qr-cols { columns: 2; column-gap: 0.25in; font-size: 8.8pt; line-height: 1.32; }
+.qr-cols .qr-block, .qr-cols .tbl { break-inside: avoid; }
+.qr-cols .qr-block { margin: 0 0 0.09in; }
+.qr-cols .qr-block h4 { margin: 0 0 0.02in; font-size: 8.6pt; }
+.qr-cols .qr-block p { margin: 0; }
+.qr-cols .tbl { margin: 0 0 0.1in; font-size: 8.4pt; }
 
 /* ------------------------------------------------------------ misc ------ */
 a { color: inherit; text-decoration: none; }
@@ -540,3 +569,7 @@ figure.tailpiece svg { height: 100%; width: auto; max-width: 100%; }
 .back-cover .tag { width: 0.75in; margin: 0.14in auto 0; color: var(--accent); }
 .back-cover .back-title { text-align: center; margin: 0.06in 0 0; font: 400 22pt var(--logo); letter-spacing: .02em; text-transform: uppercase; color: var(--accent-bright); }
 .back-cover .back-title span { font: 800 10pt var(--sans); letter-spacing: .3em; color: var(--paper-2); }
+
+/* a long rule box that may run on into the next column (v0.9: Chapter 8's Hauling box) */
+.box.split { break-inside: auto; }
+.box.split li { break-inside: avoid; }

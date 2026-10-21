@@ -1,28 +1,39 @@
 <section class="sheet" id="sheet-tracker">
   <h2>House Tracker</h2>
   <p class="sheet-intro">For the Storyteller · one per robbery</p>
-  <div class="field"><strong>House</strong><span class="blank"></span><strong>Cats</strong><span class="blank"></span><strong>Patience</strong><span class="blank"></span></div>
-  <table class="sheet-grid">
+  <div class="field"><strong>House</strong><span class="blank"></span><strong>Cats</strong><span class="blank"></span><strong>Patience</strong><span class="blank"></span><strong>Gone at round</strong><span class="blank short"></span><strong>Lights Out, end of round</strong><span class="blank short"></span></div>
+  <table class="sheet-grid meters">
     <tr><th>Broom</th><th>Cuddle</th></tr>
-    <tr><td><span class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></span></td>
-        <td><span class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></span></td></tr>
+    <tr><td><span class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></span></td>
+        <td><span class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></span></td></tr>
   </table>
   <div class="field"><strong>Patience after each Shoo! or Scoop</strong><span class="blank"></span></div>
-  <table class="sheet-grid">
-    <tr><th>Round</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th></tr>
-    <tr><td>Prize Clock</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <table class="sheet-grid rounds">
+    <colgroup><col class="label"><col span="17"></colgroup>
+    <tr><th>Round</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th></tr>
+    <tr><td class="row-label">Prize Clock</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="row-label">Tempted</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
   </table>
-  <table class="sheet-grid">
-    <tr><th>Human / pet</th><th>Room now</th><th>Searching?</th><th>Distracted this robbery</th><th>Holding</th></tr>
-    <tr><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td></td><td></td><td></td><td></td><td></td></tr>
-    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+  <table class="sheet-grid residents">
+    <colgroup><col class="wide"><col class="wide"><col><col><col><col class="wide"><col class="wide"></colgroup>
+    <tr><th>Human / pet</th><th>Room now</th><th>Asleep?</th><th>Searching?</th><th>Times Distracted</th><th>Holding</th><th>Stays put / hiding</th></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
   </table>
-  <table class="sheet-grid">
+  <table class="sheet-grid compact">
     <tr><th>Entrance</th><th>Open / shut</th><th>Entrance</th><th>Open / shut</th></tr>
     <tr><td></td><td></td><td></td><td></td></tr>
     <tr><td></td><td></td><td></td><td></td></tr>
   </table>
-  <div class="field"><strong>Prize: steps done</strong><span class="blank"></span><strong>Portions left</strong><span class="blank"></span><strong>Where</strong><span class="blank"></span></div>
-  <p class="sheet-note"><strong>Each round:</strong> Prize Clock → tempt one cat (if it gives in, it goes first) → cats act → pets (wake, bark, squawk, routine) → noise (closest human within 2 rooms, not already there) → routines (Searching humans hunt) → holders roll → finding it: a Searching human sees a cat +1 Broom; anyone not yet Searching in the prize’s room or its Clock room +1 Broom and Searching; a mess found +1 Broom. Lights Out: end of the 2nd round after the prize is gone.</p>
+  <table class="sheet-grid compact getaway">
+    <tr><th>Getaway</th><th>Start</th><th>1</th><th>2</th><th>3</th><th>4</th><th>Hideout</th></tr>
+    <tr><td class="row-label">Cats, loot, warden</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  </table>
+  <div class="field"><strong>Prize: steps done</strong><span class="blank"></span><strong>Portions left</strong><span class="blank"></span><strong>Clock spot</strong><span class="blank"></span></div>
+  <div class="field"><strong>This round’s noises, in order</strong><span class="blank"></span><strong>Messes in</strong><span class="blank"></span></div>
+  <p class="sheet-note"><strong>Loot:</strong> pieces home + portions eaten = all and nobody pinched, Clean; half, or someone pinched, Messy; less, Busted. <strong>Each round:</strong> 1 Prize Clock · 2 tempt one cat (never the one tempted last round; if it gives in, it goes first) · 3 cats act · 4 pets: wake, bark, squawk, routine · 5 noise: the closest human within 2 rooms (not one already there, holding a cat or staying put) · 6 routines; Searching humans hunt · 7 holders roll · 8 finding it: a Searching human sees a cat +1 Broom; anyone not yet Searching in the prize’s room or its Clock room +1 Broom and Searching; a mess found +1 Broom · 9 Lights Out? No free cat inside and the prize got or gone, or the gang gone home? The robbery ends.</p>
 </section>

@@ -65,7 +65,7 @@ function clock(h) {
     return `<tr><td>Start of ${ordinal(sc.round)}</td><td>${esc(who)} puts it in the ${roomName(h, sc.room).toLowerCase()} and stays there this round. ${steps[0].toUpperCase() + steps.slice(1)}.</td></tr>`;
   });
   rows.push(`<tr><td>Start of ${ordinal(z.goneAt)}</td><td>Gone — unless the gang has got it out or a cat is holding it.</td></tr>`);
-  rows.push(`<tr><td>End of ${ordinal(z.goneAt + 2)}</td><td>Lights Out: any cat still inside is adopted.</td></tr>`);
+  rows.push(`<tr><td>End of ${ordinal(z.goneAt + 2)}</td><td>Lights Out: any cat still inside is pinched.</td></tr>`);
   return `<table class="tbl"><thead><tr><th>When</th><th>The prize</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
 }
 
@@ -88,21 +88,31 @@ function residents(h) {
     let stats = "", traits = [];
     if (x.kind === "dog") {
       stats = `<div><dt>Rating</dt><dd>${x.rating}</dd></div><div><dt>Starts in</dt><dd>${roomName(h, x.start)}, ${x.asleep ? "asleep" : "awake"}</dd></div>`;
-      traits.push(`<dt>Dog</dt><dd>Barks, charges and smells hidden cats (Chapter 10). ${x.soft ? "<strong>Soft:</strong> Sweet can befriend it." : "Not soft: Sweet won’t work on it."}</dd>`);
+      traits.push(`<dt>Dog</dt><dd>Barks, charges and smells hidden cats (Chapter 11). ${x.soft ? "<strong>Soft:</strong> Sweet can befriend it." : "Not soft: Sweet won’t work on it."}</dd>`);
       s += `<article class="statblock" id="${h.key}-${x.key}"><h3>${esc(x.name)} <span class="epithet">Dog</span></h3><dl class="stats">${stats}</dl>
   <p class="pools"><strong>Routine (d6):</strong> ${routineText(h, x.routine)}.</p><dl class="traits">${traits.join("")}</dl></article>`;
     } else if (x.kind === "housecat") {
       s += `<article class="statblock" id="${h.key}-${x.key}"><h3>${esc(x.name)} <span class="epithet">House cat</span></h3><dl class="stats"><div><dt>Rating</dt><dd>${x.rating}</dd></div><div><dt>Guards</dt><dd>${roomName(h, x.start)}</dd></div></dl>
-  <dl class="traits"><dt>House cat</dt><dd>Guards its room (Chapter 10). ${x.soft ? "<strong>Soft:</strong> Sweet can befriend her." : ""}</dd></dl></article>`;
+  <dl class="traits"><dt>House cat</dt><dd>Guards its room (Chapter 11). ${x.soft ? "<strong>Soft:</strong> Sweet can befriend her." : ""}</dd></dl></article>`;
     } else if (x.kind === "parrot") {
       s += `<article class="statblock" id="${h.key}-${x.key}"><h3>${esc(x.name)} <span class="epithet">Parrot</span></h3><dl class="stats"><div><dt>Lives in</dt><dd>${roomName(h, x.start)}</dd></div></dl>
-  <dl class="traits"><dt>Parrot</dt><dd>Squawks at cats it can see; cover the cage (Streetwise, Tricky) to quiet it (Chapter 10).</dd></dl></article>`;
+  <dl class="traits"><dt>Parrot</dt><dd>Squawks at cats it can see; cover the cage (Streetwise, Tricky) to quiet it (Chapter 11).</dd></dl></article>`;
     } else if (x.kind === "vacuum") {
       s += `<article class="statblock" id="${h.key}-${x.key}"><h3>${esc(x.name)} <span class="epithet">Robot vacuum</span></h3><dl class="stats"><div><dt>Starts in</dt><dd>${roomName(h, x.start)}</dd></div><div><dt>Goes</dt><dd>${x.roam.map(r => roomName(h, r)).join(", ")}</dd></div></dl>
-  <dl class="traits"><dt>Vacuum</dt><dd>Wanders one room a round; tempts Hunters; can be ridden (Chapter 10).</dd></dl></article>`;
+  <dl class="traits"><dt>Vacuum</dt><dd>Wanders one room a round; tempts Hunters; can be ridden (Chapter 11).</dd></dl></article>`;
     }
   }
   return s;
+}
+
+/** The getaway route (Ch 9): four obstacles from the garden to the hideout. */
+const LOOT = { small: 1, medium: 2, large: 3 };
+function getaway(h) {
+  if (!h.getaway) return "";
+  const z = h.prize;
+  const loot = z.kind === "delicious" ? "its portions — whatever wasn’t eaten inside" : `${LOOT[z.size]} piece${LOOT[z.size] > 1 ? "s" : ""}`;
+  const items = h.getaway.map((o, i) => `<li><strong>${esc(o.name[0].toUpperCase() + o.name.slice(1))}</strong> — ${optText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}.</li>`).join("");
+  return `<aside class="box rule getaway-route"><h4>The getaway</h4><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p></aside>`;
 }
 
 function rooms(h) {
@@ -121,7 +131,7 @@ function rooms(h) {
 const LABEL = { easy: "Easy", standard: "Standard", hard: "Hard" };
 HOUSES.forEach((h, i) => {
   const src = readFileSync(`${ROOT}book/src/houses/${h.key}.html`, "utf8");
-  const n = 14 + i;
+  const n = 15 + i;
   const html = src
     .replace("{{NUM}}", String(n))
     .replace("{{ID}}", `ch-${n}`)
@@ -129,7 +139,8 @@ HOUSES.forEach((h, i) => {
     .replace("{{MAP}}", `<figure class="art map" data-art="map-${h.key}"><figcaption>${esc(h.name)}: the floor plan and the entrances.</figcaption></figure>`)
     .replace("{{CLOCK}}", clock(h))
     .replace("{{ROOMS}}", rooms(h))
-    .replace("{{RESIDENTS}}", residents(h));
+    .replace("{{RESIDENTS}}", residents(h))
+    .replace("{{GETAWAY}}", getaway(h));
   const out = `${ROOT}book/src/chapters/${41 + i}-ch${n}-${h.key}.html`;
   writeFileSync(out, `<!-- GENERATED by book/tools/house-pages.mjs from sim/houses.mjs + book/src/houses/${h.key}.html: edit those, not this file. -->\n` + html);
   console.log("wrote", out.replace(ROOT, ""));

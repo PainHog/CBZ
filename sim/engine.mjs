@@ -40,8 +40,10 @@ class Robbery {
     this.cats = gang.map(c => ({
       ...c, r: raised(c), instincts: [...c.instincts], cattitude: p.cattitudeStart + (p.gangScaling && gang.length <= 3 ? p.scale3Cat : 0), lives: p.livesPerRobbery,
       loc: "outside", status: "out", hidden: false, carrying: false, temptUsed: new Set(),
-      cattitudeHad: p.cattitudeStart, cattitudeSpent: 0, everCaught: false,
+      cattitudeHad: p.cattitudeStart, cattitudeSpent: 0, everCaught: false, cred: 0, nip: false,
     }));
+    // Cred (v0.10): rooms the gang has tagged, and whether the catnip stash is gone
+    this.tags = new Set(); this.nipTaken = false;
     this.humans = house.humans.map(hu => ({ ...hu, room: hu.start, distractedUntil: -1, holding: null, asleepUntil: -1 }));
     this.pets = house.pets.map(pt => ({ ...pt, room: pt.start, mode: pt.kind === "dog" ? (pt.asleep ? "asleep" : "awake") : "awake", until: -1 }));
     this.ways = house.ways.map(([a, b, size, opts]) => ({ a, b, size, open: !opts, opts: opts ?? null }));
@@ -154,6 +156,7 @@ class Robbery {
 
   /** Shoo! / Scooped! (CORE-RULES). */
   trigger(kind, cat) {
+    this.catches = (this.catches ?? 0) + 1; // v0.10: a Shoo! or Scoop gets animal control called sooner
     if (cat && cat.status === "held" && kind === "shoo") {
       // a held cat whose own roll fills Broom: the holder lets go and shoos it outside (CORE-RULES v0.7)
       const holder = this.humans.find(hu => hu.key === cat.heldBy);
@@ -240,7 +243,7 @@ class Robbery {
     const resists = opts.approach === "sneaky" || (opts.approach === "sweet" && p.attentionVs === "sneaky+sweet");
     const attention = resists && seen ? Math.max(...seenList.map(hu => hu.attention)) : 0;
     const knack = hasKnack(cat, opts.tags ?? [], this.p) || !!opts.bodyDie; // Chonky's wriggle die counts like a Knack (max +1)
-    let extra = 0;
+    let extra = cat.nip ? (p.nipDie ?? 1) : 0; // on the nip: bolder (v0.10 Cred)
     if (p.cattitudeDie && opts.important && cat.cattitude >= 2) { cat.cattitude--; cat.cattitudeSpent++; extra = 1; this.rec.event("cattitudeDie"); }
     const n = poolSize({ rating: cat.r[opts.approach] + extra, knack, helpers: opts.helpers ?? 0, difficulty: opts.diff ?? 0,
       opposition: opts.opposition ?? 0, attention }, p);
@@ -256,7 +259,7 @@ class Robbery {
     if (roll.result === "purrfect") { this.gainCattitude(cat); }
     const kid = seenList.some(hu => hu.kind === "kid");
     const delta = moodDelta({ result: roll.result, approach: opts.approach, seen, mood: this.mood, pushedWithMood, kidDoubles: kid }, p);
-    if (makesNoise(roll.result) && !opts.quiet) this.noise.push(opts.noiseRoom && works(roll.result) ? opts.noiseRoom : cat.loc);
+    if ((makesNoise(roll.result) || cat.nip) && !opts.quiet) this.noise.push(opts.noiseRoom && works(roll.result) ? opts.noiseRoom : cat.loc);
     cat.hidden = false; // CORE-RULES "Seen": doing anything ends hiding
     // the Mood moves after the outcome is known; the trigger (if any) hits this cat
     return { result: roll.result, delta, apply: () => this.moodChange(delta, cat, opts.why) };
@@ -353,6 +356,7 @@ class Robbery {
       for (const c of this.freeInside()) {
         if (c.tempted) continue;
         const here = [...(this.h.rooms[c.loc]?.tempt ?? [])];
+        if (this.p.shinyTempts) for (const i of ["curious", "knocker"]) if (!here.includes(i)) here.push(i); // v0.9: shiny things lie about in every room
         if (this.pets.some(pt => pt.kind === "vacuum" && pt.room === c.loc)) here.push("hunter");
         if (this.p.carrierRules && this.pets.some(pt => pt.room === c.loc && (pt.kind === "dog" || pt.kind === "housecat") && pt.mode !== "asleep" && pt.mode !== "hiding")) here.push("scrapper");
         for (const i of c.instincts) {
@@ -360,6 +364,8 @@ class Robbery {
           const fresh = this.tr("tempt") ? c.id !== this.lastTempted : !c.temptUsed.has(key);
           if (here.includes(i) && fresh) eligible.push({ c, i, key, cost: this.temptCost(c, i) });
         }
+        if (this.p.cred && this.h.cred?.catnip === c.loc && !this.nipTaken && c.id !== this.lastTempted)
+          eligible.push({ c, i: "catnip", key: `${c.loc}:catnip`, cost: this.temptCost(c, "curious") });
       }
       if (!eligible.length) return;
       const pick = this.p.tempter === "mean" ? eligible.sort((a, b) => b.cost - a.cost)[0] : this.rng.pick(eligible);
@@ -383,7 +389,7 @@ class Robbery {
     return cost;
   }
   resists(c, cost) {
-    if (c.cattitude <= 0) return false;
+    if (c.cattitude <= 0 || c.nip) return false; // a cat on the nip can't resist anything
     const pol = this.p.resistPolicy;
     if (pol === "always") return true;
     if (pol === "never") return false;
@@ -407,6 +413,7 @@ class Robbery {
       }
       return;
     }
+    if (i === "catnip") { this.getNip(c, watchers.length > 0, giveInSteps); return; }
     if (i === "foodie") { if (watchers.length) this.moodChange({ side: "broom", steps: giveInSteps("broom", 1) }, c, "temptation:foodie"); return; } // munching is quiet
     this.noise.push(c.loc);
     if (i === "hunter") return; // chasing a fly in view looks innocent: noise only
@@ -427,8 +434,44 @@ class Robbery {
       else if (c.status === "in") this.insideTurn(c);
       else if (c.status === "out") this.outsideTurn(c);
     }
+    if (this.p.cred) for (const c of this.freeInside()) if (!c.acted && !c.carrying) this.showOff(c);
     // policy (v0.6): a cat with its Action left and nobody watching hides (free when unseen)
     if (this.cr("spotted")) for (const c of this.freeInside()) if (!c.acted && !c.carrying && !this.seenBy(c).length) c.hidden = true;
+  }
+  /** Cred (v0.10): a cat with its Action left takes the catnip or tags the room (policies nipSeek, tagPolicy). */
+  showOff(c) {
+    const p = this.p, seen = this.seenBy(c).length > 0;
+    if (p.nipSeek && !seen && this.h.cred?.catnip === c.loc && !this.nipTaken && this.phase() !== "out") {
+      c.acted = true; this.getNip(c, false, (side, n) => n); return;
+    }
+    if (p.tagPolicy === "off" || this.tags.has(c.loc)) return;
+    const room = side => this.room(side);
+    let inView = false;
+    if (seen) {
+      if (p.tagPolicy !== "bold" || room("broom") < 4) return;
+      c.acted = true;
+      if (!this.simpleInView(c, "tag in view", [], true)) return;
+      inView = true;
+    } else {
+      if (p.tagPolicy === "safe" && room("broom") < 3) return;
+      // late: only once the prize is out (or gone), on the way out, or in a room no awake human is within one room of
+      if (p.tagPolicy === "late" && this.phase() !== "out" && this.humans.some(hu => !hu.holding && hu.asleepUntil < this.round && this.dist(hu.room, c.loc) <= 1)) return;
+      c.acted = true;
+    }
+    this.tags.add(c.loc); this.rec.event("tag");
+    if (p.tagMess) (this.messes ??= new Set()).add(c.loc);
+    this.addCred(c, 1 + (inView ? 1 : 0) + (this.h.cred?.rivalTag === c.loc ? 1 : 0), "tag");
+  }
+  addCred(c, n, why) {
+    const pts = n * (c.nip ? 2 : 1); c.cred += pts; this.rec.event(`cred:${why}`);
+    this.t(`${c.name}(${c.id}) +${pts} Cred (${why})`);
+  }
+  getNip(c, seen, giveInSteps) {
+    this.nipTaken = true; c.nip = true; this.rec.event("nip");
+    if (c.carrying) this.dropPrize(c, { here: true });
+    this.noise.push(c.loc); // rolling about in it, yowling
+    if (seen) this.moodChange({ side: "broom", steps: giveInSteps("broom", 1) }, c, "catnip");
+    this.addCred(c, 1, "nip");
   }
   priority(c) {
     if (this.plan.distract.has(c.id)) return 3;
@@ -1100,6 +1143,7 @@ class Robbery {
   }
 
   finish(reason) {
+    if (this.p.getaway) return this.finishWithGetaway(reason);
     this.t(`END ${reason}; cats: ${this.cats.map(c => `${c.id}:${c.status}@${c.loc}`).join(" ")}; prize ${JSON.stringify({ room: this.prize.room, down: this.prize.down, left: this.prize.portionsLeft, out: this.prize.out, gone: this.prize.gone })}`);
     const left = this.cats.filter(c => c.status === "in" || c.status === "held" || c.status === "shut");
     const got = this.prizeGot();
@@ -1116,6 +1160,128 @@ class Robbery {
     return out;
   }
 }
+
+// ------------------------------------------------------------ the getaway (v0.10)
+/** Loot pieces by size for a prize that isn't food (food: its portions). */
+const LOOT_PIECES = { small: 1, medium: 2, large: 3 };
+/** A route for a house that prints none (Ch 9 "The Getaway"): four obstacles to the hideout. */
+const DEFAULT_ROUTE = [
+  { name: "the back fence", opts: [["savage", 0, "climb"], ["sneaky", 0, "climb"]] },
+  { name: "next door's garden", opts: [["sneaky", 0, "hide"], ["savage", 0, "chase"]] },
+  { name: "the alley wall", opts: [["savage", 1, "climb"], ["sneaky", 1, "climb"]] },
+  { name: "the road", opts: [["streetwise", 0], ["savage", 0, "chase"]] },
+];
+
+Object.assign(Robbery.prototype, {
+  /** One getaway roll: no Mood out here, but a Push and Cattitude still work. */
+  gRoll(c, opt, extra = {}) {
+    const res = this.roll(c, { approach: opt[0], diff: opt[1] + (extra.diff ?? 0), tags: opt.slice(2), seen: [], important: true,
+      helpers: extra.helpers ?? 0, opposition: extra.opposition ?? 0, why: extra.why ?? "getaway", quiet: true });
+    return res.result;
+  },
+  gChance(c, opt, extra = {}) {
+    const n = poolSize({ rating: c.r[opt[0]], knack: hasKnack(c, opt.slice(2), this.p), helpers: extra.helpers ?? 0,
+      difficulty: opt[1] + (extra.diff ?? 0), opposition: extra.opposition ?? 0 }, this.p);
+    return chanceAtLeast(n, "scrape");
+  },
+  /**
+   * After the house (Ch 9): cats still inside are pinched; everyone outside runs the route with the loot
+   * in pieces; the warden follows; a cat the warden reaches must dodge or be pinched.
+   */
+  finishWithGetaway(reason) {
+    const p = this.p, z = this.prize;
+    const route = this.h.getaway ?? DEFAULT_ROUTE;
+    const pinched = new Set(this.cats.filter(c => ["in", "held", "shut"].includes(c.status)).map(c => c.id));
+    const food = z.kind === "delicious";
+    const total = food ? z.portions : LOOT_PIECES[z.size] ?? 1;
+    const safe = food ? z.eaten : 0;
+    let pieces = z.out ? (food ? z.portionsLeft : total) : 0;
+    const run = this.cats.filter(c => c.status === "out").map(c => ({ c, pos: 0, carry: 0, home: false }));
+    for (const c of this.cats) c.nip = false; // the nip wears off by the back fence (v0.10 Cred)
+    const patch = p.cred ? this.h.cred?.patch ?? -1 : -1; // the rivals hang about on this obstacle
+    const drop = (pos, why) => { if (pos === patch) { this.rec.event("lootNicked"); return; } drops.set(pos, (drops.get(pos) ?? 0) + 1); this.rec.event(why); };
+    // share the loot out: Chonky cats take two pieces, the others one; what nobody can carry is left behind
+    for (const r of [...run].sort((a, b) => (b.c.body === "chonky") - (a.c.body === "chonky"))) {
+      const take = Math.min(pieces, r.c.body === "chonky" ? 2 : 1); r.carry = take; pieces -= take;
+    }
+    const lostAtStart = pieces;
+    const drops = new Map();
+    let warden = ((this.catches ?? 0) > 0 ? 0 : -1) - (p.wardenLag ?? 0); // the warden's space; below 0 = still on the way
+    const G = route.length; // the cats start on space 0; clearing obstacle k takes a cat from space k to k+1; space G is the hideout
+    let rounds = 0;
+    const active = () => run.filter(r => !r.home && !pinched.has(r.c.id));
+    while (active().length && rounds < 15) {
+      rounds++;
+      let flop = false;
+      for (let pos = G - 1; pos >= 0; pos--) {
+        let here = active().filter(r => r.pos === pos);
+        if (!here.length) continue;
+        const ob = route[pos]; // the obstacle between this space and the next
+        // pick up loot dropped here when the warden isn't close
+        if ((drops.get(pos) ?? 0) > 0 && warden < pos - 1) {
+          for (const r of here) {
+            const cap = (r.c.body === "chonky" ? 2 : 1) - r.carry;
+            while (cap > 0 && (drops.get(pos) ?? 0) > 0 && r.carry < (r.c.body === "chonky" ? 2 : 1)) { r.carry++; drops.set(pos, drops.get(pos) - 1); r.picked = true; }
+          }
+          here = here.filter(r => !r.picked); for (const r of run) r.picked = false;
+        }
+        // go over together in groups of up to three: the best cat leads, the others help
+        while (here.length) {
+          let best = null;
+          for (const r of here) for (const o of ob.opts) {
+            const g = here.filter(x => x !== r).slice(0, 2);
+            const loaded = [r, ...g].some(x => x.carry > (x.c.body === "chonky" ? 1 : 0)) ? 1 : 0; // carrying loot: one die off
+            const ch = this.gChance(r.c, o, { helpers: g.length, diff: loaded, opposition: ob.pet ?? 0 });
+            if (!best || ch > best.ch) best = { r, o, g, loaded, ch };
+          }
+          const group = [best.r, ...best.g];
+          // dropping a piece on purpose to get over (+1 die) when the warden is close and it looks bad
+          let diff = best.loaded;
+          if (diff && best.ch < 0.6 && warden >= pos - 1) {
+            const dropper = group.find(x => x.carry > 0);
+            dropper.carry--; drop(pos, "lootDroppedOnPurpose"); diff = 0;
+          }
+          const res = this.gRoll(best.r.c, best.o, { helpers: best.g.length, diff, opposition: ob.pet ?? 0, why: `getaway: ${ob.name}` });
+          if (res === "flop") {
+            flop = true;
+            for (const x of group) if (x.carry > 0) { x.carry--; drop(pos, "lootDropped"); }
+          } else {
+            if (p.cred && res === "purrfect") this.addCred(best.r.c, 1, "leap");
+            if (pos === patch && (res === "clean" || res === "purrfect")) this.addCred(best.r.c, 1, "rivals"); // the cat who led them past
+            for (const x of group) { x.pos = pos + 1; if (x.pos >= G) x.home = true; }
+          }
+          here = here.filter(x => !group.includes(x));
+        }
+      }
+      // the warden: on the way in round 1 if nobody was caught tonight; then one space a round, two after a Flop
+      if (warden < 0) warden++; else warden = Math.min(G - 1, warden + 1 + (flop && p.wardenFlop ? 1 : 0));
+      // loot dropped where the warden has been is gone
+      for (const [pos, n] of drops) if (pos <= warden && n) { drops.set(pos, 0); this.rec.event("lootLost"); }
+      // cornered: a cat on or behind the warden's space dodges (Tricky) or is pinched
+      for (const r of active()) {
+        if (r.pos > warden) continue;
+        const dd = p.dodgeDiff ?? 1;
+        const opts = [["sneaky", dd, "hide"], ["savage", dd, "chase"], ["sweet", dd, "charm"]];
+        const o = opts.reduce((a, b) => (this.gChance(r.c, b) > this.gChance(r.c, a) ? b : a));
+        const res = this.gRoll(r.c, o, { why: "dodge the warden" });
+        if (res === "flop") { pinched.add(r.c.id); r.carry = 0; this.rec.event("pinched"); }
+        else { r.pos = warden + 1; if (r.pos >= G) r.home = true; this.rec.event("dodged"); }
+      }
+    }
+    const home = run.filter(r => r.home).reduce((a, r) => a + r.carry, 0);
+    const got = safe + home;
+    let outcome = "busted";
+    if (got >= total && !pinched.size) outcome = "clean";
+    else if (got * 2 >= total) outcome = "messy";
+    this.t(`GETAWAY ${rounds} rounds; loot ${got}/${total} (eaten ${safe}, home ${home}, left at the start ${lostAtStart}); pinched ${[...pinched].join(",") || "none"}`);
+    const out = {
+      outcome, reason, rounds: this.round, getawayRounds: rounds, leftBehind: pinched.size, prizeGot: got >= total, partial: got * 2 >= total && got < total,
+      loot: got, lootTotal: total, cred: this.cats.reduce((a, c) => a + c.cred, 0), tags: this.tags.size, nip: this.nipTaken, everCaught: this.cats.filter(c => c.everCaught).length, cats: this.cats, trace: this.trace,
+    };
+    this.rec.finish(out);
+    return out;
+  },
+});
 
 function nullRecorder() {
   const f = () => {};

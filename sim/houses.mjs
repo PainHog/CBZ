@@ -21,6 +21,7 @@ const bag = [["streetwise", 1, "open"], ["sneaky", 1]];                // rummag
 export const HOUSES = [
   {
     key: "number-12", name: "The Chicken at Number 12", label: "easy", patience: 4,
+    cred: { catnip: "utility", rivals: "the Bin Lid Boys", rivalTag: "loo", patch: 1 }, // v0.10 (Cred)
     map: {
       floors: [{ name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 2, 2], living: [0, 2, 2, 3], hall: [2, 2, 2, 3], loo: [4, 2, 2, 3] } }],
       entrances: { front: "bottom", flap: "top", window: "top" },
@@ -45,13 +46,20 @@ export const HOUSES = [
     ],
     pets: [{ key: "pudding", name: "Pudding", kind: "dog", rating: 2, soft: true, start: "kitchen", asleep: false,
       roam: ["kitchen", "hall", "living", "utility"], routine: ["stay", "stay", "living", "kitchen", "hall", "sniff"] }],
+    getaway: [ // v0.10 (Ch 9): Mr Pell's back fence, the allotments, the alley wall, Station Road
+      { name: "Mr Pell's back fence", opts: [["savage", 0, "climb"], ["sneaky", 0, "climb"]] },
+      { name: "the allotments", opts: [["sneaky", 0, "hide"], ["savage", 0, "chase"]] },
+      { name: "the alley wall", opts: [["savage", 1, "climb"], ["sneaky", 1, "climb"]] },
+      { name: "Station Road", opts: [["streetwise", 0], ["savage", 0, "chase"]] },
+    ],
     prize: {
       kind: "delicious", name: "rotisserie chicken", size: "medium", perCat: 1, plus: 1,
       script: [{ round: 2, room: "kitchen", steps: [climb, wrapped], by: "pell" }], goneAt: 10,
     },
   },
   {
-    key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 7,
+    key: "okafor-box", name: "The Okafors' Big Box", label: "standard", patience: 8, // v0.10: 8 (the box has to get over the fences too)
+    cred: { catnip: "kidsroom", rivals: "the Satin Paws", rivalTag: "garage", patch: 2 }, // v0.10 (Cred)
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], garage: [5, 0, 3, 5], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -85,13 +93,20 @@ export const HOUSES = [
     ],
     pets: [{ key: "noodle", name: "Noodle", kind: "dog", rating: 2, soft: true, start: "kitchen", asleep: true,
       roam: ["kitchen", "hall", "living", "garage"], routine: ["stay", "stay", "hall", "garage", "living", "sniff"] }],
+    getaway: [ // v0.10 (Ch 9)
+      { name: "the side gate, left on the latch", opts: [["streetwise", 0, "open"], ["savage", 0, "climb"]] },
+      { name: "next door's terrier", pet: 1, opts: [["savage", 0, "fight"], ["sneaky", 0, "hide"], ["sweet", 0, "charm"]] },
+      { name: "the garage roofs", opts: [["savage", 1, "climb"], ["sneaky", 1, "climb"]] },
+      { name: "the main road", opts: [["streetwise", 0], ["savage", 0, "chase"]] },
+    ],
     prize: {
       kind: "box", name: "big delivery box", size: "large",
       script: [{ round: 1, room: "hall", steps: [], by: "mum" }, { round: 5, room: "living", steps: [], by: "mum" }], goneAt: 13,
     },
   },
   {
-    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 8, scale3: [2, 2], // v0.9: three cats get Patience +2 here
+    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 9, // v0.10: 9 (the mouse has to survive the getaway too)
+    cred: { catnip: "bedroom", rivals: "the Canal Street Toms", rivalTag: "cellar", patch: 2 }, // v0.10 (Cred)
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -128,6 +143,12 @@ export const HOUSES = [
       { key: "pompom", name: "Pom-Pom", kind: "housecat", rating: 2, soft: true, start: "living" },
       { key: "roomba", name: "The robot vacuum", kind: "vacuum", start: "living", roam: ["living", "hall", "kitchen"] },
     ],
+    getaway: [ // v0.10 (Ch 9)
+      { name: "the garden wall", opts: [["savage", 0, "climb"], ["sneaky", 0, "climb"]] },
+      { name: "the greenhouse", opts: [["sneaky", 1, "hide"], ["streetwise", 1, "open"]] },
+      { name: "the canal fence", opts: [["savage", 1, "climb"], ["sneaky", 1, "climb"]] },
+      { name: "the footbridge", opts: [["savage", 0, "chase"], ["sneaky", 0]] },
+    ],
     prize: {
       kind: "fun", name: "catnip mouse", size: "small",
       script: [{ round: 1, room: "hall", steps: [bag], by: "wendell" }, { round: 4, room: "living", steps: [], by: "wendell" }], goneAt: 9,
@@ -135,6 +156,7 @@ export const HOUSES = [
   },
   {
     key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 6, scale3: [1, 1], scale5: [-1, 1], // v0.9: the Clock moves 1 round for three cats and for five
+    cred: { catnip: "utility", rivals: "the Party Crashers", rivalTag: "hall", patch: 1 }, // v0.10 (Cred)
     map: {
       floors: [{ name: "Ground floor", rooms: { dining: [0, 0, 3, 3], kitchen: [3, 0, 3, 2], utility: [6, 0, 2, 2], loo: [0, 3, 3, 2], hall: [3, 2, 2, 3], living: [5, 2, 3, 3] } }],
       entrances: { front: "bottom", patio: "left", utilwin: "top" },
@@ -166,13 +188,20 @@ export const HOUSES = [
         routine: ["stay", "stay", "dining", "dining", "hall", "living"] },
     ],
     pets: [{ key: "captain", name: "Captain the parrot", kind: "parrot", start: "dining" }],
+    getaway: [ // v0.10 (Ch 9)
+      { name: "the party gate, through the guests' legs", opts: [["sneaky", 1, "hide"], ["sweet", 0, "charm"], ["savage", 1, "chase"]] },
+      { name: "next door's bouncy castle", opts: [["savage", 1, "climb"], ["sneaky", 1]] },
+      { name: "the high back fence", opts: [["savage", 1, "climb"], ["sneaky", 2, "climb"]] },
+      { name: "the ring road", opts: [["streetwise", 1], ["savage", 1, "chase"]] },
+    ],
     prize: {
       kind: "delicious", name: "birthday cake", size: "medium", perCat: 2, plus: 0, haulDiff: 1, // it wobbles: hauling it is Tricky
-      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "dad" }, { round: 5, room: "dining", steps: [climb], by: "dad" }], goneAt: 8,
+      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "dad" }, { round: 5, room: "dining", steps: [climb], by: "dad" }], goneAt: 9,
     },
   },
   {
     key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 7, scale3: [1, 3], // v0.9: three cats get the salmon 3 rounds later
+    cred: { catnip: "study", rivals: "the Fishbone Crew", rivalTag: "utility", patch: 2 }, // v0.10 (Cred)
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 3, 2], living: [0, 2, 3, 3], hall: [3, 2, 4, 3] } },
@@ -209,9 +238,15 @@ export const HOUSES = [
         roam: ["utility", "kitchen", "hall", "living"], routine: ["stay", "kitchen", "hall", "living", "sniff", "sniff"] },
       { key: "roomba", name: "The robot vacuum", kind: "vacuum", start: "living", roam: ["living", "hall", "kitchen"] },
     ],
+    getaway: [ // v0.10 (Ch 9)
+      { name: "the restaurant yard", opts: [["sneaky", 0, "hide"], ["savage", 0, "chase"]] },
+      { name: "the fishmonger's cat", pet: 2, opts: [["savage", 0, "fight"], ["sneaky", 0, "hide"], ["sweet", 0, "charm"]] },
+      { name: "the market wall", opts: [["savage", 1, "climb"], ["sneaky", 1, "climb"]] },
+      { name: "the market street", opts: [["streetwise", 1], ["savage", 1, "chase"]] },
+    ],
     prize: {
       kind: "delicious", name: "whole salmon", size: "medium", perCat: 1, plus: 2,
-      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 8,
+      script: [{ round: 1, room: "kitchen", steps: [climb, wrapped], by: "chef" }], goneAt: 9,
     },
   },
 ];

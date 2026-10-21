@@ -20,6 +20,7 @@
  * Playwright's own default browser.
  */
 import { chromium } from "playwright-core";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -34,7 +35,7 @@ const DIST = join(BOOK, "dist");
 const BOOK_TITLE = "Nine Lives Gang";             // curly apostrophe, as in the chapters
 const BOOK_DESCRIPTION = "A tabletop roleplaying game of street cats, sticky paws and getting away with it";
 const AUTHOR = "Richard Moore";
-const VERSION = "0.8";
+const VERSION = "0.9";
 const FILE_STEM = "Nine_Lives_Gang";        // → Nine_Lives_Gang_v0.1.pdf
 const HTML_NAME = "nine-lives-gang.html";   // the self-contained print HTML (digital build only)
 // An ornament anchored in the top-left corner of the Table of Contents page
@@ -45,6 +46,8 @@ const DRAFT = process.argv.includes("--draft");
 // --print: print-on-demand files — an interior with 0.125in bleed on every edge
 // (no covers, even page count) plus separate front and back covers with bleed.
 const PRINT = process.argv.includes("--print");
+// --white: a printer-friendly copy — white pages, light part pages and sheets, the covers as they are
+const WHITE = process.argv.includes("--white");
 const BLEED_IN = PRINT ? 0.125 : 0;
 const CHROME = process.env.CHROME_PATH ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 
@@ -195,8 +198,8 @@ const HAND_SPOTS = [];
 const SPOTS = {
   "ch-01": ["spot-paws"], "ch-02": ["spot-curl"], "ch-03": ["spot-bin"], "ch-04": ["spot-purrfect"],
   "ch-05": ["spot-mug"], "ch-06": ["spot-wool"], "ch-07": ["spot-box"], "ch-08": ["spot-fish"],
-  "ch-09": [], "ch-10": ["spot-vacuum"], "ch-11": ["spot-broom"], "ch-12": ["spot-door"], "ch-13": [],
-  "ch-14": ["spot-pudding"], "ch-15": ["spot-noodle"], "ch-16": ["spot-pompom"], "ch-17": ["spot-parrot"], "ch-18": [],
+  "ch-09": [], "ch-10": [], "ch-11": ["spot-vacuum"], "ch-12": ["spot-broom"], "ch-13": ["spot-door"], "ch-14": [],
+  "ch-15": ["spot-pudding"], "ch-16": ["spot-noodle"], "ch-17": ["spot-pompom"], "ch-18": ["spot-parrot"], "ch-19": [],
 };
 const PT_PER_IN = 72;
 const BOTTOM_LIMIT_PT = (0.78 + BLEED_IN) * PT_PER_IN;   // @page bottom margin: content must end above this
@@ -246,6 +249,17 @@ const PRINT_CSS = `
 @page blankp { @bottom-center { content: none; } }
 `;
 
+// Printer-friendly overrides (--white): the page colours become white or near-white; art keeps its colours.
+const WHITE_CSS = `
+:root { --paper: #ffffff; --paper-2: #f4f1ea; --paper-light: #ffffff; }
+html, body { background: #ffffff; }
+@page { background: #ffffff; } @page toc { background: #ffffff; } @page credits { background: #ffffff; } @page sheet { background: #ffffff; }
+@page part { background: #ffffff; }
+.part { background: #ffffff; color: var(--dark-deep); }
+.part h1 { color: var(--dark-deep); } .part-lede { color: var(--ink-soft); } .part-kicker { color: var(--accent-deep); }
+.part .tag { color: var(--accent-deep); }
+`;
+
 const sectionOf = (html, cls) => (html.match(new RegExp(`<section class="${cls}"[\\s\\S]*?<\\/section>`)) ?? [null])[0];
 
 function page(pages, markers, spots = {}, { only = null, padBlank = false } = {}) {
@@ -284,6 +298,7 @@ function page(pages, markers, spots = {}, { only = null, padBlank = false } = {}
 <style>${css}</style>
 <style>${FOOTER_CSS}</style>
 ${PRINT ? `<style>${PRINT_CSS}</style>` : ""}
+${WHITE ? `<style>${WHITE_CSS}</style>` : ""}
 </head><body>
 ${content}
 </body></html>`;
@@ -360,9 +375,9 @@ try {
     if (shifted.length && !moved.length) spots = {};
   }
 
-  const out = join(DIST, PRINT ? `${FILE_STEM}_v${VERSION}_print-interior.pdf` : `${FILE_STEM}_v${VERSION}.pdf`);
+  const out = join(DIST, PRINT ? `${FILE_STEM}_v${VERSION}_print-interior.pdf` : WHITE ? `${FILE_STEM}_v${VERSION}_printer-friendly.pdf` : `${FILE_STEM}_v${VERSION}.pdf`);
   let html = page(p1.found, false, spots);
-  if (!PRINT) writeFileSync(join(DIST, HTML_NAME), html);
+  if (!PRINT && !WHITE) writeFileSync(join(DIST, HTML_NAME), html);
   await printPdf(browser, html, out);
   let { pages } = await pageMap(out);
   if (pages !== p1.pages) throw new Error("pass 1 and the final pass paginated differently — TOC numbers may be wrong");
@@ -380,9 +395,20 @@ try {
       console.log(`Built ${relative(ROOT, f)} (${8.5 + 2 * BLEED_IN}in × ${11 + 2 * BLEED_IN}in, bleed included).`);
     }
   }
+  // finishing touches (book/tools/pdf-finish.py): PDF properties, and in --print the one-piece cover spread
+  try {
+    const finish = join(BOOK, "tools", "pdf-finish.py");
+    const built = [out];
+    if (PRINT) for (const n of ["front", "back"]) { const f = join(DIST, `${FILE_STEM}_v${VERSION}_print-cover-${n}.pdf`); if (existsSync(f)) built.push(f); }
+    execFileSync("python3", [finish, "meta", ...built], { stdio: "inherit" });
+    if (PRINT) execFileSync("python3", [finish, "spread", out, built[1], built[2], join(DIST, `${FILE_STEM}_v${VERSION}_print-cover-spread.pdf`)], { stdio: "inherit" });
+  } catch (e) {
+    console.warn(`  ! PDF finishing skipped (needs python3 with PyMuPDF): ${e.message.split("\n")[0]}`);
+  }
   for (const e of entries) {
     const sp = spots[e.id];
-    console.log(`  p${String(p1.found[e.id]).padStart(3)}  ${e.label ? e.label + " — " : ""}${e.title}${sp ? `   [+ ${sp.art} ${sp.h}in]` : ""}`);
+    const end = p1.ends[e.id];
+    console.log(`  p${String(p1.found[e.id]).padStart(3)}  ${e.label ? e.label + " — " : ""}${e.title}${end ? `  (ends p${end.page}, ${end.freeIn.toFixed(1)}in free)` : ""}${sp ? `   [+ ${sp.art} ${sp.h}in]` : ""}`);
   }
   const gaps = Object.entries(p1.ends).filter(([id, v]) => !spots[id] && v.freeIn > 3 && v.freeIn <= TEXT_H_IN - 0.3).map(([id, v]) => `${id} (${v.freeIn.toFixed(1)}in free)`);
   if (gaps.length) console.warn(`  ! large gaps with no spot: ${gaps.join(", ")}`);
