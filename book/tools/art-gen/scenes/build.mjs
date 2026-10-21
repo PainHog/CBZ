@@ -6,7 +6,7 @@ import { writeFileSync } from "node:fs";
 import { ART } from "./lib.mjs";
 const mods = ["./placeholders.mjs", "./gang.mjs", "./maps.mjs", "./vignettes.mjs", "./houses.mjs", "./pages.mjs"];
 const map = {};
-const PIECE = /^(placeholder|cover|part_|ch_|map_|diagram_|orn_|spot_|ref_|portrait_)/;
+const PIECE = /^(placeholder|cover|part_|ch_|map_|diagram_|orn_|tag_|spot_|ref_|portrait_)/;
 for (const m of mods) {
   let mm; try { mm = await import(m); } catch (e) { if (e.code === "ERR_MODULE_NOT_FOUND" && e.message.includes(m.slice(2))) continue; throw e; }
   for (const [k, v] of Object.entries(mm)) if (typeof v === "function" && PIECE.test(k)) map[k.replace(/_/g, "-")] = v;

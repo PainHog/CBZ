@@ -24,6 +24,7 @@ export class Recorder {
     this.leftBehindRobberies = 0;
     this.caughtRobberies = 0;
     this.cattitude = { had: 0, spent: 0, cats: 0, halfSpenders: 0 };
+    this.cred = { sum: 0, hist: {}, topHist: {}, tags: 0, nip: 0, topCat: 0, notBusted: { gang5: 0, top4: 0, top5: 0 } };
     this.issues = new Map();
     this.cur = null;
   }
@@ -61,6 +62,12 @@ export class Recorder {
     this.reasons[out.reason] = (this.reasons[out.reason] ?? 0) + 1;
     this.rounds += out.rounds;
     if (out.leftBehind) this.leftBehindRobberies++;
+    if (out.cred !== undefined) { // Cred (v0.10)
+      const b = Math.min(out.cred, 12); this.cred.sum += out.cred; this.cred.hist[b] = (this.cred.hist[b] ?? 0) + 1;
+      this.cred.tags += out.tags ?? 0; this.cred.nip += out.nip ? 1 : 0;
+      const top = Math.max(...out.cats.map(c => c.cred ?? 0)); this.cred.topCat += top; this.cred.topHist[Math.min(top, 12)] = (this.cred.topHist[Math.min(top, 12)] ?? 0) + 1;
+      if (out.outcome !== "busted") { if (out.cred >= 5) this.cred.notBusted.gang5++; if (top >= 4) this.cred.notBusted.top4++; if (top >= 5) this.cred.notBusted.top5++; }
+    }
     const ev = this.cur?.events ?? {};
     if ((ev.held ?? 0) + (ev.shooed ?? 0) + (ev.lifeSpent ?? 0) > 0) this.caughtRobberies++;
     for (const c of out.cats) {
@@ -96,6 +103,7 @@ export class Recorder {
       broomPer: this.moodSteps.broom / n, cuddlePer: this.moodSteps.cuddle / n,
       pushPer: ((this.events.pushCattitude ?? 0) + (this.events.pushMood ?? 0)) / n,
       reasons: this.reasons, events: this.events, rollsBy: this.rollsBy, poolHist: this.poolHist,
+      credPer: this.cred.sum / n, credHist: this.cred.hist, tagsPer: this.cred.tags / n, nipShare: pct(this.cred.nip), topCatCred: this.cred.topCat / n, topHist: this.cred.topHist, repGang5: pct(this.cred.notBusted.gang5), repTop4: pct(this.cred.notBusted.top4), repTop5: pct(this.cred.notBusted.top5),
       moodWhy: this.moodWhy, entrances: this.entrances, instincts: this.instincts,
     };
   }

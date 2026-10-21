@@ -5,7 +5,7 @@
   "TYPES.Actor.pet": "Pet",
 
   "CATB.Settings.autoMood.Name": "Automatic Mood",
-  "CATB.Settings.autoMood.Hint": "Seen rolls, temptations, messes and finding the prize move the Broom and Cuddle meters, and a full meter fires Shoo! or Scooped!. Confirm: each change waits for the Storyteller's click in the Robbery Tracker. By hand: nothing is written; the Storyteller uses the meters' +1/−1.",
+  "CATB.Settings.autoMood.Hint": "Seen rolls, temptations, messes and finding the prize move the Broom and Cuddle meters (never past full; a temptation given in to never fills one), and a full meter fires Shoo! or Scooped!. Confirm: each change waits for the Storyteller's click in the Robbery Tracker. By hand: nothing is written; the Storyteller uses the meters' +1/−1.",
   "CATB.Settings.autoMood.auto": "Automatic",
   "CATB.Settings.autoMood.confirm": "Confirm each change",
   "CATB.Settings.autoMood.manual": "By hand",
@@ -32,13 +32,19 @@
   "CATB.Settings.autoTemptation.off": "No prompt",
 
   "CATB.Settings.autoCattitude.Name": "Spend and earn Cattitude",
-  "CATB.Settings.autoCattitude.Hint": "Cattitude dice, Pushes, resisting, giving in and Purrfects change the cat's Cattitude, and a robbery resets it. Off: the cards say what to change; nobody's sheet is touched.",
+  "CATB.Settings.autoCattitude.Hint": "Pushes, resisting, giving in and Purrfects change the cat's Cattitude, and a robbery resets it (2, or 3 in a gang of three, plus the gang's Rep bonus). Off: the cards say what to change; nobody's sheet is touched.",
 
   "CATB.Settings.autoPrizeClock.Name": "Run the Prize Clock",
   "CATB.Settings.autoPrizeClock.Hint": "Begin round puts the prize down, moves it and takes it away as the house's Prize Clock says. Off: the Storyteller does it by hand.",
 
   "CATB.Settings.autoOutcome.Name": "End the robbery by itself",
-  "CATB.Settings.autoOutcome.Hint": "At Lights Out, or when no free cat is left inside, the robbery ends and posts Clean Getaway, Messy or Busted (with the campaign's Rep and Lives buttons). Off: the Storyteller ends it from the tracker; no outcome card.",
+  "CATB.Settings.autoOutcome.Hint": "At Lights Out, or at the end of a round when no free cat is left inside and the prize is out, eaten or gone, the house part ends and the getaway starts; when everyone is home or pinched the outcome is posted: Clean Getaway, Messy or Busted (with the campaign's Rep and Lives buttons). Off: the Storyteller ends it from the tracker; no outcome card.",
+
+  "CATB.Settings.autoGetaway.Name": "Run the getaway",
+  "CATB.Settings.autoGetaway.Hint": "After the house, the gang legs it over four obstacles with the loot (Chapter 9): getaway rolls move the cats, a Flop drops loot, the warden comes on at the end of each getaway round and corners the stragglers, and the loot that gets home is counted. Off: the tracker still shows the route, but the Storyteller moves the cats, the loot and the warden by hand.",
+
+  "CATB.Settings.autoCred.Name": "Score Cred",
+  "CATB.Settings.autoCred.Hint": "Showing off scores by itself (Chapter 9): tagging a room, getting into the catnip, leading the gang past the rivals and a getaway Purrfect; a cat with the zoomies gets +1 die, every roll it makes is a noise, it can't resist a temptation and its Cred counts double; the outcome names the Cat's Whiskers. Off: tags and the catnip are still noted, but the Storyteller keeps Cred and the zoomies by hand on the tracker.",
 
   "CATB.Settings.trackerForPlayers.Name": "Players can open the tracker",
   "CATB.Settings.trackerForPlayers.Hint": "Players see the Robbery Tracker (the house, the meters, the clock) with buttons for their own cats. Off: only the Storyteller opens it."

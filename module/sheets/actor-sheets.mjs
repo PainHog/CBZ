@@ -2,7 +2,7 @@
  * NINE LIVES GANG — actor sheets (ApplicationV2 + HandlebarsApplicationMixin).
  * The Cat sheet shows approaches, instincts, body, Cattitude, Lives and a Roll
  * button per approach (AUTOMATION.md §7). Human and Pet sheets edit the
- * resident's numbers and d6 routine (Ch 10). Inputs named system.* save on change.
+ * resident's numbers and d6 routine (Ch 11). Inputs named system.* save on change.
  */
 import { SYSTEM_ID } from "../contracts.mjs";
 import { CATB } from "../config.mjs";
@@ -36,7 +36,8 @@ export class CatSheet extends CatBurglarsActorSheet {
     classes: ["catb-cat"],
     actions: {
       roll: CatSheet.#roll,
-      tracker: () => game.catBurglars?.openTracker?.()
+      tracker: () => game.catBurglars?.openTracker?.(),
+      zoomies: CatSheet.#zoomies
     }
   };
   static PARTS = { sheet: { template: tpl("cat-sheet") } };
@@ -48,7 +49,20 @@ export class CatSheet extends CatBurglarsActorSheet {
     const state = getState();
     const inRobbery = running(state) && state.cats.find(c => c.id === this.document.id);
     let robbery = null;
-    if (inRobbery) {
+    const r = inRobbery && state.phase === "getaway" ? state.getaway?.cats?.[inRobbery.id] : null;
+    if (r) {
+      // Ch 9: on the getaway
+      const g = state.getaway;
+      robbery = {
+        house: state.name, round: g.round, getaway: true,
+        where: r.state === "home" ? "Home in the hideout" : r.state === "pinched" ? "Pinched — off to the pound" : r.pos === 0 ? "In the garden" : `Past ${g.route[r.pos - 1].name}`,
+        status: r.state === "running" ? (r.acted ? "went this round" : "still to go") : r.state,
+        turn: r.carry ? `Carrying ${r.carry} piece${r.carry > 1 ? "s" : ""} of loot` : "Carrying no loot",
+        hidden: false, carrying: "",
+        rolls: catOptions(state, inRobbery.id).options.filter(o => o.roll && !o.disabled).map(o => o.label),
+        cred: inRobbery.cred ?? 0, nip: false, nipEditable: false, nipNote: "worn off by the back fence"
+      };
+    } else if (inRobbery) {
       const c = inRobbery;
       robbery = {
         house: state.name, round: state.round,
@@ -56,7 +70,10 @@ export class CatSheet extends CatBurglarsActorSheet {
         status: { outside: "outside", free: "free", held: "Held", shut: "Shut in the Den" }[c.status] ?? c.status,
         turn: state.stage === "cats" ? `${c.moved ? "Moved" : "Move left"} · ${c.acted ? "Acted" : "Action left"}` : "Between turns",
         hidden: c.hidden, carrying: c.carrying ? state.prize.name : "",
-        rolls: catOptions(state, c.id).options.filter(o => o.roll && !o.disabled && o.id !== "free").map(o => o.label)
+        rolls: catOptions(state, c.id).options.filter(o => o.roll && !o.disabled && o.id !== "free").map(o => o.label),
+        // Ch 9 "Cred": tonight's points and the zoomies (the Storyteller ticks the box by hand)
+        cred: c.cred ?? 0, nip: !!c.nip, nipEditable: !!game.user?.isGM,
+        nipNote: c.nip ? "+1 die, every roll a noise, no resisting, Cred ×2 — until the house part ends" : ""
       };
     }
     return {
@@ -68,7 +85,7 @@ export class CatSheet extends CatBurglarsActorSheet {
       bodyHint: CATB.bodies[s.body]?.hint ?? "",
       warnings: [
         s.instinct1 === s.instinct2 ? "A cat has two different instincts." : null,
-        !s.startingSpread ? "Starting approaches are 3, 2, 1 and 1 (Rep can raise one later, up to 4)." : null
+        !s.startingSpread ? "Starting approaches are 3, 2, 1 and 1 (Rep doesn't raise them: it gives starting Cattitude)." : null
       ].filter(Boolean),
       robbery, cattitudeMax: CATB.rules.cattitudeMax, livesMax: CATB.rules.livesMax
     };
@@ -76,6 +93,14 @@ export class CatSheet extends CatBurglarsActorSheet {
 
   static async #roll(event, target) {
     return rollFor(this.document, { approach: target.dataset.approach });
+  }
+
+  /** The Zoomies box (Storyteller): a click turns the zoomies on or off in the robbery (Ch 9 "Cred"). */
+  static async #zoomies() {
+    if (!game.user?.isGM) return null;
+    const c = getState()?.cats?.find(x => x.id === this.document.id);
+    if (!c) return null;
+    return game.catBurglars?.robbery?.overrides?.zoomies?.(this.document.id, !c.nip);
   }
 }
 

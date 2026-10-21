@@ -32,12 +32,8 @@
     {{/each}}
   </fieldset>
   {{/if}}
-  {{#if canCattitude}}
-  <div class="form-group">
-    <label class="checkbox"><input type="checkbox" name="cattitudeDie"> Spend 1 Cattitude for +1 die (you have {{cattitude}})</label>
-  </div>
-  {{/if}}
   {{#if bodyDie}}<p class="catb-note">Chonky: +1 die to wriggle free.</p>{{/if}}
+  {{#if nip}}<p class="catb-note">The zoomies: +1 die (still no more than 5) — and this roll is a noise whatever happens. Subtle.</p>{{/if}}
   <div class="form-group">
     <label>A pet in the way (its rating)</label>
     <input type="number" name="opposition" value="{{opposition}}" min="0" max="3">

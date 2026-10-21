@@ -28,6 +28,8 @@ export const SETTINGS = Object.freeze({
   autoCattitude: "autoCattitude",     // spends and gains change the cat's Cattitude
   autoPrizeClock: "autoPrizeClock",   // the Prize Clock moves the prize and takes it away
   autoOutcome: "autoOutcome",         // the robbery ends by itself and posts the outcome
+  autoGetaway: "autoGetaway",         // the getaway: rolls move the gang, the warden comes on and corners cats (Ch 9)
+  autoCred: "autoCred",               // Cred (Ch 9): tags, the catnip and the rivals score by themselves; the zoomies change rolls
   trackerForPlayers: "trackerForPlayers", // players may open the Robbery Tracker (read-only for the house)
   trackerPosition: "trackerPosition"  // client: where the tracker window was
 });
@@ -42,6 +44,8 @@ export const CARD = Object.freeze({
   mood: "mood",             // Shoo! / Scooped!
   moodPick: "moodPick",     // whispered to the Storyteller: a meter filled with no roll — which cat in sight gets it
   robbery: "robbery",       // a robbery starts
+  getaway: "getaway",       // the getaway (Ch 9): the start, the warden, cornered cats, drops, pinches
+  cred: "cred",             // showing off (Ch 9 "Cred"): a tag or the catnip with no roll, and the Cred it scored
   outcome: "outcome"        // Clean Getaway / Messy / Busted, with the campaign buttons
 });
 
@@ -52,7 +56,7 @@ export const OPS = Object.freeze({
   catTurn: "cat.turn",           // { catId, moved?, acted? } "I acted"
   temptAnswer: "tempt.answer",   // { catId, choice: "gaveIn"|"resisted" }
   rollFinalize: "roll.finalize", // { messageId } apply a final roll card now (when the GM's hook missed it)
-  campaignLife: "campaign.life"  // { catId } an adopted cat's owner spends a Life to escape
+  campaignLife: "campaign.life"  // { catId } a pinched cat's owner spends a Life to bust out of the pound
 });
 
 /** Hooks this system fires (other modules may listen). */

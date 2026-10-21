@@ -77,18 +77,19 @@ function freeContext(actor) {
 /** Step 2: the roll dialog. Resolves to the player's choices or null. */
 async function rollDialog(actor, ctx, approach) {
   const autoSeen = setting(SETTINGS.autoSeen);
-  const autoCattitude = setting(SETTINGS.autoCattitude);
-  const cattitude = Number(actor.system.cattitude ?? 0);
   const best = ctx.options.find(o => o.approach === approach) ?? [...ctx.options].sort((a, b) => b.rating - a.rating)[0];
   const seenDefault = autoSeen ? ctx.seenBy.length > 0 : false;
   const queued = ctx.helpers.filter(h => h.queued).length;
+  const nip = zoomed(ctx);
+  const loot = groupLoot(ctx, ctx.helpers.filter(h => h.queued).map(h => h.id));
   const approaches = ctx.options.map(o => {
     const plan = buildRollPlan({ approach: o.approach, rating: o.rating, knack: o.knack, bodyDie: ctx.bodyDie, helpers: queued,
-      difficulty: o.difficulty, opposition: ctx.opposition, attention: seenDefault ? o.attention : 0 });
+      difficulty: o.difficulty + loot, opposition: ctx.opposition, attention: seenDefault ? o.attention : 0, nip });
     const n = plan.zero ? 0 : plan.total;
     const bits = [`${o.label} ${o.rating}`];
     if (o.difficulty) bits.push(CATB.difficulties[o.difficulty] ?? `−${o.difficulty}`);
     if (o.knack) bits.push(`Knack (${o.knackFrom.join(", ")})`);
+    if (nip) bits.push("the zoomies +1");
     return {
       approach: o.approach, label: o.label, selected: o.approach === best?.approach, text: bits.join(", "),
       diceText: plan.zero ? "0 (keep the lower of 2)" : String(plan.total), works: odds(chanceAtLeast(n, "scrape")), clean: odds(chanceAtLeast(n, "clean"))
@@ -102,8 +103,7 @@ async function rollDialog(actor, ctx, approach) {
       ...[0, 1, 2].map(d => ({ value: String(d), label: CATB.difficulties[d], selected: false }))],
     knacks: [{ value: "auto", label: knackAutoText(ctx), selected: true }, { value: "yes", label: "Yes: an instinct suits it", selected: false }, { value: "no", label: "No", selected: false }],
     helpers: ctx.helpers.map(h => ({ ...h, locked: h.locked ?? ctx.autoHelpers })),
-    canCattitude: cattitude > 0 || !autoCattitude, cattitude,
-    bodyDie: ctx.bodyDie, opposition: ctx.opposition,
+    bodyDie: ctx.bodyDie, opposition: ctx.opposition, nip,
     seenChoices: [{ value: "auto", label: autoSeen ? (ctx.seenBy.length ? `As the house is: seen by ${ctx.seenNames.join(", ")}` : "As the house is: nobody sees") : "Not seen (fill in by hand)", selected: true },
       { value: "seen", label: "Seen", selected: false }, { value: "unseen", label: "Not seen", selected: false }],
     attention: seenDefault ? ctx.attention : 0,
@@ -122,6 +122,15 @@ async function rollDialog(actor, ctx, approach) {
   }).then(r => (r && typeof r === "object" ? r : null));
 }
 
+/**
+ * Ch 9 (P14): a group loses 1 die if any cat in it carries loot. The leader's own
+ * load is already in the options' Difficulty; a loaded helper the player ticks adds it.
+ */
+const groupLoot = (ctx, helperIds = []) => (ctx?.getaway && !ctx.lootDie && (ctx.helpers ?? []).some(h => h.loaded && helperIds.includes(h.id)) ? 1 : 0);
+
+/** Ch 9 "Cred": the zoomies add a die and make the roll a noise — when Cred is automated (the autoCred setting). */
+const zoomed = ctx => !!ctx?.nip && !ctx.getaway && setting(SETTINGS.autoCred) !== false;
+
 function knackAutoText(ctx) {
   const k = ctx.options.filter(o => o.knack);
   return k.length ? `From your instincts (${k.map(o => `${o.label}: ${o.knackFrom.join(", ")}`).join("; ")})` : "From your instincts (none suits this)";
@@ -139,7 +148,6 @@ export function readRollForm(form, ctx) {
     difficulty: val("difficulty", "auto"),
     knack: val("knack", "auto"),
     helpers,
-    cattitudeDie: on("cattitudeDie"),
     opposition: Number(val("opposition", ctx.opposition)) || 0,
     seen: val("seen", "auto"),
     attention: Number(val("attention", ctx.attention)) || 0
@@ -154,16 +162,13 @@ export async function makeRoll(actor, ctx, answer, state) {
   let seen = answer.seen === "seen" ? true : answer.seen === "unseen" ? false : (autoSeen ? ctx.seenBy.length > 0 : false);
   let seenBy = seen ? (ctx.seenBy.length ? ctx.seenBy : []) : [];
   const kid = seen && !!ctx.kid;
-  const difficulty = answer.difficulty === "auto" ? o.difficulty : Number(answer.difficulty) || 0;
+  const difficulty = answer.difficulty === "auto" ? o.difficulty + groupLoot(ctx, answer.helpers) : Number(answer.difficulty) || 0;
   const knack = answer.knack === "auto" ? o.knack : answer.knack === "yes";
   const attention = seen && attentionApplies(approach) ? answer.attention : 0;
-  const cattitude = Number(actor.system.cattitude ?? 0);
-  const autoCattitude = setting(SETTINGS.autoCattitude);
-  let cattitudeDie = !!answer.cattitudeDie;
-  if (cattitudeDie && autoCattitude && cattitude < 1) { ui.notifications?.warn(`${actor.name} has no Cattitude to spend.`); cattitudeDie = false; }
+  // v0.9 (Ch 4): Cattitude no longer buys a die — it pays for a Push or resisting a temptation
+  const nip = zoomed(ctx);
   const plan = buildRollPlan({ approach, rating: Number(actor.system.approaches?.[approach] ?? o.rating), knack, bodyDie: ctx.bodyDie,
-    helpers: answer.helpers.length, cattitudeDie, difficulty, opposition: answer.opposition, attention });
-  if (cattitudeDie && autoCattitude) await actor.update({ "system.cattitude": clampCattitude(cattitude - 1) });
+    helpers: answer.helpers.length, difficulty, opposition: answer.opposition, attention, nip });
   const roll = await new Roll(`${plan.dice}d6`).evaluate();
   const faces = roll.dice[0].results.map(r => r.result);
   const result = readDice(faces, plan.zero);
@@ -175,8 +180,10 @@ export async function makeRoll(actor, ctx, answer, state) {
     approach, plan, faces, zero: plan.zero, result, firstResult: result,
     pushes: [], pushed: false, pushedWithMood: false,
     seen, seenBy, seenNames: seenBy.map(k => humanByKey(state ?? { humans: [] }, k)?.name ?? k), kid, attention,
+    getaway: !!ctx.getaway, // Ch 9: no meters out here, and a Push is paid with Cattitude only
+    nip, // Ch 9 "Cred": the zoomies — +1 die, and the roll is a noise whatever happens
     helpers: answer.helpers, helperNames: answer.helpers.map(h => ctx.helpers.find(x => x.id === h)?.name ?? h),
-    cattitudeSpent: cattitudeDie ? 1 : 0, status: "pending", applied: false, appliedText: [], quiet: false
+    cattitudeSpent: 0, status: "pending", applied: false, appliedText: [], quiet: false
   };
   const content = await renderRollCard(card);
   return ChatMessage.create({ _id: id, content, speaker: ChatMessage.getSpeaker({ actor }), rolls: [roll], flags: { [FLAG]: { card } } }, { keepId: true });
@@ -198,7 +205,7 @@ export async function renderRollCard(card) {
   return render(TEMPLATES.roll, {
     ...card, dice, planText, approachLabel: CATB.approaches[card.approach]?.label ?? card.approach,
     resultKey: card.result, resultLabel: RESULT[card.result]?.label ?? card.result, resultText: RESULT[card.result]?.text ?? "",
-    seenNames: (card.seenNames ?? []).join(", "), moodText: moodText(card), noise: RESULT[card.result]?.noise && !card.quiet,
+    seenNames: (card.seenNames ?? []).join(", "), moodText: moodText(card), noise: (RESULT[card.result]?.noise || card.nip) && !card.quiet,
     pushText: card.pushes?.length ? `Pushed (${card.pushes[0].by === "mood" ? "+1 Mood step" : "1 Cattitude"}): was a ${RESULT[card.firstResult]?.label ?? card.firstResult}.` : "",
     applied: card.appliedText ?? [], statusText: status
   });
@@ -207,6 +214,7 @@ export async function renderRollCard(card) {
 /** What the roll does (or did) to the Mood, in words. */
 function moodText(card) {
   const state = getState();
+  if (card.getaway) return "The getaway: nobody's watching from a window out here — no meters, and a Push costs Cattitude.";
   if (!card.robberyId || !state || state.id !== card.robberyId) return card.seen ? "Seen (no robbery running: the Mood isn't tracked)." : "";
   if (card.applied) return (card.appliedText ?? []).find(t => /^(Broom|Cuddle) [+-]/.test(t)) ?? (card.seen ? "No Mood step." : "Not seen: the Mood doesn't move.");
   const { ledger, entry } = upsertEntry(state.moodLedger ?? [], rollEntry(card));
@@ -227,12 +235,17 @@ export async function updateRollCard(message, patch) {
 
 /* ------------------------------------------------------------- buttons -- */
 
-/** Ch 4 "Push your luck": once per roll, reroll every die that isn't a 6. Pay 1 Cattitude or 1 Mood step. */
+/**
+ * Ch 4 "Push your luck": once per roll, reroll every die that isn't a 6 (a
+ * zero-dice roll rerolls both, v0.9). Pay 1 Cattitude or 1 Mood step — a step
+ * paid with the Mood always lands, even on a Purrfect, and a kid doesn't double it.
+ */
 export async function push(message, how) {
   const card = cardOf(message);
   if (!card || card.kind !== CARD.roll) throw new Error("Not a roll card.");
   if (card.status !== "pending" || card.pushed) throw new Error("This roll can't be pushed any more.");
-  if (!canPush(card.faces)) throw new Error("Every die is already a 6.");
+  if (how === "mood" && card.getaway) throw new Error("Out on the getaway a Push is paid with Cattitude only.");
+  if (!canPush(card.faces, card.zero)) throw new Error("Every die is already a 6.");
   const actor = actorOf(card);
   if (how === "cattitude") {
     const c = Number(actor?.system.cattitude ?? 0);
@@ -241,9 +254,9 @@ export async function push(message, how) {
       await actor.update({ "system.cattitude": clampCattitude(c - 1) });
     }
   }
-  const idx = pushIndices(card.faces);
+  const idx = pushIndices(card.faces, card.zero);
   const roll = await new Roll(`${idx.length}d6`).evaluate();
-  const faces = applyPush(card.faces, roll.dice[0].results.map(r => r.result));
+  const faces = applyPush(card.faces, roll.dice[0].results.map(r => r.result), card.zero);
   const result = readDice(faces, card.zero);
   game.dice3d?.showForRoll?.(roll, game.user, true);
   return updateRollCard(message, {
@@ -292,13 +305,13 @@ function rollButtons(message, card, box) {
   // the player who rolled (or any non-GM owner of the cat); a GM who rolled for a cat counts as its player
   const owner = card.userId === game.user.id || (!!actor?.isOwner && !game.user.isGM);
   if (card.status === "pending" && !card.pushed) {
-    if (owner && canPush(card.faces)) {
+    if (owner && canPush(card.faces, card.zero)) {
       const c = Number(actor?.system.cattitude ?? 0);
       if (c > 0 || !setting(SETTINGS.autoCattitude)) box.appendChild(button("Push (1 Cattitude)", () => push(message, "cattitude"), { cls: "catb-push" }));
-      if (card.robberyId) box.appendChild(button("Push (+1 Mood)", () => push(message, "mood"), { cls: "catb-push" }));
+      if (card.robberyId && !card.getaway) box.appendChild(button("Push (+1 Mood)", () => push(message, "mood"), { cls: "catb-push" }));
     }
     if (owner || game.user.isGM) box.appendChild(button("Accept", () => accept(message)));
-    if (game.user.isGM && card.robberyId) box.appendChild(button(card.seen ? "Not seen" : "Seen", () => toggleSeen(message), { cls: "catb-gm" }));
+    if (game.user.isGM && card.robberyId && !card.getaway) box.appendChild(button(card.seen ? "Not seen" : "Seen", () => toggleSeen(message), { cls: "catb-gm" }));
   } else if (card.status === "final" && !card.applied && card.robberyId && game.user.isGM) {
     box.appendChild(button("Apply now", () => gm.run(OPS.rollFinalize, { messageId: message.id }), { cls: "catb-gm" }));
   }

@@ -24,7 +24,7 @@ function kitchen12(extra = {}) {
 
 /* -------------------------------------------------------------- getting in -- */
 
-test("getting in: the front door works in its rounds, in view of the human, and lets in one cat", () => {
+test("getting in: the front door works in its rounds, in view of the human, and lets in one cat a round (v0.9)", () => {
   let s = beginRound(robbery("number-12")).state;
   const front = opt(s, "velvet", "enter:front");
   assert.deepEqual(front.uses, ["move", "action"]);
@@ -35,8 +35,8 @@ test("getting in: the front door works in its rounds, in view of the human, and 
   const r = roll(s, "velvet", "enter:front", "sweet", "flop");
   assert.equal(cat(r.state, "velvet").status, "outside");
   assert.equal(cat(r.state, "velvet").moved, true);
-  assert.equal(r.state.entrances.find(e => e.key === "front").open, false, "it shuts after one cat tries");
-  assert.match(opt(r.state, "biscuit", "enter:front").disabled, /shut/);
+  assert.equal(r.state.entrances.find(e => e.key === "front").usedRound, 1, "a failed try uses that round's chance");
+  assert.match(opt(r.state, "biscuit", "enter:front").disabled, /one cat a round/);
   assert.equal(moodNow(r.state).cuddle, 2, "a seen Flop: 2 on the fuller meter (its own when level)");
   s = beginRound(beginRound(robbery("number-12")).state).state;
   assert.match(opt(s, "velvet", "enter:front").disabled, /only in round 1/);
@@ -63,15 +63,14 @@ test("getting in: Tight is for Lean cats; a jammed cat flap stays open for every
   assert.equal(opt(r.state, "mags", "enter:flap").roll, null, "jammed: no roll now");
 });
 
-test("getting in together: the leader rolls, helpers add dice and come too", () => {
-  let s = beginRound(robbery("number-12")).state;
-  s = queueHelp(s, "biscuit", "tilly").state;
-  const ctx = rollContext(s, "tilly", "enter:window");
-  assert.deepEqual(ctx.helpers.map(h => [h.id, h.queued]), [["biscuit", true], ["velvet", false], ["mags", false]]);
+test("getting in: cats outside can't help one coming in — a helper is in the same room, and outside isn't a room (v0.9)", () => {
+  const s = beginRound(robbery("number-12")).state;
+  assert.throws(() => queueHelp(s, "biscuit", "tilly"), /outside isn't a room/);
+  assert.deepEqual(rollContext(s, "tilly", "enter:window").helpers, []);
+  assert.deepEqual(catOptions(s, "biscuit").helpTargets, []);
   const r = roll(s, "tilly", "enter:window", "sneaky", "clean", { helpers: ["biscuit"] });
-  assert.equal(cat(r.state, "biscuit").where, "kitchen");
-  assert.equal(cat(r.state, "biscuit").acted, true);
-  assert.deepEqual(r.state.help, {});
+  assert.equal(cat(r.state, "tilly").where, "kitchen");
+  assert.equal(cat(r.state, "biscuit").where, "outside", "nobody comes in with her");
 });
 
 /* ----------------------------------------------------------- in the house -- */
@@ -180,7 +179,6 @@ test("going out through an entrance with no roll can be the Move or the Action; 
   assert.equal(cat(r.state, "mags").status, "outside");
   assert.equal(cat(r.state, "mags").acted, true);
   const e = beginRound(robbery("number-12")).state;
-  r = roll(queueHelp(e, "biscuit", "tilly").state, "tilly", "enter:window", "sneaky", "clean", { helpers: ["biscuit"] });
   const flapIn = doAction(doAction(e, "mags", "enter:flap").state, "velvet", "enter:flap");
   assert.equal(flapIn.state.noise.filter(n => n.room === "utility").length, 2, "one clack per cat");
 });

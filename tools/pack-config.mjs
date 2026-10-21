@@ -24,7 +24,7 @@ export const OUT = join(ROOT, "packs");
  */
 export const PACKS = [
   { file: "houses", out: "houses", collection: "journal", type: "JournalEntry", subtype: null, label: "Houses" },
-  { file: "gang", out: "gang", collection: "actors", type: "Actor", subtype: "cat", label: "The Ready-Made Gang" },
+  { file: "gang", out: "gang", collection: "actors", type: "Actor", subtype: "cat", label: "Meet the Gang" },
   { file: "residents", out: "residents", collection: "actors", type: "Actor", subtype: null, label: "Residents" }
 ];
 

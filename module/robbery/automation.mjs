@@ -16,7 +16,7 @@ import { isActiveGM } from "./gm-ops.mjs";
 import { cardOf } from "../chat/cards.mjs";
 import { updateRollCard, pendingRollMessages } from "../dice/roll.mjs";
 import { automation, setting } from "../settings.mjs";
-import { postMoodCards } from "./announce.mjs";
+import { postMoodCards, postGetawayCards } from "./announce.mjs";
 
 /** Apply a final roll card to the robbery (once). Active GM only. */
 export async function applyRollMessage(message) {
@@ -27,13 +27,15 @@ export async function applyRollMessage(message) {
   const res = await mutate(s => {
     if (!running(s) || s.id !== card.robberyId) return null;
     if (isApplied(s, card.eventId)) return { state: s, events: [], skipped: true };
-    return applyRoll(s, cardOf(message), { mood: auto.mood, effects: auto.effects });
+    return applyRoll(s, cardOf(message), { mood: auto.mood, effects: auto.effects, d6: auto.d6, getaway: auto.getaway, cred: auto.cred });
   });
   if (!res?.state || res.skipped) return res;
   await applyCattitude(res.cattitude);
   await updateRollCard(message, { applied: true, appliedText: res.events.slice(1).map(e => e.text) });
   Hooks.callAll(HOOKS.rollResolved, message, cardOf(message));
   await postMoodCards(res.events, res.state);
+  // the getaway's big moments (home, pinched, the next round after the last dodge, the outcome)
+  await postGetawayCards(res.events.filter(e => ["home", "pinched", "getawayRound", "outcome"].includes(e.type)), res.state, { always: true });
   return res;
 }
 

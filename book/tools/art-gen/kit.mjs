@@ -2,11 +2,12 @@
 // elevation with a shared floor line, so every scene has one ground plane and
 // one eye level (ART-CHECKLIST §4). Every piece stands on the floor (y = floorY)
 // or on something drawn under it, and gets a contact shadow (§1–2).
-import { C, r1, ell, circ, path, rng, uid } from "./lib.mjs";
+import { C, r1, ell, circ, path, rng, uid, GANG_SIGN } from "./lib.mjs";
 
 const rect = (x, y, w, h, fill, sw = 3, rx = 0, extra = "") =>
   `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}"${rx ? ` rx="${rx}"` : ""} fill="${fill}"${sw ? ` stroke="${C.ink}" stroke-width="${sw}"` : ""}${extra}/>`;
-export const shadowAt = (x, y, rx, op = 0.18) => ell(x, y + 1, rx, Math.max(3, rx * 0.12), C.ink, C.ink, 0, ` opacity="${op}"`);
+// A contact shadow lies on the floor: never taller than the skirting board's lowest edge allows (§4).
+export const shadowAt = (x, y, rx, op = 0.18) => ell(x, y + 1, rx, Math.min(6, Math.max(3, rx * 0.12)), C.ink, C.ink, 0, ` opacity="${op}"`);
 
 /**
  * The book shows a 3:1 vignette in a chapter-head box that is nearly 4:1, centred, with the SVG's
@@ -47,6 +48,15 @@ export function windowWall(x, y, w, h, { night = true, open = false } = {}) {
   s += rect(x - 14, y + h + 8, w + 28, 10, C.light, 2.5); // sill, fixed to the wall
   return s;
 }
+
+/**
+ * The book's scale (ART-CHECKLIST §12), in the interior vignettes' units (900×300, floor at y = 262):
+ * a gang cat is drawn at s = SCALE.cat (a sitting adult is about 74 tall; Pip and Pom-Pom are scaled by
+ * their looks), a kitchen counter is 150 tall, a table 120, a chair seat 86. A door is SCALE.door tall,
+ * so its top always runs out of the top of the frame like the humans' legs: no visible part of a person
+ * is ever taller than a door.
+ */
+export const SCALE = { cat: 0.26, counter: 150, table: 120, door: 330, doorW: 150 };
 
 /** A door in the wall, standing on the floor. ajar 0..1 shows a dark gap. catFlap draws a flap at the bottom. */
 export function door(x, floorY, w = 110, h = 230, { col = C.wood, ajar = 0, catFlap = false } = {}) {
@@ -117,10 +127,22 @@ export function bin(x, floorY, w = 64, h = 90) {
 
 /** A potted plant on the floor (or on a surface at y = base). */
 export function plant(x, base, s = 1) {
+  const k = v => r1(v * s), rim = base - 46 * s, soil = rim + 6 * s;
   let g = shadowAt(x, base, 26 * s);
-  g += path(`M${x - 24 * s} ${base - 46 * s}H${x + 24 * s}L${x + 18 * s} ${base}H${x - 18 * s}Z`, C.brick, C.ink, 3);
-  for (const [dx, dy, a] of [[-26, -96, -30], [0, -116, 0], [24, -92, 30], [-12, -78, -60], [14, -74, 60]])
-    g += ell(x + dx * s, base - 46 * s + (dy + 46) * s, 12 * s, 30 * s, C.leaf, C.ink, 2.6, ` transform="rotate(${a} ${r1(x + dx * s)} ${r1(base - 46 * s + (dy + 46) * s)})"`);
+  // the soil, seen just inside the pot's rim; every stem grows out of it
+  g += path(`M${x - k(20)} ${r1(soil)}Q${x} ${r1(soil - 8 * s)} ${x + k(20)} ${r1(soil)}Z`, C.brownDeep, C.ink, 2);
+  // each leaf sits on its own stem: the stem runs from the soil to the leaf's base
+  const leaves = [[-34, -118, -30], [0, -140, 0], [32, -114, 30], [-30, -84, -62], [30, -80, 62]];
+  for (const [dx, dy, a] of leaves) {
+    const lx = x + dx * s, ly = base + dy * s, rad = a * Math.PI / 180;
+    const bx = lx - Math.sin(rad) * 28 * s, by = ly + Math.cos(rad) * 28 * s; // the leaf's base (its lower tip)
+    g += path(`M${r1(x + dx * 0.15 * s)} ${r1(soil - 2 * s)}Q${r1(x + dx * 0.3 * s)} ${r1((soil + by) / 2)} ${r1(bx)} ${r1(by)}`, "none", C.leafDeep, Math.max(2, 4 * s));
+  }
+  for (const [dx, dy, a] of leaves)
+    g += ell(x + dx * s, base + dy * s, 12 * s, 30 * s, C.leaf, C.ink, 2.6, ` transform="rotate(${a} ${r1(x + dx * s)} ${r1(base + dy * s)})"`) +
+      path(`M${r1(x + dx * s)} ${r1(base + dy * s + 24 * s)}V${r1(base + dy * s - 20 * s)}`, "none", C.leafDeep, 1.6, ` transform="rotate(${a} ${r1(x + dx * s)} ${r1(base + dy * s)})"`);
+  // the pot, in front of the stems' feet
+  g += path(`M${x - 24 * s} ${r1(rim)}H${x + 24 * s}L${x + 18 * s} ${base}H${x - 18 * s}Z`, C.brick, C.ink, 3) + path(`M${x - 25 * s} ${r1(rim)}H${x + 25 * s}`, "none", C.ink, 3);
   return g;
 }
 
@@ -137,19 +159,65 @@ export function lamp(x, floorY, h = 260) {
 export const rug = (x, floorY, rx, col = C.leafDeep) => ell(x, floorY + 22, rx, rx * 0.12, col, C.ink, 2.6) + ell(x, floorY + 22, rx * 0.8, rx * 0.08, "none", C.accentB, 2);
 
 // ---------------------------------------------------------------- prizes
-/** A roast chicken on a plate resting on a surface at y = top. */
-export function chicken(x, top, s = 1) {
-  let g = ell(x, top - 4 * s, 60 * s, 9 * s, C.light, C.ink, 2.6); // plate, flat
-  g += ell(x, top - 34 * s, 44 * s, 30 * s, C.ginger, C.ink, 3);
-  g += ell(x - 12 * s, top - 46 * s, 14 * s, 8 * s, C.accentB, C.ink, 0, ` opacity="0.7"`);
-  for (const sd of [-1, 1]) g += path(`M${x + sd * 34 * s} ${top - 24 * s}q${sd * 22 * s} ${-6 * s} ${sd * 26 * s} ${-26 * s}`, "none", C.ink, 3) +
-    ell(x + sd * 58 * s, top - 52 * s, 7 * s, 6 * s, C.light, C.ink, 2.4);
-  return g;
+/**
+ * A plate seen from the side (the scenes are flat elevations), standing on a surface at y = top:
+ * a low dish, its foot on the surface, its rim a little wider. It lies wholly on the surface: keep
+ * x ± w inside the surface's length. Returns the plate's top (where food rests).
+ */
+export function plate(x, top, w, col = C.light) {
+  const h = Math.max(4, w * 0.11);
+  return { svg: path(`M${r1(x - w)} ${r1(top - h)}H${r1(x + w)}L${r1(x + w * 0.72)} ${r1(top)}H${r1(x - w * 0.72)}Z`, col, C.ink, 2.4), top: top - h };
 }
+/** A bone end, as on a drumstick: two round knobs side by side. */
+const knob = (x, y, r, a = 0) => `<g transform="rotate(${a} ${r1(x)} ${r1(y)})">${circ(x - r * 0.62, y, r, C.light, C.ink, 2.2)}${circ(x + r * 0.62, y, r, C.light, C.ink, 2.2)}</g>`;
+/**
+ * The book's one roast chicken (cover, part pages, every kitchen): a plump golden body lying breast
+ * up, two meaty drumsticks rising from its back end, each ending in a white double-knobbed bone, on a
+ * plate on a surface at y = top. The far drumstick is behind the body, in the deep tone.
+ */
+export function chicken(x, top, s = 1, { foil = false } = {}) {
+  const p = plate(x, top, 58 * s);
+  const b = p.top, k = v => v * s;
+  // the far drumstick, behind the body
+  let g = path(`M${r1(x + k(14))} ${r1(b - k(40))}Q${r1(x + k(22))} ${r1(b - k(66))} ${r1(x + k(36))} ${r1(b - k(70))}L${r1(x + k(42))} ${r1(b - k(64))}Q${r1(x + k(36))} ${r1(b - k(46))} ${r1(x + k(34))} ${r1(b - k(30))}Z`, C.gingerDeep, C.ink, 2.6) + knob(x + k(40), b - k(72), k(5.5), 30);
+  g += ell(x - k(4), b - k(25), k(46), k(26), C.ginger, C.ink, 3); // the body
+  g += ell(x - k(18), b - k(36), k(14), k(7), C.accentB, C.ink, 0, ` opacity="0.7"`) + path(`M${r1(x - k(40))} ${r1(b - k(14))}Q${r1(x - k(6))} ${r1(b - k(4))} ${r1(x + k(30))} ${r1(b - k(16))}`, "none", C.gingerDeep, 2.4);
+  g += path(`M${r1(x - k(30))} ${r1(b - k(30))}q${r1(k(10))} ${r1(k(12))} ${r1(k(24))} ${r1(k(8))}`, "none", C.gingerDeep, 2.6); // the tucked wing
+  // the near drumstick: meat swelling out of the body's back end, up to its bone
+  g += path(`M${r1(x + k(20))} ${r1(b - k(20))}Q${r1(x + k(28))} ${r1(b - k(58))} ${r1(x + k(50))} ${r1(b - k(62))}L${r1(x + k(56))} ${r1(b - k(54))}Q${r1(x + k(50))} ${r1(b - k(30))} ${r1(x + k(40))} ${r1(b - k(12))}Z`, C.gingerDeep, C.ink, 2.8) + knob(x + k(55), b - k(64), k(6), 35);
+  if (foil) { // the foil it came home in, peeled open and crumpled round the bird's lower half
+    const fy = b - k(18);
+    g += path(`M${r1(x - k(54))} ${r1(b)}L${r1(x - k(56))} ${r1(fy - k(4))}l${r1(k(8))} ${r1(k(6))}l${r1(k(8))} ${r1(-k(8))}l${r1(k(10))} ${r1(k(7))}l${r1(k(10))} ${r1(-k(6))}l${r1(k(12))} ${r1(k(8))}l${r1(k(10))} ${r1(-k(7))}l${r1(k(12))} ${r1(k(6))}l${r1(k(10))} ${r1(-k(8))}l${r1(k(14))} ${r1(k(9))}L${r1(x + k(54))} ${r1(b)}Z`, C.whiteDeep, C.ink, 2.4);
+    g += path(`M${r1(x - k(40))} ${r1(b - k(3))}l${r1(k(6))} ${r1(-k(8))} M${r1(x - k(6))} ${r1(b - k(2))}l${r1(k(4))} ${r1(-k(9))} M${r1(x + k(26))} ${r1(b - k(3))}l${r1(k(5))} ${r1(-k(8))}`, "none", C.light, 2);
+  }
+  return g + p.svg; // the dish's rim in front of the bird's underside
+}
+/** Wall tiles (a splashback) behind a worktop: a light panel of square tiles, from y up h. */
+export function tiles(x, y, w, h, t = 22) {
+  let s = rect(x, y - h, w, h, C.light, 2.4);
+  let d = "";
+  for (let xx = x + t; xx < x + w - 2; xx += t) d += `M${xx} ${y - h}V${y}`;
+  for (let yy = y - t; yy > y - h + 2; yy -= t) d += `M${x} ${yy}H${x + w}`;
+  return s + path(d, "none", C.edge, 1.6);
+}
+/** A sink's mixer tap standing on the worktop at y = top (the basin is sunk into the worktop, out of sight). */
+export function tap(x, top) {
+  return rect(x - 14, top - 4, 28, 4, C.grey, 2, 2) + path(`M${x} ${top - 4}V${top - 34}Q${x} ${top - 44} ${x + 12} ${top - 44}H${x + 20}V${top - 36}`, "none", C.ink, 7) +
+    path(`M${x} ${top - 4}V${top - 34}Q${x} ${top - 44} ${x + 12} ${top - 44}H${x + 20}V${top - 36}`, "none", C.grey, 3.4) + rect(x - 4, top - 30, 8, 6, C.grey, 1.6, 2);
+}
+/** An electric kettle standing on its base on the worktop at y = top. */
+export function kettle(x, top, col = C.eyeBlue) {
+  let s = rect(x - 22, top - 6, 44, 6, C.ink, 0, 2);
+  s += path(`M${x - 18} ${top - 6}L${x - 15} ${top - 46}Q${x} ${top - 52} ${x + 15} ${top - 46}L${x + 18} ${top - 6}Z`, col, C.ink, 2.6);
+  s += path(`M${x + 16} ${top - 40}q14 2 12 16q-2 10 -10 10`, "none", C.ink, 5) + path(`M${x - 16} ${top - 40}l-10 -6`, "none", C.ink, 4); // handle, spout
+  return s + rect(x - 6, top - 54, 12, 5, C.ink, 0, 2);
+}
+
 /** A big cardboard box standing on the floor (flaps open). */
 export function box(x, floorY, w = 170, h = 120) {
   const y = floorY - h;
   let s = shadowAt(x + w / 2, floorY, w * 0.55);
+  s += path(`M${x + 2} ${y}L${x + 10} ${y - 12}H${x + w - 10}L${x + w - 2} ${y}Z`, C.wood, C.ink, 2.4); // the inside of the back wall, in shadow
   s += rect(x, y, w, h, C.creamDeep, 3);
   s += path(`M${x} ${y}L${x - 24} ${y - 34}L${x + w * 0.3} ${y - 30}L${x + w * 0.42} ${y}Z`, C.cream, C.ink, 3);
   s += path(`M${x + w} ${y}L${x + w + 22} ${y - 30}L${x + w * 0.66} ${y - 34}L${x + w * 0.56} ${y}Z`, C.cream, C.ink, 3);
@@ -157,11 +225,18 @@ export function box(x, floorY, w = 170, h = 120) {
   s += path(`M${x + 16} ${y + h - 30}h40 M${x + 16} ${y + h - 20}h26`, "none", C.ink, 2);
   return s;
 }
-/** A catnip mouse toy lying on a surface at y = top. */
+/**
+ * A felt toy mouse lying on a surface at y = top, facing +x: a teardrop body on the surface, a round
+ * ear, an eye, a pink nose, and a string tail lying along the surface. About a quarter of a sitting
+ * cat's height at s = 1 beside a cat at the vignette scale.
+ */
 export function toyMouse(x, top, s = 1) {
-  let g = ell(x, top - 9 * s, 18 * s, 10 * s, C.brick, C.ink, 2.4);
-  g += circ(x + 14 * s, top - 15 * s, 5 * s, C.brick, C.ink, 2) + circ(x + 18 * s, top - 10 * s, 1.6 * s, C.ink);
-  g += path(`M${x - 18 * s} ${top - 8 * s}q-14 ${-4 * s} -22 ${4 * s}`, "none", C.ink, 2);
+  const k = v => r1(v * s);
+  let g = shadowAt(x, top, 18 * s);
+  g += path(`M${r1(x - k(16))} ${r1(top)}Q${r1(x - k(18))} ${r1(top - k(16))} ${r1(x - k(2))} ${r1(top - k(16))}Q${r1(x + k(12))} ${r1(top - k(14))} ${r1(x + k(20))} ${r1(top - k(4))}L${r1(x + k(18))} ${r1(top)}Z`, C.brick, C.ink, 2.2);
+  g += circ(x + k(4), top - k(16), k(5), C.brick, C.ink, 2) + circ(x + k(4), top - k(16), k(2.4), C.pink); // ear
+  g += circ(x + k(11), top - k(9), k(1.6), C.ink) + circ(x + k(20), top - k(4), k(2), C.pinkDeep, C.ink, 1);
+  g += path(`M${r1(x - k(16))} ${r1(top - k(2))}Q${r1(x - k(28))} ${r1(top - k(1))} ${r1(x - k(34))} ${r1(top)}H${r1(x - k(44))}`, "none", C.ink, 1.8); // the string tail, on the surface
   return g;
 }
 
@@ -182,10 +257,14 @@ export function legs(o) {
   return s;
 }
 
-/** A wall shelf held by two brackets screwed to the wall, with jars standing on it. */
+/**
+ * A wall shelf with jars standing on it, on two brackets screwed to the wall. Seen from the front, each
+ * bracket is a tapering upright strut under the shelf (its arm runs back under the board, out of sight),
+ * fixed with two screws.
+ */
 export function shelf(x, y, w, items = 3) {
   let s = "";
-  for (const bx of [x + 14, x + w - 22]) s += path(`M${bx} ${y + 10}v26h10`, "none", C.ink, 3) + circ(bx, y + 30, 2, C.ink);
+  for (const bx of [x + 18, x + w - 18]) s += path(`M${bx - 5} ${y + 10}H${bx + 5}L${bx + 3} ${y + 40}H${bx - 3}Z`, C.greyDeep, C.ink, 2.2) + circ(bx, y + 18, 1.6, C.light) + circ(bx, y + 32, 1.6, C.light);
   s += `<rect x="${x}" y="${y}" width="${w}" height="10" fill="${C.wood}" stroke="${C.ink}" stroke-width="2.6"/>`;
   const cols = [C.leaf, C.accent, C.eyeBlue, C.brown];
   for (let i = 0; i < items; i++) {
@@ -251,11 +330,17 @@ export function streetLamp(x, groundY, h = 250) {
   return s;
 }
 
-/** A wheelie bin on the pavement, wheels touching the ground. */
-export function wheelieBin(x, groundY, col = C.leafDeep) {
-  let s = shadowAt(x + 34, groundY, 40);
-  s += path(`M${x} ${groundY - 110}L${x + 8} ${groundY - 10}H${x + 60}L${x + 68} ${groundY - 110}Z`, col, C.ink, 3);
-  s += `<rect x="${x - 6}" y="${groundY - 122}" width="80" height="14" rx="4" fill="${col}" stroke="${C.ink}" stroke-width="3"/>`;
+/**
+ * A wheelie bin on the pavement: the wheel at the back (left) and a moulded foot at the front (right)
+ * both stand on the ground; the lid on its hinge, a handle at the back. h: the body's height.
+ */
+export function wheelieBin(x, groundY, col = C.leafDeep, h = 110) {
+  let s = shadowAt(x + 34, groundY, 42);
+  s += path(`M${x} ${groundY - h}L${x + 8} ${groundY - 10}H${x + 60}L${x + 68} ${groundY - h}Z`, col, C.ink, 3);
+  s += path(`M${x + 44} ${groundY - 10}V${groundY}H${x + 62}L${x + 60} ${groundY - 10}Z`, col, C.ink, 2.6); // the front foot, on the ground
+  s += path(`M${x + 6} ${groundY - h + 30}H${x + 62} M${x + 8} ${groundY - h + 40}H${x + 60}`, "none", C.ink, 1.6, ` opacity="0.4"`);
+  s += `<rect x="${x - 6}" y="${groundY - h - 12}" width="80" height="14" rx="4" fill="${col}" stroke="${C.ink}" stroke-width="3"/>`;
+  s += `<rect x="${x - 12}" y="${groundY - h - 8}" width="10" height="8" rx="2" fill="${C.ink}"/>`; // the handle at the back
   s += circ(x + 14, groundY - 10, 10, C.ink) + circ(x + 14, groundY - 10, 4, C.grey);
   return s;
 }
@@ -277,33 +362,50 @@ export function humanBack(o) {
   // coat
   g += `<path d="M${r1(x - 30 * s)} ${r1(gy - 210 * s)}Q${r1(x - 36 * s)} ${r1(gy - 140 * s)} ${r1(x - 34 * s)} ${r1(gy - 90 * s)}H${r1(x + 34 * s)}Q${r1(x + 36 * s)} ${r1(gy - 140 * s)} ${r1(x + 30 * s)} ${r1(gy - 210 * s)}Q${x} ${r1(gy - 222 * s)} ${r1(x - 30 * s)} ${r1(gy - 210 * s)}Z" fill="${coat}" stroke="${C.ink}" stroke-width="3"/>`;
   g += `<path d="M${x} ${r1(gy - 150 * s)}V${r1(gy - 92 * s)}" stroke="${C.ink}" stroke-width="2"/>`;
-  // left arm hanging, hand in pocket
-  g += `<path d="M${r1(x - 30 * s)} ${r1(gy - 205 * s)}Q${r1(x - 42 * s)} ${r1(gy - 160 * s)} ${r1(x - 34 * s)} ${r1(gy - 124 * s)}" fill="none" stroke="${C.ink}" stroke-width="${k(15)}" stroke-linecap="round"/>` +
-    `<path d="M${r1(x - 30 * s)} ${r1(gy - 205 * s)}Q${r1(x - 42 * s)} ${r1(gy - 160 * s)} ${r1(x - 34 * s)} ${r1(gy - 124 * s)}" fill="none" stroke="${coat}" stroke-width="${k(9)}" stroke-linecap="round"/>`;
-  // right arm: down to the bag (its handles wrap the hand), or hanging like the left with the hand in the pocket
-  const rx = bag ? 42 : 34, ry = bag ? 128 : 124, rq = bag ? 44 : 42;
-  g += `<path d="M${r1(x + 30 * s)} ${r1(gy - 205 * s)}Q${r1(x + rq * s)} ${r1(gy - 160 * s)} ${r1(x + rx * s)} ${r1(gy - ry * s)}" fill="none" stroke="${C.ink}" stroke-width="${k(15)}" stroke-linecap="round"/>` +
-    `<path d="M${r1(x + 30 * s)} ${r1(gy - 205 * s)}Q${r1(x + rq * s)} ${r1(gy - 160 * s)} ${r1(x + rx * s)} ${r1(gy - ry * s)}" fill="none" stroke="${coat}" stroke-width="${k(9)}" stroke-linecap="round"/>`;
+  // the arms (two), each ending in a hand seen from the back: knuckles, finger creases, the thumb tip on the inner side
+  const arm = (x0, cx, x1, y1) => `<path d="M${r1(x0)} ${r1(gy - 205 * s)}Q${r1(cx)} ${r1(gy - 160 * s)} ${r1(x1)} ${r1(y1)}" fill="none" stroke="${C.ink}" stroke-width="${k(15)}" stroke-linecap="round"/>` +
+    `<path d="M${r1(x0)} ${r1(gy - 205 * s)}Q${r1(cx)} ${r1(gy - 160 * s)} ${r1(x1)} ${r1(y1)}" fill="none" stroke="${coat}" stroke-width="${k(9)}" stroke-linecap="round"/>`;
+  const hand = (hx, hy, inner, fist) => { // inner: -1 when the body is to the hand's left, +1 to its right
+    let h = path(`M${r1(hx + inner * 3 * s)} ${r1(hy - 2 * s)}q${r1(inner * 4 * s)} ${r1(2 * s)} ${r1(inner * 3 * s)} ${r1(7 * s)}`, C.cream, C.ink, 2); // thumb tip
+    h += `<rect x="${r1(hx - 6.5 * s)}" y="${r1(hy - 6 * s)}" width="${r1(13 * s)}" height="${r1((fist ? 13 : 16) * s)}" rx="${r1(5 * s)}" fill="${C.cream}" stroke="${C.ink}" stroke-width="2.2"/>`;
+    const fy = hy + (fist ? 2 : 4) * s; // the creases between the four fingers
+    h += path(`M${r1(hx - 3.2 * s)} ${r1(fy)}v${r1(4.5 * s)} M${r1(hx)} ${r1(fy)}v${r1(5 * s)} M${r1(hx + 3.2 * s)} ${r1(fy)}v${r1(4.5 * s)}`, "none", C.ink, 1.3);
+    if (fist) h += path(`M${r1(hx - 6 * s)} ${r1(hy + 1 * s)}h${r1(12 * s)}`, "none", C.ink, 1.3); // the knuckle line of a closed hand
+    return h;
+  };
+  g += arm(x - 30 * s, x - 42 * s, x - 34 * s, gy - 126 * s) + hand(x - 34 * s, gy - 122 * s, 1, false); // left arm hanging, hand relaxed
   if (bag) {
-    g += `<path d="M${r1(x + 28 * s)} ${r1(gy - 104 * s)}Q${r1(x + 42 * s)} ${r1(gy - 140 * s)} ${r1(x + 56 * s)} ${r1(gy - 104 * s)}" fill="none" stroke="${C.ink}" stroke-width="${k(4)}"/>`;
+    // the bag's two handles rise from its rim into the closed right hand, which grips them
+    g += `<path d="M${r1(x + 30 * s)} ${r1(gy - 104 * s)}Q${r1(x + 34 * s)} ${r1(gy - 122 * s)} ${r1(x + 42 * s)} ${r1(gy - 126 * s)} M${r1(x + 54 * s)} ${r1(gy - 104 * s)}Q${r1(x + 50 * s)} ${r1(gy - 122 * s)} ${r1(x + 43 * s)} ${r1(gy - 126 * s)}" fill="none" stroke="${C.ink}" stroke-width="${k(4)}"/>`;
+    g += path(`M${r1(x + 52 * s)} ${r1(gy - 110 * s)}l${r1(5 * s)} ${r1(-9 * s)}`, "none", C.gingerDeep, k(6)) + knob(x + 58 * s, gy - 121 * s, 3 * s, 30); // a drumstick sticking up out of the bag
+    g += ell(x + 42 * s, gy - 106 * s, 13 * s, 8 * s, C.ginger, C.ink, 2.4); // the chicken inside, its top showing
     g += `<path d="M${r1(x + 22 * s)} ${r1(gy - 104 * s)}H${r1(x + 62 * s)}L${r1(x + 58 * s)} ${r1(gy - 56 * s)}H${r1(x + 26 * s)}Z" fill="${bagCol}" stroke="${C.ink}" stroke-width="3"/>`;
-    g += ell(x + 42 * s, gy - 112 * s, 13 * s, 8 * s, C.ginger, C.ink, 2.4); // the chicken peeking out of the bag
-  }
+    g += arm(x + 30 * s, x + 44 * s, x + 42 * s, gy - 134 * s) + hand(x + 42 * s, gy - 130 * s, -1, true);
+  } else g += arm(x + 30 * s, x + 42 * s, x + 34 * s, gy - 126 * s) + hand(x + 34 * s, gy - 122 * s, -1, false);
   // head from behind: hair, two ears
   g += ell(x - 22 * s, gy - 236 * s, 5 * s, 8 * s, C.cream, C.ink, 2.4) + ell(x + 22 * s, gy - 236 * s, 5 * s, 8 * s, C.cream, C.ink, 2.4);
   g += circ(x, gy - 242 * s, 23 * s, hair, C.ink, 3);
   return g;
 }
 
-/** A die lying flat-faced toward us on a surface: a rounded square with pips (1–6). */
+/**
+ * A die standing on a surface, seen a little from above and to the left: its front face (the pips
+ * given), its top face and its right side, so it sits in the same view as the floor and rugs (§4).
+ */
 export function die(x, base, size, face, col = C.light) {
-  const y = base - size;
-  let s = shadowAt(x + size / 2, base, size * 0.6);
-  s += `<rect x="${r1(x)}" y="${r1(y)}" width="${size}" height="${size}" rx="${r1(size * 0.18)}" fill="${col}" stroke="${C.ink}" stroke-width="3"/>`;
+  const y = base - size, dx = size * 0.26, dy = size * 0.2;
+  let s = shadowAt(x + size / 2 + dx / 2, base, size * 0.66);
+  const pipsOf = f => ({ 1: ["c"], 2: ["tl", "br"], 3: ["tl", "c", "br"], 4: ["tl", "tr", "bl", "br"], 5: ["tl", "tr", "c", "bl", "br"], 6: ["tl", "tr", "ml", "mr", "bl", "br"] }[f]);
+  const grid = { tl: [-1, -1], tr: [1, -1], ml: [-1, 0], mr: [1, 0], bl: [-1, 1], br: [1, 1], c: [0, 0] };
+  // top face (a parallelogram leaning back) and right side, then the front face over their edges
+  s += path(`M${r1(x)} ${r1(y)}L${r1(x + dx)} ${r1(y - dy)}H${r1(x + size + dx)}L${r1(x + size)} ${r1(y)}Z`, C.paper2, C.ink, 3);
+  s += path(`M${r1(x + size)} ${r1(y)}L${r1(x + size + dx)} ${r1(y - dy)}V${r1(base - dy)}L${r1(x + size)} ${r1(base)}Z`, C.edge, C.ink, 3);
+  s += `<rect x="${r1(x)}" y="${r1(y)}" width="${size}" height="${size}" rx="${r1(size * 0.12)}" fill="${col}" stroke="${C.ink}" stroke-width="3"/>`;
   const p = size * 0.26, c = [x + size / 2, y + size / 2];
-  const at = { tl: [c[0] - p, c[1] - p], tr: [c[0] + p, c[1] - p], ml: [c[0] - p, c[1]], mr: [c[0] + p, c[1]], bl: [c[0] - p, c[1] + p], br: [c[0] + p, c[1] + p], c };
-  const pips = { 1: ["c"], 2: ["tl", "br"], 3: ["tl", "c", "br"], 4: ["tl", "tr", "bl", "br"], 5: ["tl", "tr", "c", "bl", "br"], 6: ["tl", "tr", "ml", "mr", "bl", "br"] }[face];
-  for (const k of pips) s += circ(at[k][0], at[k][1], size * 0.08, C.ink);
+  for (const k of pipsOf(face)) s += circ(c[0] + grid[k][0] * p, c[1] + grid[k][1] * p, size * 0.08, C.ink);
+  // the top face's pips, squashed into its slant
+  const top = face === 2 || face === 5 ? 1 : face === 3 || face === 4 ? 2 : 3, tc = [x + size / 2 + dx / 2, y - dy / 2];
+  for (const k of pipsOf(top)) s += ell(tc[0] + grid[k][0] * p * 0.9 + grid[k][1] * dx * 0.22, tc[1] + grid[k][1] * dy * 0.26, size * 0.07, size * 0.04, C.ink);
   return s;
 }
 
@@ -389,8 +491,9 @@ export function bunting(x1, y1, x2, y2, sagBy = 26, n = 9) {
 /** A three-layer chocolate birthday cake on a flat plate resting on a surface at y = top, with four unlit candles. */
 export function cake(x, top, s = 1) {
   const k = v => v * s;
-  let g = ell(x, top - k(4), k(48), k(7), C.light, C.ink, 2.6); // plate, lying flat
-  let y = top - k(6);
+  const p = plate(x, top, k(50)); // the cake plate, standing wholly on the table (seen from the side)
+  let g = "";
+  let y = p.top + k(1);
   for (const [w, h] of [[40, 18], [32, 16], [24, 14]]) {
     g += rect(x - k(w), y - k(h), k(w * 2), k(h), C.brownDeep, 3, 4);
     const n = Math.round(w / 6), step = k(w * 2) / n;
@@ -401,7 +504,7 @@ export function cake(x, top, s = 1) {
   }
   for (const dx of [-14, -5, 4, 13]) g += rect(x + k(dx) - k(2.4), y - k(16), k(4.8), k(16), C.light, 2, 1) + path(`M${r1(x + k(dx))} ${r1(y - k(16))}v${r1(-k(5))}`, "none", C.ink, 1.6) +
     path(`M${r1(x + k(dx) - k(2.4))} ${r1(y - k(11))}l${r1(k(4.8))} ${r1(-k(3))}M${r1(x + k(dx) - k(2.4))} ${r1(y - k(5))}l${r1(k(4.8))} ${r1(-k(3))}`, "none", C.eyeBlue, 1.4);
-  return g;
+  return g + p.svg;
 }
 
 /** Two wrapped presents on the floor, the smaller one sitting wholly on top of the bigger one. */
@@ -417,13 +520,15 @@ export function presents(x, floorY) {
 export function paperBag(x, floorY, w = 70, h = 92) {
   const y = floorY - h, mx = x + w * 0.5;
   let s = shadowAt(x + w / 2, floorY, w * 0.55);
+  // the bag's open mouth: its back edge and the dark inside, seen just above the near edge
+  s += path(`M${x} ${y + 2}L${x + 8} ${y - 10}H${x + w - 8}L${x + w} ${y + 2}Z`, C.creamDeep, C.ink, 2.6) + path(`M${x + 4} ${y + 2}L${x + 10} ${y - 6}H${x + w - 10}L${x + w - 4} ${y + 2}Z`, C.brownDeep, C.ink, 0);
   s += rect(x, y, w, h, C.creamDeep, 3);
   s += path(`M${x + 6} ${y + 14}V${floorY - 6} M${x + w - 6} ${y + 14}V${floorY - 6}`, "none", C.wood, 1.6);
-  // the felt mouse inside, its head poking up out of the bag: two round ears, an eye, a pointed nose
+  // the felt mouse inside, its head poking up out of the bag's mouth: two round ears, an eye, a pointed nose
   s += circ(mx - 12, y - 14, 7, C.brick, C.ink, 2.4) + circ(mx - 1, y - 20, 7, C.brick, C.ink, 2.4) + circ(mx - 12, y - 14, 3.4, C.pink) + circ(mx - 1, y - 20, 3.4, C.pink);
   s += path(`M${mx - 18} ${y + 6}Q${mx - 20} ${y - 12} ${mx - 4} ${y - 14}Q${mx + 12} ${y - 16} ${mx + 26} ${y - 6}Q${mx + 14} ${y + 4} ${mx + 4} ${y + 6}Z`, C.brick, C.ink, 2.6);
   s += circ(mx + 6, y - 7, 2.4, C.ink) + circ(mx + 26, y - 6, 2.6, C.pinkDeep, C.ink, 1.2) + path(`M${mx + 22} ${y - 3}l12 3 M${mx + 22} ${y - 5}l12 -3`, "none", C.ink, 1.2);
-  s += rect(x - 2, y, w + 4, 12, C.cream, 3); // the folded-down rim, in front of the mouse
+  s += rect(x - 2, y, w + 4, 10, C.cream, 3); // the near edge of the mouth, folded down, in front of the mouse
   // the string tail: from the mouse's back end inside, out over the rim, hanging straight down the outside of the bag
   s += path(`M${x + 12} ${y + 4}Q${x + 2} ${y - 8} ${x - 3} ${y + 4}V${y + 50}`, "none", C.ink, 2.6);
   s += path(`M${x + w * 0.28} ${y + h * 0.5}h${w * 0.44} M${x + w * 0.28} ${y + h * 0.5 + 9}h${w * 0.3}`, "none", C.woodDeep, 2.2); // the shop's stamp: squiggles only
@@ -466,10 +571,11 @@ export function dogBasket(x, floorY, w = 130) {
 }
 
 /** An armchair seen from the front, standing on its four short feet (two show). Returns { svg, seat }. */
-export function armchair(x, floorY, w = 170, { col = C.leafDeep } = {}) {
+export function armchair(x, floorY, w = 170, { col = C.leafDeep, h = 176 } = {}) {
   let s = shadowAt(x + w / 2, floorY, w * 0.5);
   s += rect(x + 14, floorY - 12, 12, 12, C.woodDeep, 2) + rect(x + w - 26, floorY - 12, 12, 12, C.woodDeep, 2);
-  s += rect(x + 18, floorY - 176, w - 36, 110, col, 3, 22); // back
+  s += rect(x + 18, floorY - h, w - 36, h - 66, col, 3, 22); // back (a tall one is a wing chair: its wings stand out at the sides)
+  if (h > 200) s += rect(x + 6, floorY - h + 30, 30, h - 120, col, 3, 14) + rect(x + w - 36, floorY - h + 30, 30, h - 120, col, 3, 14);
   s += rect(x + 10, floorY - 82, w - 20, 70, col, 3, 10) + rect(x + 34, floorY - 96, w - 68, 24, C.soft, 3, 8); // seat and cushion
   s += rect(x, floorY - 118, 36, 106, col, 3, 14) + rect(x + w - 36, floorY - 118, 36, 106, col, 3, 14); // arms
   return { svg: s, seat: floorY - 96 };
@@ -533,4 +639,68 @@ export function panRail(x, y, w, n = 3) {
     s += circ(hx, y + 50 + r, r, C.blackSoft, C.ink, 3) + circ(hx, y + 50 + r, r - 6, C.black);
   }
   return s;
+}
+
+// ---------------------------------------------------------------- graffiti (outdoor surfaces only)
+// Street graffiti in the gang's world (the author, 2026-10-21): tags and throw-ups on garden walls,
+// fences, bins, the alley wall and the warden's van. Flat paint with a soft overspray, never on the
+// inside of anyone's home, never in Broom red-orange or Cuddle pink, and never fake writing: the gang's
+// cat-head 9, a few abstract marks (loops, crowns, stars, arrows, paw prints, a fish), and only the short real
+// words "MEOW", "9 LIVES" and "NLG" as bubble-letter throw-ups. A rival crew's fish-skeleton scrawl appears once,
+// tagged over by the gang (spot-rivals).
+
+/** A sprayed stroke: a soft wide overspray under a solid core. */
+export const spray = (d, col, w = 5, op = 1) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="${r1(w * 2)}" stroke-linecap="round" stroke-linejoin="round" opacity="${r1(22 * op) / 100}"/>` +
+  `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="${op}"/>`;
+
+/**
+ * The Nine Lives Gang's tag, sprayed in paint: a cat's head (two ears, whiskers both sides) with a 9
+ * in it, and two short drips running straight down from the chin. Centred on (x, y); at s = 1 about
+ * 130 wide and 100 tall. col = "currentColor" lets the page set the colour.
+ */
+export function gangTag(x, y, s = 1, col = "currentColor", op = 1, rot = 0) {
+  const { head, nine, whiskers, drips } = GANG_SIGN; // the same strokes as Big Biscuit's tattoo
+  return `<g transform="translate(${r1(x)} ${r1(y)})${rot ? ` rotate(${rot})` : ""} scale(${s})" opacity="${op}">` +
+    spray(head, col, 5.5) + spray(nine, col, 5.5) + spray(whiskers, col, 3.5) + spray(drips, col, 3.5) +
+    `<circle cx="-18" cy="47" r="3" fill="${col}"/><circle cx="22" cy="41" r="2.4" fill="${col}"/></g>`;
+}
+
+/**
+ * An abstract tag (no letters), centred on (x, y) at scale s: "loop" (a looping squiggle with an
+ * underline ending in an arrow), "crown" (a three-point crown), "star" (a star with a drip), "arrow"
+ * (a fat bent arrow), "paws" (a trail of three sprayed paw prints), "fish" (a cartoon fish).
+ */
+export function tagMark(kind, x, y, s = 1, col = C.accentB, op = 0.9, rot = 0) {
+  let g = "";
+  if (kind === "loop") g = spray("M-40 6C-34 -24 -18 -24 -20 2C-22 22 -6 22 0 -4C6 -26 18 -22 16 0C14 18 30 18 36 -6M-44 18Q0 30 42 14L34 8M42 14L34 22", col, 4);
+  if (kind === "crown") g = spray("M-26 14L-30 -16L-12 0L0 -22L12 0L30 -16L26 14Z", col, 4) + spray("M-24 24H24", col, 4);
+  if (kind === "star") g = spray("M0 -26L7 -8L26 -8L11 4L17 23L0 12L-17 23L-11 4L-26 -8L-7 -8Z", col, 4) + spray("M6 24V36", col, 3) + `<circle cx="6" cy="40" r="2.6" fill="${col}"/>`;
+  if (kind === "arrow") g = spray("M-36 16Q-30 -18 4 -14H20M10 -26L24 -14L10 -2", col, 6);
+  if (kind === "fish") g = spray("M-30 0Q-8 -22 18 0Q-8 22 -30 0ZM18 0L34 -14V14Z", col, 4) + `<circle cx="-16" cy="-4" r="3.4" fill="${col}"/>` + spray("M-2 -10Q4 0 -2 10", col, 2.4) + spray("M-36 -16a3 3 0 1 0 0.1 0M-42 -28a2 2 0 1 0 0.1 0", col, 2);
+  if (kind === "paws") for (const [px, py] of [[-28, 10], [0, -6], [28, 6]]) g += `<g transform="translate(${px} ${py}) rotate(20)" fill="${col}"><ellipse cx="0" cy="5" rx="7" ry="6"/><ellipse cx="-8" cy="-5" rx="2.8" ry="3.6"/><ellipse cx="-3" cy="-9" rx="2.8" ry="3.6"/><ellipse cx="3" cy="-9" rx="2.8" ry="3.6"/><ellipse cx="8" cy="-5" rx="2.8" ry="3.6"/></g>`;
+  return `<g transform="translate(${r1(x)} ${r1(y)})${rot ? ` rotate(${rot})` : ""} scale(${s})" opacity="${op}">${g}</g>`;
+}
+
+/**
+ * A throw-up: a short real word ("MEOW", "NLG" or "9 LIVES") in fat sprayed letters (the book's spray-paint
+ * face) with a thick outline and a drop shadow, centred on (x, y).
+ */
+export function throwUp(word, x, y, size = 40, fill = C.eyeBlue, line = C.light, rot = -4) {
+  if (!["MEOW", "9 LIVES", "NLG"].includes(word)) throw new Error(`throwUp: only safe short words, not ${word}`);
+  const t = (dx, dy, f, st, sw) => `<text x="${r1(dx)}" y="${r1(dy)}" text-anchor="middle" font-family="Rubik Spray Paint, Fraunces, serif" font-size="${size}" fill="${f}"${st ? ` stroke="${st}" stroke-width="${r1(sw)}" stroke-linejoin="round" paint-order="stroke"` : ""}>${word}</text>`;
+  return `<g transform="translate(${r1(x)} ${r1(y)}) rotate(${rot})">` + t(4, size * 0.35 + 4, C.ink, C.ink, size * 0.16) + t(0, size * 0.35, fill, line, size * 0.12) + `</g>`;
+}
+
+/**
+ * A rival crew's tag (comic, made-up): a scruffy fish-skeleton scrawl — a wobbly spine, jagged ribs, a
+ * lumpy head with a cross for an eye, a ragged tail, two drips and a scribbled underline. Centred on
+ * (x, y), about 150 wide at s = 1. Sprayed in a dull green, never Broom red or Cuddle pink.
+ */
+export function rivalTag(x, y, s = 1, col = C.leaf, op = 0.9) {
+  let g = spray("M-44 2Q-30 -6 -16 2T12 0T38 2", col, 4.2);                                                     // the wobbly spine
+  for (const [rx, h] of [[-30, 15], [-18, 18], [-6, 19], [6, 18], [18, 15], [28, 11]]) g += spray(`M${rx} 1L${rx - 4} ${-h}M${rx} 3L${rx - 5} ${h}`, col, 2.8); // jagged ribs
+  g += spray("M38 2Q46 -18 62 -12Q74 -4 66 10Q54 22 38 2Z", col, 4) + spray("M52 -6l6 6M58 -6l-6 6", col, 2.6); // the lumpy head, a cross for an eye
+  g += spray("M-44 2L-62 -16L-58 2L-64 20Z", col, 4);                                                             // the ragged tail
+  g += spray("M-54 34Q-10 26 30 36T70 30", col, 3) + spray("M-20 20V32M44 20V30", col, 2.4) + `<circle cx="-20" cy="35" r="2.4" fill="${col}"/><circle cx="44" cy="33" r="2" fill="${col}"/>`;
+  return `<g transform="translate(${r1(x)} ${r1(y)}) scale(${s})" opacity="${op}">${g}</g>`;
 }

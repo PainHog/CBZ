@@ -6,9 +6,9 @@
  * logic can all share it without importing any Foundry API. Pure data only: no
  * `game`, `ui`, `foundry` or DOM, so `module/logic/` can import it under plain Node.
  *
- * Source of truth: the rulebook (book/src/chapters/, summarised in
- * docs/CORE-RULES.md v0.8). The numbers in CATB.rules are the simulator's adopted
- * package P10 (sim/params.mjs); test/parity.test.mjs keeps the two in step.
+ * Source of truth: the rulebook (book/src/chapters/, core rules v0.9). The
+ * numbers in CATB.rules are the simulator's adopted package P13 (sim/params.mjs: the getaway,
+ * shiny loot and Cred); test/parity.test.mjs keeps the two in step.
  */
 
 export const CATB = {};
@@ -37,19 +37,21 @@ CATB.approachKeys = Object.freeze(["sneaky", "sweet", "savage", "streetwise"]);
  */
 CATB.instincts = Object.freeze({
   curious: { key: "curious", label: "Curious", knack: ["open"], knackText: "open, search, figure things out",
-    tempt: "a bag, a drawer, something new", giveInText: "You rummage in it. Noise.",
+    tempt: "a bag, a drawer, something new or shiny", giveInText: "You rummage in it. Noise.",
     giveIn: { noise: true, mess: false, hidden: false, seen: { side: "broom", steps: 1 } } },
+  // v0.9: seen, it's +1 Broom and no mess (one Broom per event); unseen, a mess for whoever comes
   knocker: { key: "knocker", label: "Knocker", knack: ["knock"], knackText: "knock, push, topple",
-    tempt: "something on the edge of a table", giveInText: "You knock it off. Noise — and a mess for whoever comes to look.",
-    giveIn: { noise: true, mess: true, hidden: false, seen: { side: "broom", steps: 1 } } },
+    tempt: "something on the edge of a table — especially if it sparkles", giveInText: "You knock it off. Noise — and, if nobody saw it fall, a mess for whoever comes to look.",
+    giveIn: { noise: true, mess: "unseen", hidden: false, seen: { side: "broom", steps: 1 } } },
   boxSitter: { key: "boxSitter", label: "Box Sitter", knack: ["hide"], knackText: "hide",
     tempt: "a box, a bag, a basket", giveInText: "You get in. Quiet, and you're hidden.",
     giveIn: { noise: false, mess: false, hidden: true, seen: null } },
-  hunter: { key: "hunter", label: "Hunter", knack: ["chase", "fight"], knackText: "pounce, chase, fight",
+  // v0.9 (Ch 2, Ch 7): pounce and chase only — not fighting animals (the simulator's hunterNoFight)
+  hunter: { key: "hunter", label: "Hunter", knack: ["chase"], knackText: "pounce, chase (not fighting animals)",
     tempt: "anything that moves", giveInText: "You chase it round the room. Noise.",
     giveIn: { noise: true, mess: false, hidden: false, seen: null } },
   lapCat: { key: "lapCat", label: "Lap Cat", knack: ["charm"], knackText: "charm a human",
-    tempt: "a lap, a sunny spot, a hand to rub", giveInText: "You go for a fuss: the human you pick is Distracted until the house's turn. No human? A sunny spot: quiet.",
+    tempt: "a lap, a sunny spot, a hand to rub", giveInText: "You go for a fuss: the human you pick is Distracted until the house's turn (it counts as a distraction of them). No human? A sunny spot: quiet.",
     giveIn: { noise: false, mess: false, hidden: false, seen: { side: "cuddle", steps: 1, kid: 2 }, fuss: true } },
   foodie: { key: "foodie", label: "Foodie", knack: ["food"], knackText: "find, steal and eat food",
     tempt: "food that isn't the prize", giveInText: "You eat it. Quiet.",
@@ -58,7 +60,7 @@ CATB.instincts = Object.freeze({
     tempt: "somewhere high", giveInText: "You go up there. Quiet, and you're hidden.",
     giveIn: { noise: false, mess: false, hidden: true, seen: null } },
   scrapper: { key: "scrapper", label: "Scrapper", knack: ["fight"], knackText: "face down and fight animals",
-    tempt: "an awake dog or cat", giveInText: "You square up to it. Noise.",
+    tempt: "an awake dog or cat", giveInText: "You square up to it. Noise. (That isn't dealing with it: you still have to.)",
     giveIn: { noise: true, mess: false, hidden: false, seen: { side: "broom", steps: 1 } } }
 });
 CATB.instinctKeys = Object.freeze(Object.keys(CATB.instincts));
@@ -77,18 +79,30 @@ CATB.results = Object.freeze({
   purrfect: { key: "purrfect", label: "Purrfect", works: true, noise: false, text: "It works so smoothly that nobody minds: no Mood step, and +1 Cattitude." }
 });
 
-/** Difficulty rungs (Ch 4, Ch 11 "Calling the roll"). */
+/** Difficulty rungs (Ch 4, Ch 12 "Calling the roll"). */
 CATB.difficulties = Object.freeze({ 0: "Plain", 1: "Tricky", 2: "Hard" });
+
+/** Prize kinds (Ch 8; d8: 1–2 delicious, 3–4 fun, 5–6 shiny, 7–8 a box). Shiny things are carried like fun ones. */
+CATB.prizeKinds = Object.freeze({ delicious: "Delicious", fun: "Fun", shiny: "Shiny", box: "A box" });
+
+/**
+ * Ch 9 "Cred: showing off": the house's catnip stash, as a temptation the
+ * Storyteller can offer any cat in its room (whatever its instincts).
+ */
+CATB.catnip = Object.freeze({
+  label: "The catnip stash",
+  giveInText: "It dives into the catnip and rolls about in it, yowling (a noise; +1 Broom if a human sees) — 1 Cred, and the zoomies until the house part ends."
+});
 
 /** Sizes (Ch 8): ways and prizes. */
 CATB.waySizes = Object.freeze({ tight: 0, normal: 1, big: 2 });
 CATB.prizeSizes = Object.freeze({ small: 0, medium: 1, large: 2 });
 
-/** Residents (Ch 10). */
+/** Residents (Ch 11). */
 CATB.humanKinds = Object.freeze({ grownup: "Grown-up", kid: "Kid", grandparent: "Grandparent", teen: "Teen" });
 CATB.humanTraits = Object.freeze({
   kid: "Kid: doubles Cuddle steps from any roll they see.",
-  dozes: "Dozes: each round, on a 1–2 on an extra d6, falls asleep until the end of the next round.",
+  dozes: "Dozes: every house's turn, on a 1–2 on an extra d6, falls asleep until the end of the next round; only a Prize Clock job wakes them.",
   busy: "Busy: too busy to answer noise; still sees everything in the room.",
   headphones: "Headphones: doesn't answer noise."
 });
@@ -98,7 +112,7 @@ CATB.petModes = Object.freeze({
 });
 
 /**
- * The adopted rules numbers (core rules v0.8 = simulator package P10). Every
+ * The rules numbers (core rules v0.9 with the getaway and Cred = simulator package P13). Every
  * number the automation uses comes from here, so one place follows the book.
  */
 CATB.rules = Object.freeze({
@@ -115,17 +129,37 @@ CATB.rules = Object.freeze({
   minPatience: 2,        // Ch 5: Patience never below 2
   patienceDrop: 1,
   noiseRange: 2,         // Ch 6: the closest awake human within two rooms
-  holdTable: [3, 5],     // Ch 9: 1–3 keeps cuddling, 4–5 the Den, 6 outside
-  wriggleDifficulty: 1,  // Ch 9: Savage, Tricky
+  holdTable: [3, 5],     // Ch 10: 1–3 keeps cuddling, 4–5 the Den, 6 outside
+  wriggleDifficulty: 1,  // Ch 10: Savage, Tricky
   lightsOut: 2,          // Ch 8: Lights Out at the end of the second round after the prize goes
-  petHideRounds: 3,      // Ch 10: a driven-off pet hides for 3 rounds, counting this one
-  dozeOn: 2,             // Ch 10: dozes on a 1–2
-  // Ch 8 "Gang size": the houses are written for four cats. 3 cats: Patience +1, the prize 2 rounds
-  // later, 3 starting Cattitude each; 5 cats: Patience −1 (v0.8 final: the Clock no longer moves for five).
+  petHideRounds: 3,      // Ch 11: a driven-off pet hides for 3 rounds, counting this one
+  dozeOn: 2,             // Ch 11: dozes on a 1–2
+  // Ch 12 "Gang size": the houses are written for four cats. The general rule (for your own houses):
+  // 3 cats: Patience +1, the prize 2 rounds later, 3 starting Cattitude each; 5 cats: Patience −1.
+  // v0.9: a ready-to-run house may print its own three- and five-cat numbers (catalog scale3 / scale5).
   gangScaling: { 3: { patience: 1, clock: 2, cattitude: 1 }, 4: { patience: 0, clock: 0, cattitude: 0 }, 5: { patience: -1, clock: 0, cattitude: 0 } },
-  // Ch 9 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
+  // Ch 14 "Rep" (v0.9): at 3, 6 and 9 Rep every cat starts each robbery with 1 more Cattitude (never above 5)
+  repSteps: [3, 6, 9],
+  // Ch 7 (shiny loot): shiny things lie about in every house — any room tempts Curious and Knocker cats
+  shinyTempts: ["curious", "knocker"],
+  // Ch 9 "The Getaway" (simulator package P14): the warden pulls up on the garden at the end of round 2 if
+  // anyone was Shooed or Scooped tonight, else a round later (wardenLag 2); then moves 1 space a round, 2 after a
+  // Flop, never past a cat (wardenNoPass); a cornered cat dodges plain, and a dodge that works leaves the cat where
+  // it is and sends the warden sprawling (dodgeStun: he doesn't move next round); a cat carrying loot can't be Sweet
+  // (mouthFull); a group is a leader and up to 2 helpers; loot: Small 1, Medium 2, Large 3 pieces
+  wardenLag: 2,
+  wardenFlopSpaces: 2,
+  dodgeDiff: 0,
+  getawayHelpers: 2,
+  lootPieces: { small: 1, medium: 2, large: 3 },
+  // Ch 9 "Cred: showing off" (simulator package P14): tag a room 1 (+1 in view if it works, +1 over the
+  // rivals' tag; unseen it's a mess, in view it isn't), the catnip 1 (never doubled), each group's leader past the
+  // rivals on a Clean or a Purrfect 1, a getaway Purrfect 1; the zoomies: +1 die, every roll a noise, every tag a
+  // roll, no resisting, Cred counts double; a night when the gang's Cred adds up to 8 or more and it wasn't Busted: +1 Rep (Ch 14)
+  cred: Object.freeze({ tag: 1, inView: 1, overRivals: 1, nip: 1, rivals: 1, leap: 1, nipDie: 1, nipTimes: 2, repNight: 8 }),
+  // Ch 10 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
   denDoor: [["streetwise", 1, "open"], ["savage", 2]],   // a friend in the next room
   denInside: [["streetwise", 2, "open"]],               // the cat on its own
   reopenEntrance: [["streetwise", 2, "open"]],          // Ch 8: a shut entrance, from inside
-  coverParrot: [["streetwise", 1, "open"]]              // Ch 10
+  coverParrot: [["streetwise", 1, "open"]]              // Ch 11
 });

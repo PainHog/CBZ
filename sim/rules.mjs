@@ -98,7 +98,10 @@ export function applyMood(mood, patience, { side, steps }) {
 export function afterTrigger(mood, patience, side, p) {
   const left = Math.max(p.minPatience, patience - p.patienceDrop);
   // calm: the meter empties; half (v0.7): it drops to half the new Patience, rounded down (the house stays cross)
-  return { mood: { ...mood, [side]: p.resetTo === "half" ? Math.floor(left / 2) : 0 }, patience: left };
+  const m = { ...mood, [side]: p.resetTo === "half" ? Math.floor(left / 2) : 0 };
+  // v0.9: the other meter never sits at or above the new Patience — it drops to one below (no instant chains)
+  if (p.meterCap) for (const k of Object.keys(m)) if (k !== side) m[k] = Math.min(m[k], left - 1);
+  return { mood: m, patience: left };
 }
 
 /** The holder's end-of-round roll for a Held cat (CORE-RULES "Caught"). */

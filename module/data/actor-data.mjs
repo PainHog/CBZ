@@ -1,6 +1,6 @@
 /**
  * NINE LIVES GANG — actor data models (TypeDataModel) for cats, humans and pets
- * (AUTOMATION.md §7). Numbers follow Chapter 2 (cats) and Chapter 10
+ * (AUTOMATION.md §7). Numbers follow Chapter 2 (cats) and Chapter 11
  * (residents); the limits come from CONFIG data in ../config.mjs.
  */
 import { CATB } from "../config.mjs";
@@ -15,7 +15,7 @@ const bool = (initial = false) => new fields.BooleanField({ required: true, init
 const INSTINCT_CHOICES = Object.fromEntries(CATB.instinctKeys.map(k => [k, CATB.instincts[k].label]));
 const ROUTINE_HINT = 'six d6 results: "stay", a room key, or (pets) "sniff"';
 
-/** A routine: six results for d6 1–6 (Ch 10). */
+/** A routine: six results for d6 1–6 (Ch 11). */
 const routineField = () => new fields.SchemaField(Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`r${i}`, str("stay")])), { hint: ROUTINE_HINT });
 
 /** Read a routine field back as an array of six. */
@@ -46,7 +46,7 @@ export class CatData extends foundry.abstract.TypeDataModel {
   }
 }
 
-/** Ch 10 "Humans". */
+/** Ch 11 "Humans". */
 export class HumanData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
@@ -61,7 +61,7 @@ export class HumanData extends foundry.abstract.TypeDataModel {
   get routineList() { return routineList(this.routine); }
 }
 
-/** Ch 10 "Pets". */
+/** Ch 11 "Pets". */
 export class PetData extends foundry.abstract.TypeDataModel {
   static defineSchema() {
     return {
@@ -86,6 +86,7 @@ export function catSnapshot(actor) {
   return {
     id: actor.id, actorId: actor.id, name: actor.name, img: actor.img,
     r: Object.fromEntries(CATB.approachKeys.map(a => [a, Number(s.approaches?.[a] ?? 1)])),
-    instincts: [s.instinct1, s.instinct2].filter(Boolean), body: s.body ?? "lean"
+    instincts: [s.instinct1, s.instinct2].filter(Boolean), body: s.body ?? "lean",
+    rep: Number(s.rep ?? 0) // v0.9 (Ch 14): the gang's Rep gives starting Cattitude
   };
 }

@@ -3,9 +3,10 @@
  * robbery cats, scripted dice, and small helpers for driving round.mjs.
  */
 import { findHouse } from "../module/logic/house-catalog.mjs";
-import { newRobbery, clone } from "../module/logic/round.mjs";
+import { newRobbery, clone, finishRobbery } from "../module/logic/round.mjs";
+import { placeRunner } from "../module/logic/getaway.mjs";
 
-/** Chapter 3, "The Ready-Made Gang". */
+/** Chapter 3, "Meet the Gang". */
 export const GANG = {
   tilly: { id: "tilly", name: "Two-Bin Tilly", r: { streetwise: 3, sneaky: 2, sweet: 1, savage: 1 }, instincts: ["curious", "climber"], body: "lean" },
   biscuit: { id: "biscuit", name: "Big Biscuit", r: { savage: 3, streetwise: 2, sweet: 1, sneaky: 1 }, instincts: ["scrapper", "foodie"], body: "chonky" },
@@ -36,6 +37,22 @@ export function arrange(state, { cats = {}, humans = {}, pets = {}, round = null
   for (const [k, v] of Object.entries(humans)) Object.assign(s.humans.find(h => h.key === k), typeof v === "string" ? { room: v } : v);
   for (const [k, v] of Object.entries(pets)) Object.assign(s.pets.find(p => p.key === k), typeof v === "string" ? { room: v } : v);
   return s;
+}
+
+/**
+ * End the house part (if it's still running) and settle the getaway by hand:
+ * every running cat goes home with its loot, except those named in `pinched`.
+ * Returns { state, outcome, events }.
+ */
+export function runHome(state, { pinched = [], reason = "manual" } = {}) {
+  let r = state.phase === "robbery" ? finishRobbery(state, reason) : { state, events: [], outcome: state.outcome ?? null };
+  const events = [...r.events];
+  for (const id of Object.keys(r.state.getaway?.cats ?? {})) {
+    if (r.state.phase !== "getaway" || r.state.getaway.cats[id].state !== "running") continue;
+    r = placeRunner(r.state, id, pinched.includes(id) ? "pinched" : "home");
+    events.push(...r.events);
+  }
+  return { state: r.state, outcome: r.state.outcome, events };
 }
 
 export const cat = (s, id) => s.cats.find(c => c.id === id);
