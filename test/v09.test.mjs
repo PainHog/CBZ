@@ -18,7 +18,7 @@ import { shooEntrances, isDoorEntrance } from "../module/logic/map.mjs";
 import { repBonus, startingCattitude, pickByDie, buildRollPlan } from "../module/logic/rules.mjs";
 import { findHouse } from "../module/logic/house-catalog.mjs";
 import { CATB } from "../module/config.mjs";
-import { robbery, dice, arrange, cat, human, pet, texts, GANG } from "./fixtures.mjs";
+import { robbery, dice, arrange, cat, human, pet, texts, GANG, runHome } from "./fixtures.mjs";
 
 let n = 0;
 function roll(s, id, optionId, approach, result, extra = {}) {
@@ -333,16 +333,16 @@ test("14. hauling: the dog takes no dice off a haul out; a failed one there drop
   assert.deepEqual(rollContext(s, "biscuit", "eat").options.map(o => o.difficulty), [1, 1]);
 });
 
-test("15. the end: at the end of a round with no free cat inside and the prize got or gone (a cat still inside is adopted); the gang going home is the Storyteller's End", () => {
+test("15. the end of the house part: at the end of a round with no free cat inside and the prize out, eaten or gone (a cat still inside is pinched); the gang running for it is the Storyteller's End", () => {
   let s = number12({ cats: { velvet: { where: "living", status: "held", heldBy: "pell" } }, humans: { pell: { room: "living", holding: "velvet" } } });
   s.prize.out = true;
   assert.deepEqual([endCheck(s).due, endCheck(s).reason], [true, "allOut"]);
-  assert.match(endCheck(s).text, /got: the robbery ends at the end of the round \(still inside, so adopted: Velvet\)/);
-  const end = finishRobbery(s, "allOut");
+  assert.match(endCheck(s).text, /out: the house part ends at the end of the round, and the getaway starts \(still inside, so pinched: Velvet\)/);
+  const end = runHome(s, { reason: "allOut" });
   assert.deepEqual([end.outcome.result, end.outcome.leftBehind], ["messy", ["velvet"]]);
   s = number12({});
   assert.equal(endCheck(s).due, false, "the prize still to get: cats outside can come back in");
-  assert.equal(finishRobbery(s, "manual").outcome.result, "busted", "…unless the gang goes home");
+  assert.equal(runHome(s).outcome.result, "busted", "…unless the gang runs for it");
   s = number12({ cats: { mags: "hall" } });
   s.prize.gone = true;
   assert.equal(endCheck(s).due, false, "a free cat is still inside");
@@ -351,14 +351,16 @@ test("15. the end: at the end of a round with no free cat inside and the prize g
 test("16. gang size: a house's own three- and five-cat numbers, else the general rule", () => {
   const three = ["tilly", "biscuit", "velvet"], five = ["tilly", "biscuit", "velvet", "mags", "pip"];
   const nums = (key, gang) => { const s = robbery(key, gang); return [s.patience0, s.clock.goneAt, s.clock.lightsOut, s.cattitudeStart]; };
-  assert.deepEqual(nums("wendell-mouse", ["tilly", "biscuit", "velvet", "mags"]), [8, 9, 11, 2], "v0.9: Patience 8");
-  assert.deepEqual(nums("wendell-mouse", three), [10, 11, 13, 3], "Patience +2 here");
-  assert.deepEqual(nums("birthday-cake", three), [7, 9, 11, 3], "the Clock moves 1 for three…");
-  assert.deepEqual(nums("birthday-cake", five), [5, 9, 11, 2], "…and for five");
-  assert.deepEqual(nums("marchetti-salmon", ["tilly", "biscuit", "velvet", "mags"]), [7, 8, 10, 2], "v0.9: Patience 7");
-  assert.deepEqual(nums("marchetti-salmon", three), [8, 11, 13, 3], "the salmon 3 rounds later");
+  assert.deepEqual(nums("wendell-mouse", ["tilly", "biscuit", "velvet", "mags"]), [9, 9, 11, 2], "v0.10: Patience 9");
+  assert.deepEqual(nums("wendell-mouse", three), [10, 11, 13, 3], "v0.10: the general rule again");
+  assert.deepEqual(nums("birthday-cake", ["tilly", "biscuit", "velvet", "mags"]), [6, 9, 11, 2], "v0.10: gone at the start of round 9");
+  assert.deepEqual(nums("birthday-cake", three), [7, 10, 12, 3], "the Clock moves 1 for three…");
+  assert.deepEqual(nums("birthday-cake", five), [5, 10, 12, 2], "…and for five");
+  assert.deepEqual(nums("marchetti-salmon", ["tilly", "biscuit", "velvet", "mags"]), [7, 9, 11, 2], "v0.10: gone at the start of round 9");
+  assert.deepEqual(nums("marchetti-salmon", three), [8, 12, 14, 3], "the salmon 3 rounds later");
   assert.deepEqual(nums("number-12", three), [5, 12, 14, 3], "the general rule");
-  assert.deepEqual(nums("okafor-box", five), [6, 13, 15, 2]);
+  assert.deepEqual(nums("okafor-box", ["tilly", "biscuit", "velvet", "mags"])[0], 8, "v0.10: the Okafors' Patience 8");
+  assert.deepEqual(nums("okafor-box", five), [7, 13, 15, 2]);
 });
 
 test("17. Rep: at 3, 6 and 9 every cat starts each robbery with 1 more Cattitude (never above 5)", () => {

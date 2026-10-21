@@ -23,6 +23,7 @@ import {
 import { currentStep, canCarry, carryRule, dropPrize } from "./prize.mjs";
 import { clone, addMood, pushLog, markApplied, isApplied, chaseBack, look } from "./round.mjs";
 import { rollEntry } from "./mood.mjs";
+import { inGetaway, getawayOptions, getawayRollContext, applyGetawayRoll, doGetawayAction, getawayHelpers } from "./getaway.mjs";
 
 const R = CATB.rules;
 const SIMPLE_IN_VIEW = tags => [["sneaky", 0, ...tags], ["savage", 0, ...tags]];
@@ -40,6 +41,7 @@ export function turnOpen(s) { return s?.phase === "robbery" && s.stage === "cats
  * @returns {{cat, room, seen: object[], blockedBy: object|null, options: object[], helpTargets: object[]}}
  */
 export function catOptions(state, catId) {
+  if (inGetaway(state)) return getawayOptions(state, catId); // Ch 9: the getaway has its own options
   const s = state;
   const c = catById(s, catId);
   const out = { cat: c, room: c?.where ?? null, seen: [], blockedBy: null, options: [], helpTargets: [] };
@@ -69,7 +71,7 @@ export function catOptions(state, catId) {
         : !e.open ? "it's shut" : (e.rounds && !e.rounds.includes(s.round)) ? `only in round ${e.rounds.join(" or ")}`
         : (e.one && e.usedRound === s.round) ? "one cat a round: it has been tried this round"
         : !fits(e.size, { body: c.body }) ? "too tight for a Chonky cat" : null;
-      // v0.9 (Ch 11): cats outside can't help one coming in — a helper is in the same room, and outside isn't a room
+      // v0.9 (Ch 12): cats outside can't help one coming in — a helper is in the same room, and outside isn't a room
       opt({ id: `enter:${e.key}`, kind: "enter", label: `In through the ${e.name}`, target: e.key, room: e.room, uses, roll,
         group: false, disabled: why ?? need(uses, roll) });
     }
@@ -169,7 +171,7 @@ export function catOptions(state, catId) {
         target: p.key, roll: { options, opposition: p.rating } }, { allowBlocked: true });
     }
     if (p.kind === "parrot" && p.mode !== "covered") act({ id: `cover:${p.key}`, kind: "cover", label: `Cover ${p.name}'s cage`, target: p.key, roll: { options: R.coverParrot } });
-    // Ch 10 (v0.8, REVIEW #89): a cat holding the prize can't ride
+    // Ch 11 (v0.8, REVIEW #89): a cat holding the prize can't ride
     if (p.kind === "vacuum" && c.riding !== p.key && !c.carrying) act({ id: `ride:${p.key}`, kind: "ride", label: `Hop on ${p.name}`, target: p.key }, { simple: true });
   }
   if (c.riding) opt({ id: "hopOff", kind: "hopOff", label: "Hop off the vacuum (free)", uses: [] });
@@ -210,8 +212,8 @@ const anyApproach = d => CATB.approachKeys.map(a => [a, d]);
 
 /**
  * The gang mates this cat could help this round: free cats in the same room —
- * and a held cat there, to wriggle free (v0.9, Ch 9) — if it hasn't acted.
- * Cats outside can't help (v0.9, Ch 11: outside isn't a room).
+ * and a held cat there, to wriggle free (v0.9, Ch 10) — if it hasn't acted.
+ * Cats outside can't help (v0.9, Ch 12: outside isn't a room).
  */
 export function helpTargetsFor(s, c) {
   if (!c || c.acted || c.status !== "free") return [];
@@ -222,15 +224,16 @@ export function helpTargetsFor(s, c) {
 /**
  * Cats who could help this cat's roll now: free cats in the same room that
  * haven't acted (for exit groups also not moved). Nobody helps from outside
- * (v0.9, Ch 11); a held cat's wriggle can be helped by the free cats in its
- * room (v0.9, Ch 9). A haul (v0.8, REVIEW #80): the other carriers are the
+ * (v0.9, Ch 12); a held cat's wriggle can be helped by the free cats in its
+ * room (v0.9, Ch 10). A haul (v0.8, REVIEW #80): the other carriers are the
  * helpers (it's their Action anyway), then any other free cat in the room that
  * hasn't acted — it helps (+1 die, its Action; still +2 at most) but stays
  * behind: only the carriers move.
  */
 export function eligibleHelpers(s, c, option = null) {
+  if (inGetaway(s)) return c ? getawayHelpers(s, c, option) : [];
   if (!c || !(c.status === "free" || c.status === "held")) return [];
-  // Ch 10: a cat a dog (or house cat) is stopping deals with it before doing anything else — it can help only that roll
+  // Ch 11: a cat a dog (or house cat) is stopping deals with it before doing anything else — it can help only that roll
   const free = x => {
     const p = x.status === "free" ? hostilePet(s, x.where, x) : null;
     return !p || (x.dealt ?? []).includes(p.key) || (option?.kind === "confront" && option.target === p.key);
@@ -275,6 +278,7 @@ export function rollWatchers(s, c, o) {
  * who sees it (their highest Attention, a kid), and the helpers.
  */
 export function rollContext(state, catId, optionId = "free") {
+  if (inGetaway(state)) return getawayRollContext(state, catId, optionId);
   const s = state;
   const c = catById(s, catId);
   const o = findOption(s, catId, optionId) ?? (optionId === "free" ? { id: "free", kind: "free", label: "A free roll", roll: { options: anyApproach(0) }, uses: ["action"] } : null);
@@ -309,6 +313,7 @@ export function rollContext(state, catId, optionId = "free") {
  * ctx: { mood }
  */
 export function doAction(state, catId, optionId, args = {}, ctx = {}) {
+  if (inGetaway(state)) return doGetawayAction(state, catId, optionId, args);
   const s = clone(state);
   const ev = [];
   const c = catById(s, catId);
@@ -337,6 +342,7 @@ function queuedHelpers(s, c) {
  */
 export function applyRoll(state, card, ctx = {}) {
   if (isApplied(state, card.eventId)) return { state, events: [], cattitude: [], skipped: true };
+  if (inGetaway(state)) return applyGetawayRoll(state, card, ctx); // Ch 9: no meters out here
   const s = clone(state);
   const ev = [];
   const cattitude = [];
@@ -448,7 +454,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
     }
     case "enter": {
       const e = s.entrances.find(x => x.key === o.target);
-      const group = [c]; // v0.9 (Ch 11): nobody helps from outside
+      const group = [c]; // v0.9 (Ch 12): nobody helps from outside
       for (const x of group) mark(x);
       // Ch 8 (v0.9): the front door lets one cat through each round it works; a failed try uses that round's chance
       if (e.one) e.usedRound = s.round;
@@ -571,7 +577,7 @@ function perform(s, c, o, { result, approach, helpers = [] }, ev, ctx) {
       // v0.7: rolling against it, or helping the cat who rolls, is dealing with it (no end-of-turn chase)
       for (const x of [c, ...helpCats]) x.dealt = [...(x.dealt ?? []), p.key];
       if (ok) {
-        // Ch 10 (v0.6): driven off = hides for 3 rounds counting this one (back at the end of the third)
+        // Ch 11 (v0.6): driven off = hides for 3 rounds counting this one (back at the end of the third)
         if (approach === "savage") { p.mode = "hiding"; p.until = s.round + R.petHideRounds - 1; ev.push({ type: "drivenOff", pet: p.key, text: `${c.name} drives ${p.name} off: it hides for ${R.petHideRounds} rounds, counting this one.` }); }
         else if (approach === "sweet") { p.mode = "friendly"; ev.push({ type: "befriended", pet: p.key, text: `${c.name} befriends ${p.name}: it leaves the whole gang alone for the rest of the robbery.` }); }
         else { c.slipped = [...(c.slipped ?? []), p.key]; ev.push({ type: "slipped", pet: p.key, text: `${c.name} slips past ${p.name} this turn.` }); }
@@ -642,9 +648,17 @@ export function queueHelp(state, helperId, targetId) {
   if (!targetId) { delete s.help[helperId]; return { state: s, events: [] }; }
   const t = catById(s, targetId);
   if (!t || t.id === h.id) throw new Error("Help whom?");
+  if (inGetaway(s)) {
+    // Ch 9: help a cat on your space over the next obstacle (and go over with it)
+    if (!getawayHelpers(s, t, { kind: "over" }).some(x => x.id === h.id)) throw new Error(`${h.name} must be on ${t.name}'s space, and not have gone yet, to help.`);
+    s.help[helperId] = targetId;
+    const ev = [{ type: "help", text: `${h.name} will help ${t.name} over.` }];
+    pushLog(s, ev);
+    return { state: s, events: ev };
+  }
   if (!turnOpen(s)) throw new Error("Wait for the round to begin.");
   if (h.acted) throw new Error(`${h.name} has already acted this round.`);
-  // v0.9: a helper is in the same room (outside isn't one, Ch 11); a held cat's wriggle can be helped (Ch 9)
+  // v0.9: a helper is in the same room (outside isn't one, Ch 12); a held cat's wriggle can be helped (Ch 10)
   if (h.status === "outside") throw new Error(`${h.name} is outside: a helper must be in the same room (outside isn't a room).`);
   if (!(h.status === "free" && (t.status === "free" || t.status === "held") && h.where === t.where)) throw new Error(`${h.name} must be with ${t.name} to help.`);
   s.help[helperId] = targetId;
@@ -658,6 +672,7 @@ export function markTurn(state, catId, { moved, acted }) {
   const s = clone(state);
   const c = catById(s, catId);
   if (!c) throw new Error("No such cat");
+  if (inGetaway(s)) { const r = s.getaway.cats[catId]; if (r && acted !== undefined) r.acted = !!acted; return { state: s, events: [] }; }
   if (moved !== undefined) c.moved = !!moved;
   if (acted !== undefined) c.acted = !!acted;
   return { state: s, events: [] };

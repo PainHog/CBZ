@@ -29,6 +29,11 @@
   {{/if}}
   {{#if isGM}}
   <nav class="catb-controls">
+    {{#if inGetaway}}
+    <button type="button" data-action="endGetawayRound" {{#unless getaway.canEndRound}}disabled{{/unless}}>End the getaway round{{#if getaway.cornered}} (cornered cats dodge first){{/if}}</button>
+    <button type="button" data-action="finishGetaway" {{#unless getaway.canFinish}}disabled{{/unless}}>Count the loot</button>
+    <button type="button" data-action="clear">Clear</button>
+    {{else}}
     {{#if running}}
     <button type="button" data-action="beginRound" {{#if inCats}}disabled{{/if}}>Begin round {{#if inCats}}(running){{/if}}</button>
     <button type="button" data-action="endRound" {{#unless inCats}}disabled{{/unless}}>End round</button>
@@ -38,6 +43,7 @@
     {{else}}
     <button type="button" data-action="start">Start a new robbery</button>
     <button type="button" data-action="clear">Clear</button>
+    {{/if}}
     {{/if}}
   </nav>
   {{/if}}

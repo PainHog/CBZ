@@ -2,7 +2,7 @@
  * NINE LIVES GANG — actor sheets (ApplicationV2 + HandlebarsApplicationMixin).
  * The Cat sheet shows approaches, instincts, body, Cattitude, Lives and a Roll
  * button per approach (AUTOMATION.md §7). Human and Pet sheets edit the
- * resident's numbers and d6 routine (Ch 10). Inputs named system.* save on change.
+ * resident's numbers and d6 routine (Ch 11). Inputs named system.* save on change.
  */
 import { SYSTEM_ID } from "../contracts.mjs";
 import { CATB } from "../config.mjs";

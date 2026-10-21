@@ -38,7 +38,10 @@
   "CATB.Settings.autoPrizeClock.Hint": "Begin round puts the prize down, moves it and takes it away as the house's Prize Clock says. Off: the Storyteller does it by hand.",
 
   "CATB.Settings.autoOutcome.Name": "End the robbery by itself",
-  "CATB.Settings.autoOutcome.Hint": "At Lights Out, or at the end of a round when no free cat is left inside and the prize is got or gone, the robbery ends and posts Clean Getaway, Messy or Busted (with the campaign's Rep and Lives buttons). Off: the Storyteller ends it from the tracker; no outcome card.",
+  "CATB.Settings.autoOutcome.Hint": "At Lights Out, or at the end of a round when no free cat is left inside and the prize is out, eaten or gone, the house part ends and the getaway starts; when everyone is home or pinched the outcome is posted: Clean Getaway, Messy or Busted (with the campaign's Rep and Lives buttons). Off: the Storyteller ends it from the tracker; no outcome card.",
+
+  "CATB.Settings.autoGetaway.Name": "Run the getaway",
+  "CATB.Settings.autoGetaway.Hint": "After the house, the gang legs it over four obstacles with the loot (Chapter 9): getaway rolls move the cats, a Flop drops loot, the warden comes on at the end of each getaway round and corners the stragglers, and the loot that gets home is counted. Off: the tracker still shows the route, but the Storyteller moves the cats, the loot and the warden by hand.",
 
   "CATB.Settings.trackerForPlayers.Name": "Players can open the tracker",
   "CATB.Settings.trackerForPlayers.Hint": "Players see the Robbery Tracker (the house, the meters, the clock) with buttons for their own cats. Off: only the Storyteller opens it."

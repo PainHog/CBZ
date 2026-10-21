@@ -1,6 +1,7 @@
 /**
  * Parity: the table's rules (module/logic/) and the simulator's (sim/) must
- * agree under the adopted package (sim/params.mjs ADOPTED, P11 = core rules v0.9), and the house
+ * agree on the package the system follows (P12: core rules v0.9 with the getaway and shiny loot;
+ * the simulator's ADOPTED P13 adds only Cred, which the system doesn't follow yet), and the house
  * catalog must be an exact copy of sim/houses.mjs (AUTOMATION.md §9).
  * module/ never imports from sim/; this test is the only bridge.
  */
@@ -16,10 +17,15 @@ import { CATB } from "../module/config.mjs";
 import { foldMood, upsertEntry } from "../module/logic/mood.mjs";
 import { gangScaling } from "../module/logic/prize.mjs";
 
-const p = makeParams();
+const p = makeParams(PACKAGES.P12); // the getaway and shiny loot; Cred (P13) comes in its own brief
 
-test("the simulator's defaults are the adopted package (so parity means P11, core rules v0.9)", () => {
-  assert.equal(ADOPTED, "P11");
+test("the system follows package P12; the simulator's adopted P13 adds only Cred (not built yet)", () => {
+  assert.equal(ADOPTED, "P13");
+  assert.deepEqual(PACKAGES.P13, { ...PACKAGES.P12, cred: true }, "P13 is P12 plus Cred: anything else needs building here first");
+  assert.equal(p.cred, false);
+  assert.equal(p.getaway, true, "v0.10 (Ch 9): the getaway");
+  assert.equal(p.shinyTempts, true, "shiny things tempt Curious and Knocker cats in every room");
+  assert.deepEqual([p.wardenLag, p.wardenFlop, p.dodgeDiff], [1, true, 0], "the warden: arrives a round later if nobody was caught, 2 spaces after a Flop; dodges are plain");
   assert.equal(p.carrierRules, true, "v0.6: hauling, finding it, Searching for the prize");
   assert.equal(p.tableRules, true, "v0.7: holders see, eating is a roll, temptation rotates");
   assert.equal(p.holdRules, true, "v0.8: the Clock's hold beats noise, any cat helps a haul, a house may make hauling Tricky (test/v08.test.mjs)");
@@ -34,7 +40,7 @@ test("the simulator's defaults are the adopted package (so parity means P11, cor
   assert.equal(p.heldBroomDen, false, "a held cat whose own roll fills Broom is still put outside");
   assert.equal(p.searchHold, false, "declined: a Searching human beside the prize still answers noise");
   assert.equal(p.resetTo, "calm", "a trigger empties its meter");
-  for (const [k, v] of Object.entries(PACKAGES[ADOPTED])) assert.deepEqual(p[k], v, k);
+  for (const [k, v] of Object.entries(PACKAGES.P12)) assert.deepEqual(p[k], v, k);
 });
 
 test("the rules numbers in config match the simulator's adopted parameters", () => {
@@ -151,7 +157,8 @@ test("v0.9: gang-size scaling uses each house's own numbers like the simulator (
       assert.deepEqual([t.patience, t.clock], sc, `${h.key} ×${n}`);
     }
   }
-  assert.deepEqual(houseNumbers("wendell-mouse"), [8, [2, 2], undefined]);
+  assert.deepEqual(houseNumbers("wendell-mouse"), [9, undefined, undefined], "v0.10: Patience 9, the general rule");
+  assert.deepEqual(houseNumbers("okafor-box"), [8, undefined, undefined], "v0.10: Patience 8");
   assert.deepEqual(houseNumbers("birthday-cake"), [6, [1, 1], [-1, 1]]);
   assert.deepEqual(houseNumbers("marchetti-salmon"), [7, [1, 3], undefined]);
 });

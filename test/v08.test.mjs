@@ -13,7 +13,7 @@ import { rollContext, applyRoll, findOption, doAction, catOptions } from "../mod
 import { prizeGot } from "../module/logic/prize.mjs";
 import { buildRollPlan } from "../module/logic/rules.mjs";
 import { trackerView } from "../module/apps/tracker-view.mjs";
-import { robbery, dice, arrange, cat, human, pet, texts } from "./fixtures.mjs";
+import { robbery, dice, arrange, cat, human, pet, texts, runHome } from "./fixtures.mjs";
 
 let n = 0;
 function roll(s, id, optionId, approach, result, extra = {}) {
@@ -130,8 +130,8 @@ test("4. nothing is picked up or eaten until every step is done; a part-eaten pr
   e = carrying(arrange(e, { round: 4, cats: { biscuit: { acted: false, moved: false } } }), ["biscuit"], "utility");
   e = roll(e, "biscuit", "exit:flap", "savage", "clean").state;
   assert.equal(prizeGot(e), true);
-  const out = finishRobbery(e).outcome;
-  assert.deepEqual([out.result, out.eaten, out.portions], ["clean", 1, 5]);
+  const out = runHome(e).outcome;
+  assert.deepEqual([out.result, out.eaten, out.portions, out.loot], ["clean", 1, 5, 5], "1 eaten + 4 carried home");
 });
 
 test("5. Shoo!: the nearest entrance that works this round (ties: the Storyteller's pick); the human stays in that room; a prize put back needs every step again", () => {

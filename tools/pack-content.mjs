@@ -60,7 +60,7 @@ function sheet(h) {
 <p><em>${gangText(h)} The Robbery Tracker does this for you.</em></p>`;
 }
 
-/** Ch 11 "Gang size" (v0.9): this house's own three- and five-cat numbers, or the general rule. */
+/** Ch 12 "Gang size" (v0.9): this house's own three- and five-cat numbers, or the general rule. */
 function gangText(h) {
   const z = h.prize;
   const s3 = gangScaling(3, h), s5 = gangScaling(5, h);
@@ -77,7 +77,7 @@ function clock(h) {
     return `<tr><td>Start of round ${sc.round}</td><td>${esc(who)} puts it in the ${esc(roomName(h, sc.room).toLowerCase())} and stays there this round. ${steps[0].toUpperCase()}${steps.slice(1)}.</td></tr>`;
   });
   rows.push(`<tr><td>Start of round ${z.goneAt}</td><td>Gone — if the gang isn't holding it.</td></tr>`);
-  rows.push(`<tr><td>End of round ${z.goneAt + CATB.rules.lightsOut}</td><td>Lights Out: any cat still inside is adopted.</td></tr>`);
+  rows.push(`<tr><td>End of round ${z.goneAt + CATB.rules.lightsOut}</td><td>Lights Out: any cat still inside is pinched.</td></tr>`);
   return `<table><thead><tr><th>When</th><th>The prize</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
 }
 
@@ -120,6 +120,16 @@ function residents(h) {
   return s;
 }
 
+/** Ch 9: the house's getaway route — four obstacles from the garden to the hideout — and its loot (as the book's house pages print it). */
+function getaway(h) {
+  if (!h.getaway) return "";
+  const z = h.prize;
+  const pieces = CATB.rules.lootPieces[z.size] ?? 1;
+  const loot = z.kind === "delicious" ? "its portions — whatever wasn't eaten inside" : `${pieces} piece${pieces > 1 ? "s" : ""}`;
+  const items = h.getaway.map(o => `<li>${esc(o.name[0].toUpperCase() + o.name.slice(1))} — ${optionsText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}.</li>`).join("");
+  return `<h3>The getaway</h3><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p>`;
+}
+
 /** The book's page for a house, with the catalog's tables filled in (as book/tools/house-pages.mjs does). */
 function housePage(h) {
   const file = join(ROOT, "book", "src", "houses", `${h.key}.html`);
@@ -127,7 +137,7 @@ function housePage(h) {
   html = html
     .replace(/<figure[^>]*>[\s\S]*?<\/figure>/g, "")
     .replace(/<p class="chapter-num">[\s\S]*?<\/p>/, "")
-    .replace("{{SHEET}}", sheet(h)).replace("{{CLOCK}}", clock(h)).replace("{{ROOMS}}", rooms(h)).replace("{{RESIDENTS}}", residents(h))
+    .replace("{{SHEET}}", sheet(h)).replace("{{CLOCK}}", clock(h)).replace("{{ROOMS}}", rooms(h)).replace("{{RESIDENTS}}", residents(h)).replace("{{GETAWAY}}", getaway(h))
     .replace("{{MAP}}", "").replace(/\{\{[A-Z]+\}\}/g, "")
     .replace(/\n\s*\n+/g, "\n").trim();
   return html;
@@ -139,7 +149,8 @@ const RUNNING = h => `<h2>Running ${esc(h.name)} in Foundry</h2>
 <li><strong>Begin round</strong> runs the Prize Clock and, if anyone can be tempted, whispers you one-click <strong>Tempt</strong> buttons.</li>
 <li>Players move and act from the tracker (or roll from their cat sheets). The roll dialog fills in the Knack, help, Difficulty, the pet and who is watching; the card offers Push and Accept, and you can flip Seen.</li>
 <li><strong>End round</strong> rolls the house's turn in the open: pets, noise, routines and Searching, holders, then Finding it.</li>
-<li>The robbery ends at Lights Out, or at the end of a round when no free cat is left inside and the prize is got or gone (or when you press <strong>End the robbery</strong> because the gang has gone home), and the outcome is posted.</li>
+<li>The house part ends at Lights Out, or at the end of a round when no free cat is left inside and the prize is out, eaten or gone (or when you press <strong>End the robbery</strong> because the gang runs for it). Any cat still inside is pinched.</li>
+<li><strong>The getaway</strong> follows in the same tracker: the loot is shared out, each cat rolls over the next obstacle (help a friend and go over together; a Flop drops loot), and <strong>End the getaway round</strong> brings the warden on and corners the stragglers, who dodge or go in the van. When everyone is home or pinched, the loot is counted and the outcome is posted.</li>
 </ol>
 <p>Every automation can be switched off in the system settings. The residents of this house are in the <em>Residents</em> compendium; the tracker works without them.</p>`;
 

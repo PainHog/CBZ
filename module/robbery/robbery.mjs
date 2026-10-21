@@ -15,13 +15,13 @@ import * as Round from "../logic/round.mjs";
 import { findOption, doAction, queueHelp, markTurn as markTurnPure } from "../logic/actions.mjs";
 import { findHouse, HOUSES } from "../logic/house-catalog.mjs";
 import { catById, humanByKey, roomName } from "../logic/residents.mjs";
-import { OUTCOME_LABEL } from "../logic/prize.mjs";
+import * as Getaway from "../logic/getaway.mjs";
 import { clampCattitude } from "../logic/rules.mjs";
 import { catSnapshot } from "../data/actor-data.mjs";
-import { getState, running, mutate } from "./store.mjs";
+import { getState, running, onGetaway, mutate } from "./store.mjs";
 import { gm, isActiveGM, owns } from "./gm-ops.mjs";
 import { finalizePending, applyCattitude, applyRollMessage } from "./automation.mjs";
-import { postMoodCards, metersOf } from "./announce.mjs";
+import { postMoodCards, metersOf, outcomeView, postGetawayCards, postOutcome } from "./announce.mjs";
 import { postEventCard, rerenderEvent, cardOf, registerButtons, button } from "../chat/cards.mjs";
 import { rollFor, updateRollCard } from "../dice/roll.mjs";
 import { automation, setting } from "../settings.mjs";
@@ -149,34 +149,38 @@ async function houseDice(state) {
   return () => (faces.length ? faces.shift() : 1 + Math.floor(rnd() * 6));
 }
 
-/** End the robbery now and work out the outcome (Ch 8). */
+/**
+ * End the house part now (Ch 8): Lights Out, nobody free inside with the prize
+ * out, eaten or gone, or the gang running for it (the Storyteller's End). Any
+ * cat still inside is pinched, and the getaway starts (Ch 9); the outcome card
+ * comes when everyone is home or pinched.
+ */
 export async function endRobbery(reason = "manual") {
   requireGM();
   await finalizePending();
+  if (onGetaway()) return finishGetaway();
   const res = await mutate(s => Round.finishRobbery(s, reason));
-  const s = res.state;
-  const o = res.outcome;
-  if (setting(SETTINGS.autoOutcome)) {
-    const left = o.leftBehind.map(id => catById(s, id)?.name).filter(Boolean);
-    await postEventCard({ kind: CARD.outcome, robberyId: s.id, result: o.result, leftBehind: o.leftBehind, escaped: [], repGiven: false }, outcomeView(s, o, []));
-  }
-  Hooks.callAll(HOOKS.robberyEnded, s, o);
+  await postGetawayCards(res.events, res.state, { title: "Leg it!", always: true });
   return res;
 }
 
-function outcomeView(s, o, escaped) {
-  const left = o.leftBehind.map(id => catById(s, id)).filter(Boolean);
-  return {
-    title: OUTCOME_LABEL[o.result],
-    subtitle: s.name,
-    lines: [
-      o.prizeGot ? `The gang got the ${s.prize.name}.` : o.halfEaten ? `At least half the ${s.prize.name} was eaten (${o.eaten} of ${o.portions}).` : `No ${s.prize.name}.`,
-      left.length ? `Left behind, and adopted: ${left.map(c => c.name).join(", ")}.` : "Nobody was left behind.",
-      ...left.filter(c => escaped.includes(c.id)).map(c => `${c.name} spends a Life and slips out of a window in the night.`),
-      o.result === "clean" ? "Campaign: the gang gets 1 Rep for a Clean Getaway (at 3, 6 and 9 Rep every cat starts each robbery with 1 more Cattitude)." : ""
-    ],
-    meters: metersOf(s)
-  };
+/** The end of a getaway round (Ch 9): the warden comes on, loot behind it is lost, stragglers are cornered. */
+export async function endGetawayRound() {
+  requireGM();
+  await finalizePending();
+  const auto = automation();
+  const res = await mutate(s => Getaway.endGetawayRound(s, { getaway: auto.getaway }));
+  await postGetawayCards(res.events, res.state, { title: "The warden", always: true });
+  return res;
+}
+
+/** The Storyteller ends the getaway (every cat home or pinched) and counts the loot. */
+export async function finishGetaway() {
+  requireGM();
+  await finalizePending();
+  const res = await mutate(s => Getaway.finishGetaway(s));
+  await postGetawayCards(res.events, res.state);
+  return res;
 }
 
 /** Throw the robbery away (the tracker's Clear). */
@@ -203,8 +207,16 @@ export const overrides = {
   /** The Storyteller picks the cat a full meter falls on (a meter filled with no roll, or one that was waiting). */
   pickTarget: catId => gmMutate(s => Round.resolvePendingTrigger(s, catId, moodMode())),
   /** The Storyteller does a cat's option by hand, even when it's normally refused. */
-  force: (catId, optionId, args = {}) => gmMutate(s => doAction(s, catId, optionId, { ...args, force: true }, moodMode()))
+  force: (catId, optionId, args = {}) => gmMutate(s => doAction(s, catId, optionId, { ...args, force: true }, moodMode())),
+  /** The getaway by hand (Ch 9): a cat to a space (0–3), "home" or "pinched"; the warden to a space (or "none"); a cat's loot. */
+  runner: (catId, where) => getawayMutate(s => Getaway.placeRunner(s, catId, where)),
+  warden: pos => getawayMutate(s => Getaway.setWarden(s, pos)),
+  carry: (catId, n) => getawayMutate(s => Getaway.setCarry(s, catId, n))
 };
+function getawayMutate(fn) {
+  requireGM();
+  return mutate(fn).then(async res => { await postGetawayCards((res?.events ?? []).filter(e => e.type === "outcome"), res?.state); return res; });
+}
 
 /* --------------------------------------------------------------- players -- */
 
@@ -239,6 +251,7 @@ export function registerRobberyOps() {
       await finalizePending({ catId });
       const res = await mutate(s => doAction(s, catId, optionId, { helpers, force: !!(user?.isGM && force) }, moodMode()));
       await postMoodCards(res.events, res.state);
+      await postGetawayCards(res.events, res.state);
       return { events: lines(res.events), done: res.ok !== false };
     }
   });
@@ -289,9 +302,9 @@ export function registerRobberyOps() {
     check: ({ catId }, user) => {
       const s = getState();
       const actor = game.actors.get(catId);
-      if (s?.phase !== "ended" || !s.outcome?.leftBehind?.includes(catId)) return "Only a cat left behind at the end of a robbery can spend a Life to escape.";
+      if (s?.phase !== "ended" || !s.outcome?.leftBehind?.includes(catId)) return "Only a cat pinched at the end of a robbery can spend a Life to bust out of the pound.";
       if (!owns(user, actor)) return "That isn't your cat.";
-      if ((actor.system.lives ?? 0) < 1) return `${actor.name} has no Lives left: it stays, happily, for ever.`;
+      if ((actor.system.lives ?? 0) < 1) return `${actor.name} has no Lives left: somebody adopts it from the pound, and it lives on a lap for ever.`;
       return null;
     },
     apply: async ({ catId }) => {
@@ -345,7 +358,7 @@ export function registerRobberyButtons() {
     for (const id of card.leftBehind ?? []) {
       const a = game.actors.get(id);
       if (!a || (card.escaped ?? []).includes(id) || !(a.isOwner)) continue;
-      box.appendChild(button(`${a.name}: spend a Life to escape`, () => spendLife(id)));
+      box.appendChild(button(`${a.name}: spend a Life to bust out of the pound`, () => spendLife(id)));
     }
   });
   registerButtons(CARD.moodPick, (message, card, box) => {
@@ -363,10 +376,17 @@ export function registerRobberyButtons() {
   };
   registerButtons(CARD.robbery, openBtn);
   registerButtons(CARD.round, openBtn);
+  registerButtons(CARD.getaway, (message, card, box) => {
+    openBtn(message, card, box);
+    const s = getState();
+    if (game.user.isGM && onGetaway(s) && s.id === card.robberyId && s.getaway.stage === "run" && s.getaway.round === card.round) {
+      box.appendChild(button("End the getaway round", () => endGetawayRound(), { cls: "catb-gm" }));
+    }
+  });
 }
 
 /** The robbery API on game.catBurglars.robbery. */
 export const robberyApi = {
-  state: getState, houses: HOUSES, startRobbery, beginRound, temptCat, endRound, endRobbery, clearRobbery, overrides,
+  state: getState, houses: HOUSES, startRobbery, beginRound, temptCat, endRound, endRobbery, endGetawayRound, finishGetaway, clearRobbery, overrides,
   act, help, markTurn, answerTemptation, spendLife, defaultGang
 };

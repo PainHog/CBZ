@@ -167,6 +167,7 @@ export async function makeRoll(actor, ctx, answer, state) {
     approach, plan, faces, zero: plan.zero, result, firstResult: result,
     pushes: [], pushed: false, pushedWithMood: false,
     seen, seenBy, seenNames: seenBy.map(k => humanByKey(state ?? { humans: [] }, k)?.name ?? k), kid, attention,
+    getaway: !!ctx.getaway, // Ch 9: no meters out here, and a Push is paid with Cattitude only
     helpers: answer.helpers, helperNames: answer.helpers.map(h => ctx.helpers.find(x => x.id === h)?.name ?? h),
     cattitudeSpent: 0, status: "pending", applied: false, appliedText: [], quiet: false
   };
@@ -199,6 +200,7 @@ export async function renderRollCard(card) {
 /** What the roll does (or did) to the Mood, in words. */
 function moodText(card) {
   const state = getState();
+  if (card.getaway) return "The getaway: nobody's watching from a window out here — no meters, and a Push costs Cattitude.";
   if (!card.robberyId || !state || state.id !== card.robberyId) return card.seen ? "Seen (no robbery running: the Mood isn't tracked)." : "";
   if (card.applied) return (card.appliedText ?? []).find(t => /^(Broom|Cuddle) [+-]/.test(t)) ?? (card.seen ? "No Mood step." : "Not seen: the Mood doesn't move.");
   const { ledger, entry } = upsertEntry(state.moodLedger ?? [], rollEntry(card));
@@ -228,6 +230,7 @@ export async function push(message, how) {
   const card = cardOf(message);
   if (!card || card.kind !== CARD.roll) throw new Error("Not a roll card.");
   if (card.status !== "pending" || card.pushed) throw new Error("This roll can't be pushed any more.");
+  if (how === "mood" && card.getaway) throw new Error("Out on the getaway a Push is paid with Cattitude only.");
   if (!canPush(card.faces, card.zero)) throw new Error("Every die is already a 6.");
   const actor = actorOf(card);
   if (how === "cattitude") {
@@ -291,10 +294,10 @@ function rollButtons(message, card, box) {
     if (owner && canPush(card.faces, card.zero)) {
       const c = Number(actor?.system.cattitude ?? 0);
       if (c > 0 || !setting(SETTINGS.autoCattitude)) box.appendChild(button("Push (1 Cattitude)", () => push(message, "cattitude"), { cls: "catb-push" }));
-      if (card.robberyId) box.appendChild(button("Push (+1 Mood)", () => push(message, "mood"), { cls: "catb-push" }));
+      if (card.robberyId && !card.getaway) box.appendChild(button("Push (+1 Mood)", () => push(message, "mood"), { cls: "catb-push" }));
     }
     if (owner || game.user.isGM) box.appendChild(button("Accept", () => accept(message)));
-    if (game.user.isGM && card.robberyId) box.appendChild(button(card.seen ? "Not seen" : "Seen", () => toggleSeen(message), { cls: "catb-gm" }));
+    if (game.user.isGM && card.robberyId && !card.getaway) box.appendChild(button(card.seen ? "Not seen" : "Seen", () => toggleSeen(message), { cls: "catb-gm" }));
   } else if (card.status === "final" && !card.applied && card.robberyId && game.user.isGM) {
     box.appendChild(button("Apply now", () => gm.run(OPS.rollFinalize, { messageId: message.id }), { cls: "catb-gm" }));
   }

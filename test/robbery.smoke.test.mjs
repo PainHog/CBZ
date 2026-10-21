@@ -223,9 +223,38 @@ test("a GM and two players rob Number 12 (core rules v0.9) from start to Clean G
   assert.equal(state().prize.out, true);
   await trackerAction(p2, "act", { cat: mags.id, option: "exit:flap" });
   await houseTurn([1, 1, 1, 1, 1, 1, 1]);
+
+  // ---- The getaway (Ch 9): the chicken in 5 pieces — Biscuit 2, the others 1 each; Biscuit was Shooed, so the van comes at once
+  assert.equal(state().phase, "getaway");
+  assert.match(lastCard("getaway").content, /Leg it!/);
+  assert.match(lastCard("getaway").content, /Big Biscuit 2 pieces/);
+  assert.match(lastCard("getaway").content, /the van pulls up at the end of round 1/);
+  const over = async (user, actor, approach, faces, helpers = []) => {
+    const msg = await rollAs(user, actor, "over", { approach, ...Object.fromEntries(helpers.map(h => [`help-${h.id}`, true])) }, faces);
+    assert.ok(!buttonLabels(msg, user).includes("Push (+1 Mood)"), "out here a Push costs Cattitude only");
+    await click(msg, user, "Accept");
+    return msg;
+  };
+  const pos = c => state().getaway?.cats[c.id];
+  m = await over(p1, tilly, "sneaky", [6, 4, 2, 1], [velvet, mags]); // Sneaky 2 + Climber + 2 helpers − 1 for her piece of chicken
+  assert.equal(flags(m).plan.total, 4);
+  assert.match(flags(m).moodText ?? m.content, /no meters/);
+  assert.deepEqual([tilly, velvet, mags].map(c => pos(c).pos), [1, 1, 1], "over the back fence together");
+  m = await over(p2, biscuit, "savage", [5, 1]); // Savage 3 − 1: two pieces is a load even for a Chonky cat
+  assert.equal(pos(biscuit).pos, 1);
+  await trackerAction(gmU, "endGetawayRound");
+  assert.match(lastCard("getaway").content, /the warden jumps out into the garden/);
+  assert.equal(state().getaway.warden, 0);
+  for (const [faces, bFaces] of [[[6, 1, 1], [6, 2]], [[6, 2, 2], [6]], [[6, 1, 1, 1], [4, 1]]]) { // the allotments, the alley wall, Station Road
+    await over(p1, tilly, tilly.system.approaches.streetwise && state().getaway.cats[tilly.id].pos === 3 ? "streetwise" : "sneaky", faces, [velvet, mags]);
+    await over(p2, biscuit, "savage", bFaces);
+    if (state().phase === "getaway") await trackerAction(gmU, "endGetawayRound");
+  }
   assert.equal(state().phase, "ended");
+  assert.ok([tilly, velvet, mags, biscuit].every(c => pos(c).state === "home"));
   const out = lastCard("outcome");
   assert.match(out.content, /Clean Getaway/);
+  assert.match(out.content, /Loot home: 5 of 5/);
   assert.deepEqual(buttonLabels(out, gmU), ["Give the gang +1 Rep (campaign)"]);
   await click(out, gmU, "Give the gang +1 Rep (campaign)");
   assert.equal(tilly.system.rep, 1);
@@ -430,5 +459,81 @@ test("v0.9: a Shoo! through a shut entrance, the last open entrance staying open
   assert.equal(pell().distractedRound, state().round, "Mr Pell is Distracted…");
   assert.equal(pell().distractions, 1, "…and it counts as a distraction of him");
   assert.equal(lady.system.cattitude, 4, "3 (a gang of three) + 1 for giving in");
+  assert.deepEqual(log.errors, []);
+});
+
+test("the getaway (Ch 9): a piece dropped on purpose, a Flop, the van, a dodge, pinched — and busting out of the pound", async () => {
+  const fudge = await makeCat("Fudge", p1, { approaches: { savage: 3, sneaky: 2, sweet: 1, streetwise: 1 }, instinct1: "hunter", instinct2: "climber", body: "chonky" });
+  const wisp = await makeCat("Wisp", p2, { approaches: { sneaky: 3, sweet: 2, savage: 1, streetwise: 1 }, instinct1: "boxSitter", instinct2: "curious", body: "lean" });
+  await asUser(gmU, () => api().robbery.startRobbery("number-12", { actorIds: [fudge.id, wisp.id] }));
+  await asUser(gmU, () => api().robbery.beginRound());
+  await settle();
+  // the house part as it ends: the chicken (3 portions for two cats) carried out, nobody caught
+  const s = JSON.parse(JSON.stringify(state()));
+  Object.assign(s.prize, { withHuman: null, out: true, room: null });
+  await asUser(gmU, () => game.settings.set("cat-burglars", "robberyState", s));
+  await settle();
+  await asUser(gmU, () => api().robbery.endRobbery("manual"));
+  await settle();
+  assert.equal(state().phase, "getaway");
+  assert.match(lastCard("getaway").content, /Fudge 2 pieces, Wisp 1 piece/);
+  assert.match(lastCard("getaway").content, /the van pulls up at the end of round 2/);
+  const app = asUser(p1, () => api().openTracker());
+  await settle();
+  assert.match(app.element.innerHTML, /The getaway — round 1/);
+  const at = c => state().getaway.cats[c.id];
+
+  // round 1: Fudge drops a piece on purpose (two is a load), then climbs the back fence; Wisp Flops and drops hers
+  await trackerAction(p1, "act", { cat: fudge.id, option: "gdrop" });
+  assert.match(lastCard("getaway").content, /Fudge drops a piece of loot on purpose/);
+  let m = await rollAs(p1, fudge, "over", { approach: "savage" }, [6, 2, 1, 1]); // Savage 3 + Climber, no loot die now
+  await click(m, p1, "Accept");
+  assert.equal(at(fudge).pos, 1);
+  m = await rollAs(p2, wisp, "over", { approach: "sneaky" }, [2, 1]); // Sneaky 3 − 1 for her piece
+  await click(m, p2, "Accept");
+  assert.match(m.content, /Wisp is stuck at Mr Pell(&#x27;|')s back fence/);
+  assert.deepEqual([at(wisp).pos, at(wisp).carry, state().getaway.drops[0]], [0, 0, 2]);
+  await trackerAction(gmU, "endGetawayRound");
+  assert.match(lastCard("getaway").content, /a van is on its way/);
+
+  // round 2: Wisp grabs a dropped piece; Fudge Flops in the allotments and drops his; the van pulls up
+  await trackerAction(p2, "act", { cat: wisp.id, option: "gpick" });
+  m = await rollAs(p1, fudge, "over", { approach: "savage" }, [1, 1, 2, 3]); // Savage 3 + Hunter (chase)
+  await click(m, p1, "Accept");
+  assert.deepEqual([at(fudge).pos, at(fudge).carry, state().getaway.drops[1]], [1, 0, 1]);
+  await trackerAction(gmU, "endGetawayRound");
+  const card = lastCard("getaway");
+  assert.match(card.content, /the warden jumps out into the garden/);
+  assert.match(card.content, /scoops up 1 piece of dropped loot/);
+  assert.match(card.content, /Cornered! Wisp must dodge the warden/);
+  assert.deepEqual(buttonLabels(card, gmU), ["Open the Robbery Tracker"], "no End the getaway round while a cat must dodge");
+  m = await rollAs(p2, wisp, "dodge", { approach: "sneaky" }, [1, 1, 1, 2]); // Sneaky 3 + Box Sitter (hide)
+  await click(m, p2, "Accept");
+  assert.equal(at(wisp).state, "pinched");
+  assert.match(lastCard("getaway").content, /Pinched! The warden(&#x27;|')s net comes down on Wisp, loot and all/);
+  assert.equal(state().getaway.round, 3);
+
+  // rounds 3–5: Fudge grabs his piece back, dodges the warden, and gets home
+  await trackerAction(p1, "act", { cat: fudge.id, option: "gpick" });
+  assert.ok(buttonLabels(lastCard("getaway"), gmU).includes("End the getaway round"));
+  await click(lastCard("getaway"), gmU, "End the getaway round");
+  assert.deepEqual(state().getaway.cornered, [fudge.id], "the warden stomps on to the allotments");
+  m = await rollAs(p1, fudge, "dodge", { approach: "savage" }, [6, 1, 1, 1]);
+  await click(m, p1, "Accept");
+  assert.equal(at(fudge).pos, 2, "he bolts to the space just ahead of the warden");
+  m = await rollAs(p1, fudge, "over", { approach: "savage" }, [6, 1, 1]); // the alley wall: Savage 3 + Climber − Tricky
+  await click(m, p1, "Accept");
+  await trackerAction(gmU, "endGetawayRound");
+  m = await rollAs(p1, fudge, "over", { approach: "savage" }, [5, 1, 1, 1]); // Station Road: Savage 3 + Hunter
+  await click(m, p1, "Accept");
+  assert.equal(state().phase, "ended");
+  const out = lastCard("outcome");
+  assert.match(out.content, /Busted/);
+  assert.match(out.content, /Loot home: 1 of 3/);
+  assert.match(out.content, /Pinched, and off to the pound: Wisp/);
+  assert.deepEqual(buttonLabels(out, p2), ["Wisp: spend a Life to bust out of the pound"]);
+  await click(out, p2, "Wisp: spend a Life to bust out of the pound");
+  assert.equal(wisp.system.lives, 8);
+  assert.match(lastCard("outcome").content, /Wisp spends a Life and busts out of the pound in the night/);
   assert.deepEqual(log.errors, []);
 });

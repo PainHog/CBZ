@@ -2,7 +2,7 @@
  * NINE LIVES GANG — the five ready-to-run houses (pure data + lookups)
  * --------------------------------------------------------------------
  * COPIED from sim/houses.mjs (core rules v0.9, simulator package P11), which the
- * rulebook house chapters (Ch 14–18, book/tools/house-pages.mjs) are generated
+ * rulebook house chapters (Ch 15–19, book/tools/house-pages.mjs) are generated
  * from. module/ never imports from sim/: this is a copy, and
  * test/parity.test.mjs fails if the two drift apart. Change sim/houses.mjs (and
  * re-run the book generator) first, then copy the change here.
@@ -259,7 +259,7 @@ export const HOUSES = [
 
 export const houseByKey = Object.fromEntries(HOUSES.map(h => [h.key, h]));
 
-/** Ch 10 traits from a catalog human (kind and flags). */
+/** Ch 11 traits from a catalog human (kind and flags). */
 export function humanTraits(h) {
   const t = [];
   if (h.kind === "kid") t.push("kid");

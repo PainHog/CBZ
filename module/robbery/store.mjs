@@ -16,8 +16,10 @@ export function getState() {
   catch { return null; }
 }
 
-/** Is a robbery running? */
-export const running = (s = getState()) => s?.phase === "robbery";
+/** Is a robbery running — in the house, or on the getaway (Ch 9)? */
+export const running = (s = getState()) => s?.phase === "robbery" || s?.phase === "getaway";
+/** Is the getaway running? */
+export const onGetaway = (s = getState()) => s?.phase === "getaway";
 
 /**
  * Change the robbery: fn(state) returns { state, ... } (a pure result) or null

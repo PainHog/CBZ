@@ -72,7 +72,7 @@ export const worksThisRound = (state, e) => !e.rounds || e.rounds.includes(state
  * rounds), shut or open — the human opens a shut one to put the cat out — all
  * tied at the shortest distance, in house order (the Storyteller picks between
  * ties). If none works for that cat, the nearest it fits through; if none fits,
- * the nearest of all. The holder's 6 (Ch 9) uses the same choice. `cat` may be
+ * the nearest of all. The holder's 6 (Ch 10) uses the same choice. `cat` may be
  * null (any body).
  */
 export function shooEntrances(state, room, cat = null) {

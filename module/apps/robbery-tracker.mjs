@@ -37,6 +37,8 @@ export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {
       beginRound: guard(() => R.beginRound()),
       endRound: guard(() => R.endRound()),
       endRobbery: guard(() => R.endRobbery("manual")),
+      endGetawayRound: guard(() => R.endGetawayRound()),
+      finishGetaway: guard(() => R.finishGetaway()),
       clear: guard(RobberyTracker.#clear),
       tempt: guard((event, target) => R.temptCat({ catId: target.dataset.cat, instinct: target.dataset.instinct })),
       temptRandom: guard(() => R.temptCat("random")),
@@ -121,6 +123,10 @@ export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #place(event, target) {
     const d = target.dataset;
+    // the getaway by hand (Ch 9)
+    if (d.change === "runner") return R.overrides.runner(d.cat, d.to);
+    if (d.change === "carry") return R.overrides.carry(d.cat, d.to);
+    if (d.change === "warden") return R.overrides.warden(d.to);
     if (d.cat) return R.overrides.placeCat(d.cat, d.to);
     if (d.key) return R.overrides.placeResident(d.key, d.to);
     return null;

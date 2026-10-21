@@ -1,5 +1,40 @@
 <section class="catb-house">
   {{#if hasRobbery}}
+  {{#if inGetaway}}
+  <div class="catb-getaway">
+    <h3>The getaway — round {{getaway.round}}</h3>
+    <p class="catb-note">{{getaway.wardenText}} {{getaway.lootText}}</p>
+    {{#if isGM}}<label class="catb-place">Warden: <select data-change="warden">{{#each getaway.wardenSpots}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+    <ol class="catb-route">
+      {{#each getaway.spaces}}
+      <li class="catb-space{{#if this.warden}} warden{{/if}}{{#if this.hideout}} hideout{{/if}}">
+        <h4>{{this.name}}{{#if this.warden}} <span class="catb-badge">The warden!</span>{{/if}}</h4>
+        {{#if this.obstacle}}<p class="catb-tempt">{{this.obstacle}}</p>{{/if}}
+        {{#if this.loot}}<p class="catb-prize">Dropped loot here: {{this.loot}}</p>{{/if}}
+        {{#each this.cats}}
+        <div class="catb-cat">
+          <p class="catb-cat-name"><a data-action="openSheet" data-cat="{{this.id}}">{{this.name}}</a> <span class="catb-badges">{{this.badges}}</span></p>
+          {{#if this.helping}}<p class="catb-note">{{this.helping}}</p>{{/if}}
+          <div class="catb-options">
+            {{#each this.usable}}<button type="button" class="{{this.cls}}" data-action="act" data-cat="{{../id}}" data-option="{{this.id}}">{{this.label}}</button>{{/each}}
+            {{#each this.helpTargets}}<button type="button" class="catb-opt" data-action="help" data-cat="{{../id}}" data-target="{{this.id}}" data-queued="{{this.queued}}">{{this.label}}</button>{{/each}}
+          </div>
+          {{#if this.hasBlocked}}<details class="catb-blocked"><summary>Not now</summary><ul>{{#each this.blocked}}<li>{{this.label}}: {{this.reason}}</li>{{/each}}</ul></details>{{/if}}
+          {{#if this.isGM}}<label class="catb-place">Put: <select data-change="runner" data-cat="{{this.id}}">{{#each this.spots}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>
+          <label class="catb-place">Loot: <select data-change="carry" data-cat="{{this.id}}">{{#each this.carries}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select></label>{{/if}}
+        </div>
+        {{/each}}
+      </li>
+      {{/each}}
+    </ol>
+    {{#if getaway.pinched.length}}
+    <div class="catb-pinched">
+      <h4>Pinched (the van)</h4>
+      {{#each getaway.pinched}}<p class="catb-cat-name">{{this.name}} <span class="catb-badges">{{this.badges}}</span>{{#if this.isGM}} <select data-change="runner" data-cat="{{this.id}}">{{#each this.spots}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}</select>{{/if}}</p>{{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{else}}
   <div class="catb-outside">
     <h3>Outside</h3>
     {{#each outside}}
@@ -67,5 +102,6 @@
     </div>
   </div>
   {{/each}}
+  {{/if}}
   {{/if}}
 </section>

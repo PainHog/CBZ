@@ -26,6 +26,7 @@ export const SETTING_DEFS = {
   [SETTINGS.autoCattitude]: { ...L("autoCattitude"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.autoPrizeClock]: { ...L("autoPrizeClock"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.autoOutcome]: { ...L("autoOutcome"), scope: "world", config: true, type: Boolean, default: true },
+  [SETTINGS.autoGetaway]: { ...L("autoGetaway"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.trackerForPlayers]: { ...L("trackerForPlayers"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.trackerPosition]: { scope: "client", config: false, type: Object, default: {} }
 };
@@ -41,7 +42,7 @@ export function setting(key) {
 }
 
 /**
- * A die for a tie between humans outside the house's turn (v0.9, Ch 11 "Ties":
+ * A die for a tie between humans outside the house's turn (v0.9, Ch 12 "Ties":
  * the higher Attention goes; still tied, a die). The face is written into the
  * event's text. (The house's turn uses its own dice, rolled in the open.)
  */
@@ -59,6 +60,7 @@ export function automation() {
     temptation: setting(SETTINGS.autoTemptation),
     cattitude: setting(SETTINGS.autoCattitude),
     prizeClock: setting(SETTINGS.autoPrizeClock),
-    outcome: setting(SETTINGS.autoOutcome)
+    outcome: setting(SETTINGS.autoOutcome),
+    getaway: setting(SETTINGS.autoGetaway)
   };
 }

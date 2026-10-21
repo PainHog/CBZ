@@ -37,11 +37,11 @@ CATB.approachKeys = Object.freeze(["sneaky", "sweet", "savage", "streetwise"]);
  */
 CATB.instincts = Object.freeze({
   curious: { key: "curious", label: "Curious", knack: ["open"], knackText: "open, search, figure things out",
-    tempt: "a bag, a drawer, something new", giveInText: "You rummage in it. Noise.",
+    tempt: "a bag, a drawer, something new or shiny", giveInText: "You rummage in it. Noise.",
     giveIn: { noise: true, mess: false, hidden: false, seen: { side: "broom", steps: 1 } } },
   // v0.9: seen, it's +1 Broom and no mess (one Broom per event); unseen, a mess for whoever comes
   knocker: { key: "knocker", label: "Knocker", knack: ["knock"], knackText: "knock, push, topple",
-    tempt: "something on the edge of a table", giveInText: "You knock it off. Noise — and, if nobody saw it fall, a mess for whoever comes to look.",
+    tempt: "something on the edge of a table — especially if it sparkles", giveInText: "You knock it off. Noise — and, if nobody saw it fall, a mess for whoever comes to look.",
     giveIn: { noise: true, mess: "unseen", hidden: false, seen: { side: "broom", steps: 1 } } },
   boxSitter: { key: "boxSitter", label: "Box Sitter", knack: ["hide"], knackText: "hide",
     tempt: "a box, a bag, a basket", giveInText: "You get in. Quiet, and you're hidden.",
@@ -79,14 +79,17 @@ CATB.results = Object.freeze({
   purrfect: { key: "purrfect", label: "Purrfect", works: true, noise: false, text: "It works so smoothly that nobody minds: no Mood step, and +1 Cattitude." }
 });
 
-/** Difficulty rungs (Ch 4, Ch 11 "Calling the roll"). */
+/** Difficulty rungs (Ch 4, Ch 12 "Calling the roll"). */
 CATB.difficulties = Object.freeze({ 0: "Plain", 1: "Tricky", 2: "Hard" });
+
+/** Prize kinds (Ch 8; d8: 1–2 delicious, 3–4 fun, 5–6 shiny, 7–8 a box). Shiny things are carried like fun ones. */
+CATB.prizeKinds = Object.freeze({ delicious: "Delicious", fun: "Fun", shiny: "Shiny", box: "A box" });
 
 /** Sizes (Ch 8): ways and prizes. */
 CATB.waySizes = Object.freeze({ tight: 0, normal: 1, big: 2 });
 CATB.prizeSizes = Object.freeze({ small: 0, medium: 1, large: 2 });
 
-/** Residents (Ch 10). */
+/** Residents (Ch 11). */
 CATB.humanKinds = Object.freeze({ grownup: "Grown-up", kid: "Kid", grandparent: "Grandparent", teen: "Teen" });
 CATB.humanTraits = Object.freeze({
   kid: "Kid: doubles Cuddle steps from any roll they see.",
@@ -117,20 +120,30 @@ CATB.rules = Object.freeze({
   minPatience: 2,        // Ch 5: Patience never below 2
   patienceDrop: 1,
   noiseRange: 2,         // Ch 6: the closest awake human within two rooms
-  holdTable: [3, 5],     // Ch 9: 1–3 keeps cuddling, 4–5 the Den, 6 outside
-  wriggleDifficulty: 1,  // Ch 9: Savage, Tricky
+  holdTable: [3, 5],     // Ch 10: 1–3 keeps cuddling, 4–5 the Den, 6 outside
+  wriggleDifficulty: 1,  // Ch 10: Savage, Tricky
   lightsOut: 2,          // Ch 8: Lights Out at the end of the second round after the prize goes
-  petHideRounds: 3,      // Ch 10: a driven-off pet hides for 3 rounds, counting this one
-  dozeOn: 2,             // Ch 10: dozes on a 1–2
-  // Ch 11 "Gang size": the houses are written for four cats. The general rule (for your own houses):
+  petHideRounds: 3,      // Ch 11: a driven-off pet hides for 3 rounds, counting this one
+  dozeOn: 2,             // Ch 11: dozes on a 1–2
+  // Ch 12 "Gang size": the houses are written for four cats. The general rule (for your own houses):
   // 3 cats: Patience +1, the prize 2 rounds later, 3 starting Cattitude each; 5 cats: Patience −1.
   // v0.9: a ready-to-run house may print its own three- and five-cat numbers (catalog scale3 / scale5).
   gangScaling: { 3: { patience: 1, clock: 2, cattitude: 1 }, 4: { patience: 0, clock: 0, cattitude: 0 }, 5: { patience: -1, clock: 0, cattitude: 0 } },
-  // Ch 13 "Rep" (v0.9): at 3, 6 and 9 Rep every cat starts each robbery with 1 more Cattitude (never above 5)
+  // Ch 14 "Rep" (v0.9): at 3, 6 and 9 Rep every cat starts each robbery with 1 more Cattitude (never above 5)
   repSteps: [3, 6, 9],
-  // Ch 9 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
+  // Ch 7 (shiny loot): shiny things lie about in every house — any room tempts Curious and Knocker cats
+  shinyTempts: ["curious", "knocker"],
+  // Ch 9 "The Getaway" (simulator package P12): the warden arrives at the end of round 1 if anyone was
+  // Shooed or Scooped tonight, else a round later (wardenLag 1); then moves 1 space a round, 2 after a Flop;
+  // a cornered cat dodges plain; a group is a leader and up to 2 helpers; loot: Small 1, Medium 2, Large 3 pieces
+  wardenLag: 1,
+  wardenFlopSpaces: 2,
+  dodgeDiff: 0,
+  getawayHelpers: 2,
+  lootPieces: { small: 1, medium: 2, large: 3 },
+  // Ch 10 / Ch 8: doors and the Den. Options are [approach, Difficulty, ...knack tags].
   denDoor: [["streetwise", 1, "open"], ["savage", 2]],   // a friend in the next room
   denInside: [["streetwise", 2, "open"]],               // the cat on its own
   reopenEntrance: [["streetwise", 2, "open"]],          // Ch 8: a shut entrance, from inside
-  coverParrot: [["streetwise", 1, "open"]]              // Ch 10
+  coverParrot: [["streetwise", 1, "open"]]              // Ch 11
 });

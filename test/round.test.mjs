@@ -10,7 +10,7 @@ import {
 } from "../module/logic/round.mjs";
 import { applyRoll, doAction } from "../module/logic/actions.mjs";
 import { stepEntry } from "../module/logic/mood.mjs";
-import { robbery, dice, arrange, cat, human, pet, texts } from "./fixtures.mjs";
+import { robbery, dice, arrange, cat, human, pet, texts, runHome } from "./fixtures.mjs";
 
 /* ---------------------------------------------------------------- set up -- */
 
@@ -33,8 +33,8 @@ test("a new robbery: cats outside, Patience and Clock scaled for gang size, port
   const s5 = robbery("number-12", ["tilly", "biscuit", "velvet", "mags", "pip"]);
   assert.equal(s5.patience0, 3, "5 cats: Patience −1");
   assert.deepEqual(s5.clock, { goneAt: 10, lightsOut: 12 }, "…and the Clock unchanged");
-  assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet"]).patience0, 8);
-  assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet", "mags", "pip"]).patience0, 6);
+  assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet"]).patience0, 9, "v0.10: the Okafors' Patience 8, +1");
+  assert.equal(robbery("okafor-box", ["tilly", "biscuit", "velvet", "mags", "pip"]).patience0, 7);
   assert.equal(robbery("birthday-cake").prize.portions, 8, "a cake is 2 per cat");
   assert.equal(robbery("okafor-box").prize.portions, 0, "a box has no portions");
   assert.equal(pet(robbery("okafor-box"), "noodle").mode, "asleep");
@@ -101,7 +101,8 @@ test("the prize not where the Clock left it: the owner goes there, stays, finds 
 test("temptation: free cats in a room with one of their instincts' temptations, one per round, never twice", () => {
   let s = arrange(beginRound(robbery("number-12")).state, { cats: { tilly: "kitchen", velvet: "living", mags: "hall" }, pets: { pudding: { mode: "hiding", until: 99 } } });
   const opts = temptationOptions(s);
-  assert.deepEqual(opts.map(o => `${o.catId}:${o.instinct}`).sort(), ["tilly:climber", "velvet:knocker", "velvet:lapCat"]);
+  assert.deepEqual(opts.map(o => `${o.catId}:${o.instinct}`).sort(), ["tilly:climber", "tilly:curious", "velvet:knocker", "velvet:lapCat"], "shiny things tempt Curious and Knocker cats in every room");
+  assert.equal(opts.find(o => o.catId === "tilly" && o.instinct === "curious").tempt, "something shiny lying about");
   assert.ok(!temptationOptions(arrange(s, { pets: { pudding: { mode: "awake", room: "kitchen" } } })).some(o => o.catId === "tilly"),
     "v0.9: a cat that has to deal with a pet in its room this turn can't be tempted");
   s = tempt(s, { catId: "tilly", instinct: "climber" }).state;
@@ -482,29 +483,34 @@ test("the end: Lights Out at the end of the second round after the prize goes; o
   s = arrange(s, { round: 4 });
   assert.equal(endCheck(s).due, false, "everyone outside but the prize is still to get: they can come back in");
   s.prize.gone = true;
-  assert.deepEqual(endCheck(s), { due: true, reason: "allOut", text: "No free cat is inside and the rotisserie chicken is gone: the robbery ends at the end of the round." });
+  assert.deepEqual(endCheck(s), { due: true, reason: "allOut", text: "No free cat is inside and the rotisserie chicken is gone: the house part ends at the end of the round, and the getaway starts." });
   s = arrange(s, { cats: { tilly: "hall" } });
   assert.equal(endCheck(s).due, false);
 });
 
-test("the outcome: Clean, Messy (left behind, or half the food eaten) or Busted", () => {
+test("the outcome (v0.10: counted after the getaway): Clean, Messy (someone pinched, or half the loot) or Busted", () => {
   let s = robbery("number-12");
   s.prize.out = true;
-  assert.equal(finishRobbery(s).outcome.result, "clean");
+  assert.equal(runHome(s).outcome.result, "clean", "all 5 portions home");
   s.cats[0].status = "held"; s.cats[0].where = "hall";
-  let o = finishRobbery(s).outcome;
-  assert.equal(o.result, "messy");
+  let o = runHome(s).outcome;
+  assert.equal(o.result, "messy", "Tilly pinched, and the others can carry only 4 of the 5 pieces");
   assert.deepEqual(o.leftBehind, ["tilly"]);
+  assert.deepEqual([o.loot, o.lootTotal], [4, 5]);
   s = robbery("birthday-cake");
   s.prize.eaten = 4; s.prize.portionsLeft = 4;
-  assert.equal(finishRobbery(s).outcome.result, "messy", "half the cake eaten");
+  assert.equal(runHome(s).outcome.result, "messy", "half the cake eaten (the rest never left the house: nothing to run with)");
   s.prize.eaten = 3;
-  assert.equal(finishRobbery(s).outcome.result, "busted");
+  assert.equal(runHome(s).outcome.result, "busted");
   s.prize.eaten = 8; s.prize.portionsLeft = 0;
-  o = finishRobbery(s);
-  assert.equal(o.outcome.result, "clean", "every portion eaten is the prize got");
+  o = runHome(s);
+  assert.equal(o.outcome.result, "clean", "every portion eaten is all the loot, safe inside the gang");
   assert.equal(o.state.phase, "ended");
   assert.throws(() => beginRound(o.state));
+  // nobody outside to run: the outcome comes at once
+  s = robbery("number-12");
+  for (const c of s.cats) Object.assign(c, { status: "free", where: "hall" });
+  assert.deepEqual([finishRobbery(s).state.phase, finishRobbery(s).outcome.result, finishRobbery(s).outcome.pinched.length], ["ended", "busted", 4]);
 });
 
 test("the Storyteller's hands: place a cat or resident, open and shut ways and entrances", () => {

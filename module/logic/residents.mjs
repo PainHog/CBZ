@@ -1,9 +1,9 @@
 /**
  * NINE LIVES GANG — the humans and pets (pure)
  * --------------------------------------------
- * Who sees whom (Ch 5 "Who sees you"), pets in the way (Ch 10), and the house's
+ * Who sees whom (Ch 5 "Who sees you"), pets in the way (Ch 11), and the house's
  * turn: pets, noise, routines, Searching and the holders' d6 (Ch 6 "The house's
- * turn", Ch 9, Ch 10; core rules v0.9): pets, noise, routines or Searching,
+ * turn", Ch 10, Ch 11; core rules v0.9): pets, noise, routines or Searching,
  * holders, then Finding it. Where the book leaves a choice the readings follow
  * the simulator's engine (sim/engine.mjs, package P11); the "Implementation
  * notes" in docs/AUTOMATION.md list them.
@@ -30,7 +30,7 @@ export const isDistracted = (s, h) => (h.distractedRound ?? -1) >= s.round && s.
 
 /**
  * Ch 5: humans who can see cats in this room — awake and not Distracted. A
- * human holding a cat still sees their room (v0.7, Ch 9); they just don't move,
+ * human holding a cat still sees their room (v0.7, Ch 10); they just don't move,
  * answer noise, Search or find things.
  */
 export function watchers(s, room) {
@@ -56,7 +56,7 @@ export function seenBy(s, cat, { room = null, ignoreHidden = false } = {}) {
   return watchers(s, where);
 }
 
-/** Ch 4 / Ch 10: the highest Attention among these humans. */
+/** Ch 4 / Ch 11: the highest Attention among these humans. */
 export const highestAttention = humans => humans.reduce((m, h) => Math.max(m, h.attention ?? 0), 0);
 
 /** The watcher who acts for a meter (Ch 5: the highest Attention; ties, house order — pickHuman adds the die). */
@@ -65,7 +65,7 @@ export function leadWatcher(humans) {
 }
 
 /**
- * Ch 11 "Ties" (v0.9): between humans the rules make you pick — two as close to
+ * Ch 12 "Ties" (v0.9): between humans the rules make you pick — two as close to
  * a noise, two who saw the same roll — the higher Attention goes first; still
  * tied, a die (pickByDie). Without a d6 the first in house order goes, and the
  * text says it was the Storyteller's pick.
@@ -81,14 +81,14 @@ export function pickHuman(humans, d6 = null) {
   return face ? { h: pick, tie: "die", face, text: ` (tied on Attention: a die, ${face})` } : { h: pick, tie: "pick", face: null, text: " (a tie: the Storyteller's pick)" };
 }
 
-/** Ch 5 / Ch 10: a kid among the watchers doubles Cuddle steps. */
+/** Ch 5 / Ch 11: a kid among the watchers doubles Cuddle steps. */
 export const kidAmong = humans => humans.some(h => hasTrait(h, "kid"));
 
 export const freeInside = s => (s.cats ?? []).filter(c => c.status === "free");
 export const catsIn = (s, room) => freeInside(s).filter(c => c.where === room);
 
 /**
- * Ch 10: a pet that stops a cat in this room until it leaves or deals with it:
+ * Ch 11: a pet that stops a cat in this room until it leaves or deals with it:
  * an awake dog, or a guarding house cat — not hiding, befriended or asleep.
  * A cat that slipped past it this turn isn't stopped.
  */
@@ -101,7 +101,7 @@ export function hostilePet(s, room, cat = null) {
 /* ------------------------------------------------------------------ pets -- */
 
 /**
- * Ch 10 (v0.8): a parrot squawks in the Pets step if it saw a cat that wasn't
+ * Ch 11 (v0.8): a parrot squawks in the Pets step if it saw a cat that wasn't
  * hidden at any time this round. Called after every change to the robbery
  * (round.mjs look): an uncovered parrot with an unhidden cat in its room —
  * free, or held (v0.9: a held cat counts as seen) — remembers the round. MUTATES s.
@@ -113,13 +113,13 @@ export function parrotsLook(s) {
   }
 }
 
-/** v0.9 (Ch 11 "Does a held cat count as seen?"): the cats someone in this room can see — free and unhidden, or held. */
+/** v0.9 (Ch 12 "Does a held cat count as seen?"): the cats someone in this room can see — free and unhidden, or held. */
 export function seenCatsIn(s, room) {
   return (s.cats ?? []).filter(c => c.where === room && ((c.status === "free" && !c.hidden) || c.status === "held"));
 }
 
 /**
- * Ch 10, each pet at the end of the round (the simulator's order: pets act
+ * Ch 11, each pet at the end of the round (the simulator's order: pets act
  * before noise is answered, and their barks and squawks join the noise list).
  */
 export function petsAct(s, ctx, ev) {
@@ -246,7 +246,7 @@ export function resolveNoise(s, ev, ctx = {}) {
 /* -------------------------------------------------------------- routines -- */
 
 /**
- * Ch 6 / Ch 10: every other human's d6 routine. Holders don't follow it (Ch 9);
+ * Ch 6 / Ch 11: every other human's d6 routine. Holders don't follow it (Ch 10);
  * a human who answered a noise, whom the Prize Clock moved this round, or who
  * shooed a cat out this round (v0.8: they stay in that entrance's room) stays;
  * a sleeping human stays put (v0.8, REVIEW #73); and a Searching human hunts
@@ -254,11 +254,11 @@ export function resolveNoise(s, ev, ctx = {}) {
  * isn't), stays with it if it's in their room, else steps into its room if it's
  * next door; else stays with a cat in sight, else steps into a next room with an
  * unhidden cat (the Storyteller's pick between rooms: a die); else follows the
- * routine. v0.9 (Ch 10): a dozing human who is awake rolls the doze die every
+ * routine. v0.9 (Ch 11): a dozing human who is awake rolls the doze die every
  * house's turn, even in a round they roll no routine (they answered a noise,
  * stayed for the Clock or a Shoo!, or Searched): 1–2, asleep until the end of
  * the next round. Only a Prize Clock job wakes them (prize.mjs). A human holding
- * a cat rolls no doze die (they're busy cuddling; Ch 9).
+ * a cat rolls no doze die (they're busy cuddling; Ch 10).
  */
 export function humanRoutines(s, ctx, answered, ev) {
   for (const h of s.humans ?? []) {
@@ -318,7 +318,7 @@ function humanRoutine(s, h, ctx, answered, ev) {
 }
 
 /**
- * Ch 9: in the house's turn, after the routines, each holder rolls a d6 — 1–3
+ * Ch 10: in the house's turn, after the routines, each holder rolls a d6 — 1–3
  * keeps cuddling; 4–5 the Den (v0.9: the human then stays just outside, in the
  * room next to the Den's door, for the rest of the round); 6 outside, through
  * the nearest entrance that cat fits through and that works this round (as a
@@ -395,7 +395,7 @@ export function findingIt(s, ev, { disturbed, inPlay }) {
   return mood;
 }
 
-/** Ch 10: a driven-off pet comes back where it started, awake, when its 3 rounds (counting the first) are up. */
+/** Ch 11: a driven-off pet comes back where it started, awake, when its 3 rounds (counting the first) are up. */
 export function petsReturn(s, ev) {
   for (const p of s.pets ?? []) {
     if (p.mode === "hiding" && s.round >= (p.until ?? 0)) {

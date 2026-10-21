@@ -24,7 +24,7 @@ export const RESULT_RANK = Object.freeze({ flop: 0, scrape: 1, clean: 2, purrfec
 /** Ch 5: which meter an approach fills when a human sees it (Sweet → Cuddle; the rest → Broom). */
 export const fillsMeter = approach => (approach === "sweet" ? "cuddle" : "broom");
 
-/** Ch 4 "How many dice", Ch 10: a watching human's Attention takes dice from Sneaky and Sweet rolls only. */
+/** Ch 4 "How many dice", Ch 11: a watching human's Attention takes dice from Sneaky and Sweet rolls only. */
 export const attentionApplies = approach => approach === "sneaky" || approach === "sweet";
 
 /** Ch 7 "Knacks": does any of these instincts suit an action with these tags? */
@@ -163,7 +163,7 @@ export function moodDelta({ result, approach, seen, mood = { broom: 0, cuddle: 0
 }
 
 /**
- * Ch 11 "Ties" (v0.9): pick one of a list with a die, fairly — the faces are
+ * Ch 12 "Ties" (v0.9): pick one of a list with a die, fairly — the faces are
  * split evenly between them (2: 1–3 / 4–6; 3: 1–2 / 3–4 / 5–6), and with four
  * or five a face above the count is rolled again. One item needs no die.
  * Returns { pick, face } (face null when no die was rolled or there's no d6).
@@ -179,13 +179,13 @@ export function pickByDie(list, d6) {
   return { pick: list[f - 1], face: f };
 }
 
-/** Ch 13 "Rep" (v0.9): the gang's Rep bonus — 1 more starting Cattitude at each of 3, 6 and 9 Rep. */
+/** Ch 14 "Rep" (v0.9): the gang's Rep bonus — 1 more starting Cattitude at each of 3, 6 and 9 Rep. */
 export const repBonus = rep => R.repSteps.filter(n => (Number(rep) || 0) >= n).length;
 
-/** Ch 2 §7, Ch 13: a cat's starting Cattitude — 2 (3 in a gang of three) plus the Rep bonus, never above 5. */
+/** Ch 2 §7, Ch 14: a cat's starting Cattitude — 2 (3 in a gang of three) plus the Rep bonus, never above 5. */
 export const startingCattitude = (base, rep = 0) => Math.min(R.cattitudeMax, base + repBonus(rep));
 
-/** Ch 9: the holder's end-of-round d6. */
+/** Ch 10: the holder's end-of-round d6. */
 export function holderOutcome(face) {
   const [keep, den] = R.holdTable;
   if (face <= keep) return "keep";

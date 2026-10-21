@@ -10,10 +10,11 @@ import { moodNow, temptationOptions, roomTemptations, endCheck } from "../logic/
 import { catOptions } from "../logic/actions.mjs";
 import { watchers, isAsleep, isDistracted, roomName, hasTrait, humanByKey } from "../logic/residents.mjs";
 import { optionsText } from "../logic/house-catalog.mjs";
-import { OUTCOME_LABEL } from "../logic/prize.mjs";
+import { OUTCOME_LABEL, carryCap } from "../logic/prize.mjs";
+import { getawayView } from "../logic/getaway.mjs";
 
 const STATUS = { outside: "Outside", free: "In the house", held: "Held", shut: "Shut in the Den" };
-const STAGE = { cats: "The cats' turn", house: "The house's turn", between: "Between rounds" };
+const STAGE = { cats: "The cats' turn", house: "The house's turn", between: "Between rounds", getaway: "The getaway" };
 const LABEL = { easy: "Easy", standard: "Standard", hard: "Hard" };
 const low = s => String(s ?? "").toLowerCase();
 
@@ -23,10 +24,18 @@ function meter(value, patience, cls) {
 
 function catView(s, c, { canControl, isGM }) {
   const badges = [];
-  if (c.hidden) badges.push(c.riding ? "Riding the vacuum (hidden)" : "Hidden");
-  if (c.carrying) badges.push(`Carrying the ${s.prize.name}`);
-  if (c.status === "held") badges.push(`Held by ${humanByKey(s, c.heldBy)?.name ?? "a human"}`);
-  if (c.status === "shut") badges.push("Shut in the Den");
+  const r = s.phase === "getaway" ? s.getaway?.cats?.[c.id] : null;
+  if (r) {
+    // Ch 9: the getaway
+    if (r.carry) badges.push(`Carrying ${r.carry} piece${r.carry > 1 ? "s" : ""} of loot`);
+    if (r.state === "home") badges.push("Home in the hideout");
+    if (r.state === "pinched") badges.push(r.where === "house" ? "Pinched (still in the house)" : "Pinched (in the van)");
+    if (r.state === "running") badges.push(s.getaway.cornered.includes(c.id) ? "Cornered: dodge!" : r.acted ? "Went this round" : "Still to go");
+  }
+  if (c.hidden && !r) badges.push(c.riding ? "Riding the vacuum (hidden)" : "Hidden");
+  if (c.carrying && !r) badges.push(`Carrying the ${s.prize.name}`);
+  if (c.status === "held" && !r) badges.push(`Held by ${humanByKey(s, c.heldBy)?.name ?? "a human"}`);
+  if (c.status === "shut" && !r) badges.push("Shut in the Den");
   if (s.phase === "robbery" && s.stage === "cats" && s.round >= 1) { badges.push(c.moved ? "Moved" : "Move left"); badges.push(c.acted ? "Acted" : "Action left"); }
   if (s.temptation?.catId === c.id && !s.temptation.choice) badges.push("Tempted: answer first");
   const mine = canControl(c.id);
@@ -44,7 +53,31 @@ function catView(s, c, { canControl, isGM }) {
     notes: (opts?.notes ?? []).join(" "),
     helpTargets: mine ? (opts?.helpTargets ?? []).map(t => ({ ...t, label: t.queued ? `Helping ${t.name} (cancel)` : `Help ${t.name}` })) : [],
     helping: s.help?.[c.id] ? `Will help ${s.cats.find(x => x.id === s.help[c.id])?.name ?? ""}` : "",
-    places: isGM ? [{ value: "outside", label: "Outside", selected: c.where === "outside" }, ...Object.entries(s.rooms).map(([k, r]) => ({ value: k, label: r.name, selected: c.where === k }))] : []
+    places: isGM && !r ? [{ value: "outside", label: "Outside", selected: c.where === "outside" }, ...Object.entries(s.rooms).map(([k, rm]) => ({ value: k, label: rm.name, selected: c.where === k }))] : [],
+    // the getaway by hand (GM): where the cat is on the route, and its loot
+    spots: isGM && r ? [...s.getaway.route.map((o, i) => ({ value: String(i), label: i === 0 ? "The garden" : `Past ${s.getaway.route[i - 1].name}`, selected: r.state === "running" && r.pos === i })),
+      { value: "home", label: "Home", selected: r.state === "home" }, { value: "pinched", label: "Pinched", selected: r.state === "pinched" }] : [],
+    carries: isGM && r ? Array.from({ length: carryCap(c) + 1 }, (_, n) => ({ value: String(n), label: `${n} piece${n === 1 ? "" : "s"}`, selected: r.carry === n })) : [],
+    onRoute: !!r
+  };
+}
+
+/** Ch 9: the getaway as the tracker shows it. */
+function getawaySection(s, { canControl, isGM }) {
+  const v = getawayView(s);
+  const g = s.getaway;
+  const anyRunning = Object.values(g.cats).some(r => r.state === "running");
+  return {
+    round: v.round, cornered: v.stage === "cornered", wardenText: v.wardenText,
+    lootText: `Loot: ${v.loot.start} piece${v.loot.start === 1 ? "" : "s"} of the ${s.prize.name} carried out${v.loot.safe ? `, ${v.loot.safe} eaten in the house (safe)` : ""} — ${v.loot.total} in all.`,
+    spaces: v.spaces.map(sp => ({
+      name: sp.name, next: sp.next, hideout: sp.next === null, warden: sp.warden, loot: sp.loot,
+      obstacle: sp.next ? `Next: ${sp.next} — ${optionsText(sp.opts)}${sp.pet ? `; it takes ${sp.pet} ${sp.pet > 1 ? "dice" : "die"} off` : ""}` : "",
+      cats: sp.cats.map(x => catView(s, s.cats.find(c => c.id === x.id), { canControl, isGM }))
+    })),
+    pinched: v.pinched.map(x => catView(s, s.cats.find(c => c.id === x.id), { canControl, isGM })),
+    wardenSpots: isGM ? [{ value: "none", label: "On the way", selected: g.warden === null }, ...g.route.map((o, i) => ({ value: String(i), label: o.name, selected: g.warden === i }))] : [],
+    canEndRound: isGM && v.stage === "run" && anyRunning, canFinish: isGM && !anyRunning
   };
 }
 
@@ -104,6 +137,7 @@ export function trackerView(state, { isGM = false, canControl = () => false, hou
   const s = state;
   const f = moodNow(s);
   const running = s.phase === "robbery";
+  const inGetaway = s.phase === "getaway" && !!s.getaway;
   const z = s.prize;
   const left = s.clock.goneAt - s.round;
   const clockText = z.out ? "Got it!" : z.gone ? `Gone (round ${s.clock.goneAt})` : left > 0 ? `Gone at the start of round ${s.clock.goneAt} (${left} round${left > 1 ? "s" : ""} to go)` : `Due to go — the gang is holding it`;
@@ -130,7 +164,8 @@ export function trackerView(state, { isGM = false, canControl = () => false, hou
   const t = s.temptation;
   const end = running ? endCheck(s) : { due: false };
   return {
-    ...base, hasRobbery: true, running, ended: s.phase === "ended",
+    ...base, hasRobbery: true, running, ended: s.phase === "ended", inGetaway, inHouse: !inGetaway,
+    getaway: inGetaway ? getawaySection(s, { canControl, isGM }) : null,
     title: s.name, label: LABEL[s.label] ?? s.label, gangSize: s.gangSize,
     round: s.round, stage: STAGE[s.stage] ?? s.stage, inCats: running && s.stage === "cats", between: running && s.stage !== "cats",
     clockText, lightsText: `Lights Out at the end of round ${s.clock.lightsOut}`,
@@ -145,7 +180,7 @@ export function trackerView(state, { isGM = false, canControl = () => false, hou
     temptation: t ? `${s.cats.find(c => c.id === t.catId)?.name} was tempted (${CATB.instincts[t.instinct]?.label})${t.choice ? (t.choice === "gaveIn" ? ": gave in." : ": resisted.") : ": waiting for an answer."}` : "",
     temptOpts: temptOpts.map(o => ({ ...o, text: `Tempt ${o.catName}: ${o.label} (${o.roomName})` })), canTempt: temptOpts.length > 0,
     endDue: end.due ? end.text : "",
-    outcome: s.outcome ? `${OUTCOME_LABEL[s.outcome.result]}${s.outcome.leftBehind.length ? ` — left behind: ${s.outcome.leftBehind.map(id => s.cats.find(c => c.id === id)?.name).join(", ")}` : ""}` : "",
+    outcome: s.outcome ? `${OUTCOME_LABEL[s.outcome.result]}${s.outcome.lootTotal ? ` — loot home: ${s.outcome.loot} of ${s.outcome.lootTotal}` : ""}${s.outcome.leftBehind.length ? ` — pinched: ${s.outcome.leftBehind.map(id => s.cats.find(c => c.id === id)?.name).join(", ")}` : ""}` : "",
     prize: prizeText(s),
     outside: s.cats.filter(c => c.where === "outside").map(c => catView(s, c, { canControl, isGM })),
     floors,

@@ -14,14 +14,14 @@ import { roomName, humanByKey, freeInside, isAsleep } from "./residents.mjs";
 
 const R = CATB.rules;
 
-/** Ch 8 "Eating it" / Ch 12 "Portions": food portions are set per cat in the gang. */
+/** Ch 8 "Eating it" / Ch 13 "Portions": food portions are set per cat in the gang. */
 export function portionsFor(prize, gangSize) {
   if (prize.kind !== "delicious") return 0;
   return Math.max(1, Math.round((prize.perCat ?? 0) * gangSize + (prize.plus ?? 0)));
 }
 
 /**
- * Ch 11 "Gang size": the houses are written for four cats (a gang of one or two
+ * Ch 12 "Gang size": the houses are written for four cats (a gang of one or two
  * plays as three). The general rule: 3 cats — Patience +1, the prize 2 rounds
  * later, 3 Cattitude each; 5 — Patience −1. v0.9: a ready-to-run house prints
  * its own three- and five-cat numbers (catalog `scale3` / `scale5`:
@@ -118,7 +118,7 @@ export function dropPrize(s, { putBack = false, room = null, ev = null } = {}) {
   return true;
 }
 
-const goneText = z => (z.kind === "delicious" ? "eaten" : z.kind === "box" ? "flattened for the recycling" : "put away");
+const goneText = z => (z.kind === "delicious" ? "eaten" : z.kind === "box" ? "flattened for the recycling" : z.kind === "shiny" ? "locked away in a drawer" : "put away");
 
 /**
  * Ch 6 / Ch 8 "Where it goes" (v0.8): the Prize Clock acts at the start of its
@@ -169,21 +169,53 @@ export function prizeClock(s) {
   return { events, mood };
 }
 
+/** Ch 9 "The loot": a Chonky cat carries two pieces, any other cat one. */
+export const carryCap = c => (c?.body === "chonky" ? 2 : 1);
+
 /**
- * Ch 8 "Getting out, and the end": Clean Getaway — the prize is eaten or outside
- * and nobody was left behind; Messy — got it but someone was left behind, or at
- * least half the food was eaten; Busted — anything less. Any cat still inside
- * (held, shut in or free) is left behind: adopted.
+ * Ch 9 "The loot": the prize in pieces. Food comes in its portions (the ones
+ * not eaten inside — and only if the food was carried out); anything else
+ * (fun, shiny, a box) is Small 1, Medium 2, Large 3 pieces. Portions eaten in
+ * the house are already safe. Returns { total, safe, pieces } — pieces is what
+ * the gang has outside to carry home.
+ */
+export function lootOf(s) {
+  const z = s.prize;
+  const food = z?.kind === "delicious";
+  const total = food ? z.portions : (R.lootPieces[z?.size] ?? 1);
+  const safe = food ? z.eaten : 0;
+  const pieces = z?.out ? (food ? z.portionsLeft : total) : 0;
+  return { total, safe, pieces };
+}
+
+/**
+ * Ch 9 "How did it go?" (v0.10): count the loot — the pieces that made it home
+ * plus any portions eaten in the house. Clean Getaway: all of it, and nobody
+ * pinched; Messy: at least half of it (or all of it, but somebody was
+ * pinched); Busted: less than half. Pinched (Ch 10): any cat still inside when
+ * the house part ended, and any the warden caught. Without a getaway in the
+ * state (it hasn't run), every cat outside counts as home with its share.
+ * `leftBehind` is the pinched cats (the outcome card's Lives buttons).
  */
 export function robberyOutcome(s) {
-  const left = s.cats.filter(c => c.status !== "outside").map(c => c.id);
-  const got = prizeGot(s);
   const z = s.prize;
-  const halfEaten = !got && z.kind === "delicious" && z.portions > 0 && z.eaten * 2 >= z.portions;
+  const { total, safe, pieces } = lootOf(s);
+  const g = s.getaway;
+  let home, pinched;
+  if (g) {
+    home = Object.values(g.cats).filter(r => r.state === "home").reduce((a, r) => a + r.carry, 0);
+    pinched = s.cats.filter(c => g.cats[c.id]?.state === "pinched").map(c => c.id);
+  } else {
+    const out = s.cats.filter(c => c.status === "outside");
+    home = Math.min(pieces, out.reduce((a, c) => a + carryCap(c), 0));
+    pinched = s.cats.filter(c => c.status !== "outside").map(c => c.id);
+  }
+  const got = safe + home;
   let result = "busted";
-  if (got && !left.length) result = "clean";
-  else if (got || halfEaten) result = "messy";
-  return { result, leftBehind: left, prizeGot: got, halfEaten, eaten: z.eaten, portions: z.portions };
+  if (got >= total && total > 0 && !pinched.length) result = "clean";
+  else if (got * 2 >= total && got > 0) result = "messy";
+  return { result, leftBehind: pinched, pinched, loot: got, lootTotal: total, lootHome: home, eaten: safe,
+    prizeGot: got >= total && total > 0, halfEaten: got > 0 && got * 2 >= total && got < total, portions: z.portions };
 }
 
 export const OUTCOME_LABEL = Object.freeze({ clean: "Clean Getaway", messy: "Messy Getaway", busted: "Busted" });

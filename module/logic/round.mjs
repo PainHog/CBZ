@@ -20,9 +20,10 @@ import {
   watchers, catById, humanByKey, petByKey, roomName, freeInside, isAsleep, catsInSight, parrotsLook, pickHuman,
   petsAct, resolveNoise, humanRoutines, holdersRoll, petsReturn, addNoise, hasTrait, findingIt, hostilePet
 } from "./residents.mjs";
-import { newPrize, gangScaling, prizeClock, prizePhase, isDisturbed, dropPrize, robberyOutcome, OUTCOME_LABEL, prizeGot } from "./prize.mjs";
+import { newPrize, gangScaling, prizeClock, prizePhase, isDisturbed, dropPrize, prizeGot } from "./prize.mjs";
 import { startingCattitude, repBonus } from "./rules.mjs";
 import { humanTraits } from "./house-catalog.mjs";
+import { startGetaway } from "./getaway.mjs";
 
 const R = CATB.rules;
 const LOG_CAP = 200;
@@ -34,11 +35,11 @@ export const clone = v => (v === undefined ? undefined : JSON.parse(JSON.stringi
 /* ------------------------------------------------------------ set up -- */
 
 /**
- * A new robbery at a catalog house (Ch 11 "Before you start"): every cat
+ * A new robbery at a catalog house (Ch 12 "Before you start"): every cat
  * outside, the Mood at 0, Patience and the Prize Clock adjusted for gang size
  * (v0.9: the house's own three- and five-cat numbers when it prints them).
  * Starting Cattitude: 2 (3 in a gang of three) plus the gang's Rep bonus
- * (v0.9, Ch 13: +1 at each of 3, 6 and 9 Rep; never above 5). The gang's Rep
+ * (v0.9, Ch 14: +1 at each of 3, 6 and 9 Rep; never above 5). The gang's Rep
  * is `rep`, or else the highest Rep among the cats (a cat who joins later gets
  * the gang's bonus too).
  * @param {object} house  a catalog entry (house-catalog.mjs)
@@ -75,6 +76,7 @@ export function newRobbery(house, { id = "robbery", cats = [], gangSize = null, 
     entrances: house.entrances.map(e => ({ key: e.key, name: e.name, room: e.room, size: e.size, opts: (e.opts ?? []).map(o => [...o]),
       climb: !!e.climb, rounds: e.rounds ? [...e.rounds] : null, one: !!e.one, letOut: !!e.letOut, noisy: !!e.noisy, jam: !!e.jam, open: true })),
     den: house.den,
+    getawayRoute: house.getaway ? clone(house.getaway) : null, // Ch 9: the house's getaway route (or the default)
     cats: cats.map(catEntry),
     humans, pets,
     prize: null,
@@ -132,7 +134,7 @@ export function moodNow(state) {
  * sight the meter stays full until someone can see a cat (settleWaiting).
  * `mode`: "auto" applies; "confirm" adds it pending (the GM clicks ✓); "manual" only reports it.
  * `wait`: the autoMood setting for a meter left waiting ("manual": it never goes off by itself).
- * `d6`: a die for a tie between humans (v0.9, Ch 11 "Ties"); without one, house order.
+ * `d6`: a die for a tie between humans (v0.9, Ch 12 "Ties"); without one, house order.
  * MUTATES s. Returns the entry (or null in manual mode).
  */
 export function addMood(s, raw, ev, mode = "auto", { wait = mode, d6 = null } = {}) {
@@ -189,7 +191,7 @@ export function settleMood(s, entry, ev, wait = "auto", d6 = null) {
   if (!inside || !who.length) return full();
   // a held cat's own roll: its holder acts (Broom: the holder lets go and shoos it out, REVIEW #72);
   // a Distract that fills Cuddle: the human it was aimed at picks the cat up (v0.9, Ch 5: the Scoop wins);
-  // otherwise the highest Attention, a die if they're tied (v0.9, Ch 11 "Ties")
+  // otherwise the highest Attention, a die if they're tied (v0.9, Ch 12 "Ties")
   const holder = cat.status === "held" && who.find(h => h.holding === cat.id);
   const aimed = r.side === "cuddle" && entry.prefer ? who.find(h => h.key === entry.prefer) : null;
   const pick = holder || aimed ? { h: holder || aimed, text: "" } : pickHuman(who, d6);
@@ -199,7 +201,7 @@ export function settleMood(s, entry, ev, wait = "auto", d6 = null) {
 /**
  * Ch 5 (v0.8, REVIEW #71, #83): a full meter that nobody could act on waits
  * for someone with free hands; as soon as a human with free hands can see a
- * cat, that human (the highest Attention; ties, a die — v0.9, Ch 11 "Ties")
+ * cat, that human (the highest Attention; ties, a die — v0.9, Ch 12 "Ties")
  * acts at once, on a cat they can see — one cat at once, several the
  * Storyteller's pick (a pending pick; the cats wait for it). Broom first, then
  * Cuddle (v0.9: if both are full and waiting, Broom goes first — and its catch
@@ -412,13 +414,15 @@ export function beginRound(state, ctx = {}) {
 /**
  * Ch 7: the instincts a room tempts. A robot vacuum tempts Hunters wherever it
  * is; any room with an awake dog or house cat in it tempts Scrappers (v0.6) —
- * but not a befriended one (v0.9, Ch 10).
+ * but not a befriended one (v0.9, Ch 11).
  */
 export function roomTemptations(s, room) {
   const list = [...(s.rooms[room]?.tempt ?? [])];
   const pets = (s.pets ?? []).filter(p => p.room === room);
   if (pets.some(p => p.kind === "vacuum") && !list.includes("hunter")) list.push("hunter");
   if (pets.some(p => (p.kind === "dog" || p.kind === "housecat") && !["asleep", "hiding", "friendly"].includes(p.mode)) && !list.includes("scrapper")) list.push("scrapper");
+  // Ch 7 (shiny loot): every house has shiny things lying about — any room tempts Curious and Knocker cats
+  for (const i of R.shinyTempts ?? []) if (!list.includes(i)) list.push(i);
   return list;
 }
 
@@ -442,8 +446,9 @@ export function temptationOptions(state) {
     for (const i of c.instincts) {
       const key = `${c.where}:${i}`;
       if (here.includes(i)) {
+        const shiny = (R.shinyTempts ?? []).includes(i) && !(state.rooms[c.where]?.tempt ?? []).includes(i);
         out.push({ catId: c.id, catName: c.name, instinct: i, label: CATB.instincts[i]?.label ?? i, room: c.where, roomName: roomName(state, c.where), key,
-          tempt: CATB.instincts[i]?.tempt ?? "" });
+          tempt: shiny ? (i === "knocker" ? "something sparkly on the edge of a table" : "something shiny lying about") : CATB.instincts[i]?.tempt ?? "" });
       }
     }
   }
@@ -593,7 +598,7 @@ export function endRound(state, ctx = {}) {
 }
 
 /**
- * Ch 10 (v0.7, v0.8): a cat that ends its turn in an awake dog's room — or a
+ * Ch 11 (v0.7, v0.8): a cat that ends its turn in an awake dog's room — or a
  * house cat's, which guards like a dog's charge (REVIEW #89) — without dealing
  * with it (rolling, or helping the cat who rolls) is chased back the way it
  * came, outside again if it came in this round; a carrier drops the prize. A
@@ -636,14 +641,14 @@ export function chaseBack(s, c, p, ev, { dropWhereTheyEnd = false } = {}) {
   return true;
 }
 
-/** The room on the other side of the Den's door (Ch 9, v0.9: where a human who shuts a cat in waits). */
+/** The room on the other side of the Den's door (Ch 10, v0.9: where a human who shuts a cat in waits). */
 export function denOutside(s) {
   const w = s.ways.find(x => x.den);
   return w ? (w.a === s.den ? w.b : w.a) : s.den;
 }
 
 /**
- * Ch 9 "Shut in": the cat goes in the Den and its door is shut while a cat is
+ * Ch 10 "Shut in": the cat goes in the Den and its door is shut while a cat is
  * in it; the human who shut it in stays just outside, in the room next to the
  * Den's door, for the rest of the round (v0.9). MUTATES s.
  */
@@ -659,33 +664,32 @@ export function shutInDen(s, c, h) {
  * end of the second round after the prize goes) — or sooner, at the end of a
  * round, if no free cat is inside and the prize is got or gone. (Or when the
  * gang outside goes home: the Storyteller's End the robbery.) Any cat still
- * inside then — held or shut in — is adopted. While the prize is still to get,
+ * inside then — held or shut in — is pinched (Ch 10) and the getaway starts (Ch 9). While the prize is still to get,
  * cats outside may come back in, so an empty house doesn't end it by itself.
  */
 export function endCheck(s) {
   if (s.phase !== "robbery") return { due: false };
-  if (s.round >= s.clock.lightsOut) return { due: true, reason: "lightsOut", text: "Lights Out: the humans go to bed." };
+  if (s.round >= s.clock.lightsOut) return { due: true, reason: "lightsOut", text: "Lights Out: the humans have rung animal control — any cat still inside is pinched when the van arrives." };
   if (s.round < 1 || freeInside(s).length) return { due: false };
   if (prizePhase(s) === "out") {
     const inside = s.cats.filter(c => c.status === "held" || c.status === "shut").map(c => c.name);
     return { due: true, reason: "allOut",
-      text: `No free cat is inside and the ${s.prize.name} is ${prizeGot(s) ? "got" : "gone"}: the robbery ends at the end of the round${inside.length ? ` (still inside, so adopted: ${inside.join(", ")})` : ""}.` };
+      text: `No free cat is inside and the ${s.prize.name} is ${s.prize.gone ? "gone" : s.prize.out ? "out" : "eaten"}: the house part ends at the end of the round, and the getaway starts${inside.length ? ` (still inside, so pinched: ${inside.join(", ")})` : ""}.` };
   }
   return { due: false };
 }
 
-/** Ch 8 "Getting out, and the end": the outcome. Any cat still inside is adopted. */
+/**
+ * Ch 8 "Getting out" (v0.10): the house part of the robbery ends — at Lights
+ * Out, at the end of a round with no free cat inside and the prize out, eaten
+ * or gone, or when the gang runs for it (the Storyteller's End). Any cat still
+ * inside is pinched, and the getaway starts (getaway.mjs, Ch 9); the outcome
+ * comes when every cat is home or pinched — at once if nobody is running.
+ * Returns { state, events, outcome (null while the getaway runs) }.
+ */
 export function finishRobbery(state, reason = "manual") {
-  const s = clone(state);
-  const out = robberyOutcome(s);
-  s.phase = "ended";
-  s.stage = "between";
-  s.outcome = { ...out, reason, label: OUTCOME_LABEL[out.result] };
-  const names = out.leftBehind.map(id => catById(s, id)?.name).filter(Boolean);
-  const ev = [{ type: "outcome", result: out.result,
-    text: `${OUTCOME_LABEL[out.result]}!${names.length ? ` Left behind (adopted): ${names.join(", ")}.` : " Nobody was left behind."}` }];
-  pushLog(s, ev);
-  return { state: s, events: ev, outcome: s.outcome };
+  if (state.phase !== "robbery") throw new Error("There is no robbery running in the house.");
+  return startGetaway(state, reason);
 }
 
 /* ----------------------------------------------- the Storyteller's hands -- */
