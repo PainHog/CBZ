@@ -120,14 +120,20 @@ function residents(h) {
   return s;
 }
 
-/** Ch 9: the house's getaway route — four obstacles from the garden to the hideout — and its loot (as the book's house pages print it). */
+/**
+ * Ch 9: the house's getaway route — four obstacles from the garden to the hideout — its loot, the
+ * rivals' patch and the house's Cred line (as the book's house pages print them).
+ */
 function getaway(h) {
   if (!h.getaway) return "";
   const z = h.prize;
+  const cr = h.cred;
+  const cap = s => s[0].toUpperCase() + s.slice(1);
   const pieces = CATB.rules.lootPieces[z.size] ?? 1;
   const loot = z.kind === "delicious" ? "its portions — whatever wasn't eaten inside" : `${pieces} piece${pieces > 1 ? "s" : ""}`;
-  const items = h.getaway.map(o => `<li>${esc(o.name[0].toUpperCase() + o.name.slice(1))} — ${optionsText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}.</li>`).join("");
-  return `<h3>The getaway</h3><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p>`;
+  const items = h.getaway.map((o, i) => `<li>${esc(cap(o.name))} — ${optionsText(o.opts)}${o.pet ? `; rating ${o.pet} (it takes ${o.pet} ${o.pet > 1 ? "dice" : "die"} off)` : ""}${cr?.patch === i ? `. ${esc(cap(cr.rivals))} hang about here, and nick any loot that's dropped` : ""}.</li>`).join("");
+  const cred = cr ? `<p><strong>Cred</strong> (Chapter 9): the catnip stash is ${esc(cr.catnipName)} (${esc(roomName(h, cr.catnip).toLowerCase())}). ${esc(cap(cr.rivals))} have tagged the ${esc(roomName(h, cr.rivalTag).toLowerCase())}.</p>` : "";
+  return `<h3>The getaway</h3><ol>${items}</ol><p>Then the hideout. The loot is ${loot}.</p>${cred}`;
 }
 
 /** The book's page for a house, with the catalog's tables filled in (as book/tools/house-pages.mjs does). */
@@ -151,6 +157,7 @@ const RUNNING = h => `<h2>Running ${esc(h.name)} in Foundry</h2>
 <li><strong>End round</strong> rolls the house's turn in the open: pets, noise, routines and Searching, holders, then Finding it.</li>
 <li>The house part ends at Lights Out, or at the end of a round when no free cat is left inside and the prize is out, eaten or gone (or when you press <strong>End the robbery</strong> because the gang runs for it). Any cat still inside is pinched.</li>
 <li><strong>The getaway</strong> follows in the same tracker: the loot is shared out, each cat rolls over the next obstacle (help a friend and go over together; a Flop drops loot), and <strong>End the getaway round</strong> brings the warden on and corners the stragglers, who dodge or go in the van. When everyone is home or pinched, the loot is counted and the outcome is posted.</li>
+<li><strong>Cred</strong> scores itself: any cat can <strong>Tag</strong> its room (one tag a room for the gang), the catnip stash tempts every cat in its room (or a cat gets into it on purpose) and gives that cat the zoomies, and the rivals wait on the getaway. The tracker keeps each cat's Cred (with − and + for you), and the outcome card names the Cat's Whiskers.</li>
 </ol>
 <p>Every automation can be switched off in the system settings. The residents of this house are in the <em>Residents</em> compendium; the tracker works without them.</p>`;
 
