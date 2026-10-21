@@ -91,7 +91,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 7,
+    key: "wendell-mouse", name: "Grandpa Wendell's Catnip Mouse", label: "standard", patience: 8, scale3: [2, 2], // v0.9: three cats get Patience +2 here
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 5, 2], living: [0, 2, 3, 3], hall: [3, 2, 2, 3] } },
@@ -115,7 +115,7 @@ export const HOUSES = [
       { key: "front", name: "Front door (behind Grandpa)", room: "hall", size: "big", rounds: [1], one: true, letOut: true, opts: [["sneaky", 2], ["sweet", 0, "charm"]] },
       { key: "flap", name: "Pom-Pom's microchip cat flap (jam it open)", room: "kitchen", size: "normal", opts: [["streetwise", 1, "open"]], jam: true, noisy: true },
       { key: "cellarwin", name: "Cracked cellar window", room: "cellar", size: "tight", opts: [] },
-      { key: "bedwin", name: "Bedroom window (up the drainpipe)", room: "bedroom", size: "normal", climb: true, opts: hardClimb },
+      { key: "bedwin", name: "Spare bedroom window (up the drainpipe)", room: "bedroom", size: "normal", climb: true, opts: hardClimb },
     ],
     den: "bathroom",
     humans: [
@@ -134,7 +134,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 6,
+    key: "birthday-cake", name: "The Birthday Cake", label: "hard", patience: 6, scale3: [1, 1], scale5: [-1, 1], // v0.9: the Clock moves 1 round for three cats and for five
     map: {
       floors: [{ name: "Ground floor", rooms: { dining: [0, 0, 3, 3], kitchen: [3, 0, 3, 2], utility: [6, 0, 2, 2], loo: [0, 3, 3, 2], hall: [3, 2, 2, 3], living: [5, 2, 3, 3] } }],
       entrances: { front: "bottom", patio: "left", utilwin: "top" },
@@ -172,7 +172,7 @@ export const HOUSES = [
     },
   },
   {
-    key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 6,
+    key: "marchetti-salmon", name: "Chef Marchetti's Salmon", label: "hard", patience: 7, scale3: [1, 3], // v0.9: three cats get the salmon 3 rounds later
     map: {
       floors: [
         { name: "Ground floor", rooms: { kitchen: [0, 0, 4, 2], utility: [4, 0, 3, 2], living: [0, 2, 3, 3], hall: [3, 2, 4, 3] } },

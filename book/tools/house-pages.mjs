@@ -16,7 +16,7 @@ const INSTINCT = { curious: "Curious", knocker: "Knocker", boxSitter: "Box Sitte
 const KIND = { grownup: "Grown-up", kid: "Kid", grandparent: "Grandparent", teen: "Teen" };
 const SIZE = { tight: "Tight", normal: "Normal", big: "Big" };
 const PSIZE = { small: "Small", medium: "Medium", large: "Large" };
-const esc = s => String(s).replace(/&/g, "&amp;");
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/'/g, "’"); // curly apostrophes in print
 
 function roomName(h, k) { return h.rooms[k]?.name ?? k; }
 function routineText(h, r) {
@@ -36,10 +36,15 @@ const ordinal = n => `round ${n}`;
 function sheet(h, label) {
   const z = h.prize;
   const portions = z.kind === "delicious" ? `portions: ${z.perCat} per cat${z.plus ? ` + ${z.plus}` : ""}` : "";
+  // three- and five-cat numbers: the house's own (v0.9) or the general rule (Ch 11 "Gang size")
+  const s3 = h.scale3 ?? [1, 2], s5 = h.scale5 ?? [-1, 0];
+  const gone3 = z.goneAt + s3[1], gone5 = z.goneAt + s5[1];
+  const five = `Patience ${Math.max(2, h.patience + s5[0])}${s5[1] ? `, gone at the start of round ${gone5}, Lights Out at the end of round ${gone5 + 2}` : ""}`;
+  const names = h.humans.map(x => esc(x.name)).concat(h.pets.map(x => esc(x.name))).map((n, i) => i ? n.replace(/^The /, "the ") : n);
   let s = `<aside class="box list house-sheet"><h4>At a glance</h4>
-  <p class="statline"><strong>Difficulty</strong> ${label} <span class="sep">·</span> <strong>Patience</strong> ${h.patience} <span class="sep">·</span> <strong>The prize</strong> ${esc(z.name)} (${PSIZE[z.size]}${portions ? `, ${portions}` : ""}${z.haulDiff ? `; hauling it is ${z.haulDiff >= 2 ? "Hard" : "Tricky"}` : ""}) <span class="sep">·</span> <strong>Gone</strong> at the start of round ${z.goneAt} <span class="sep">·</span> <strong>Den</strong> ${roomName(h, h.den)}</p>
-  <p class="statline"><strong>Who lives here</strong> ${h.humans.map(x => esc(x.name)).concat(h.pets.map(x => esc(x.name))).join(", ")}</p>
-  <p class="statline"><strong>Three cats</strong> Patience ${h.patience + 1}, gone at the start of round ${z.goneAt + 2}, 3 Cattitude each <span class="sep">·</span> <strong>Five cats</strong> Patience ${Math.max(2, h.patience - 1)}</p>
+  <p class="statline"><strong>House</strong> ${label} <span class="sep">·</span> <strong>Patience</strong> ${h.patience} <span class="sep">·</span> <strong>The prize</strong> ${esc(z.name)} (${PSIZE[z.size]}${portions ? `, ${portions}` : ""}${z.haulDiff ? `; hauling it is ${z.haulDiff >= 2 ? "Hard" : "Tricky"}` : ""}) <span class="sep">·</span> <strong>Gone</strong> at the start of round ${z.goneAt} <span class="sep">·</span> <strong>Den</strong> ${roomName(h, h.den)}</p>
+  <p class="statline"><strong>Who lives here</strong> ${names.join(", ")}</p>
+  <p class="statline"><strong>Three cats</strong> Patience ${h.patience + s3[0]}, gone at the start of round ${gone3}, Lights Out at the end of round ${gone3 + 2}, 3 Cattitude each <span class="sep">·</span> <strong>Five cats</strong> ${five}</p>
 </aside>`;
   return s;
 }
@@ -69,9 +74,9 @@ function residents(h) {
   for (const x of h.humans) {
     const traits = [];
     if (x.kind === "kid") traits.push("<dt>Kid</dt><dd>Doubles Cuddle steps from any roll they see.</dd>");
-    if (x.kind === "grandparent") traits.push("<dt>Dozes</dt><dd>Each round on a 1–2 (extra d6), asleep until the end of the next round.</dd>");
+    if (x.kind === "grandparent") traits.push("<dt>Dozes</dt><dd>Every house’s turn on a 1–2 (extra d6), asleep until the end of the next round; only a Prize Clock job wakes them.</dd>");
     if (x.kind === "teen") traits.push("<dt>Headphones</dt><dd>Doesn’t answer noise.</dd>");
-    if (x.busy) traits.push("<dt>Busy</dt><dd>Cooking: never answers noise.</dd>");
+    if (x.busy) traits.push("<dt>Busy (cooking)</dt><dd>Never answers noise.</dd>");
     s += `<article class="statblock" id="${h.key}-${x.key}">
   <h3>${esc(x.name)} <span class="epithet">${KIND[x.kind] ?? x.kind}</span></h3>
   <dl class="stats"><div><dt>Attention</dt><dd>${x.attention}</dd></div><div><dt>Starts in</dt><dd>${roomName(h, x.start)}</dd></div></dl>
@@ -82,7 +87,7 @@ function residents(h) {
   for (const x of h.pets) {
     let stats = "", traits = [];
     if (x.kind === "dog") {
-      stats = `<div><dt>Rating</dt><dd>${x.rating}</dd></div><div><dt>Starts in</dt><dd>${roomName(h, x.start)}${x.asleep ? ", asleep" : ""}</dd></div>`;
+      stats = `<div><dt>Rating</dt><dd>${x.rating}</dd></div><div><dt>Starts in</dt><dd>${roomName(h, x.start)}, ${x.asleep ? "asleep" : "awake"}</dd></div>`;
       traits.push(`<dt>Dog</dt><dd>Barks, charges and smells hidden cats (Chapter 10). ${x.soft ? "<strong>Soft:</strong> Sweet can befriend it." : "Not soft: Sweet won’t work on it."}</dd>`);
       s += `<article class="statblock" id="${h.key}-${x.key}"><h3>${esc(x.name)} <span class="epithet">Dog</span></h3><dl class="stats">${stats}</dl>
   <p class="pools"><strong>Routine (d6):</strong> ${routineText(h, x.routine)}.</p><dl class="traits">${traits.join("")}</dl></article>`;
@@ -121,7 +126,7 @@ HOUSES.forEach((h, i) => {
     .replace("{{NUM}}", String(n))
     .replace("{{ID}}", `ch-${n}`)
     .replace("{{SHEET}}", sheet(h, LABEL[h.label]))
-    .replace("{{MAP}}", `<figure class="art map" data-art="map-${h.key}"><figcaption>${esc(h.name)}: the floor plan and the ways in.</figcaption></figure>`)
+    .replace("{{MAP}}", `<figure class="art map" data-art="map-${h.key}"><figcaption>${esc(h.name)}: the floor plan and the entrances.</figcaption></figure>`)
     .replace("{{CLOCK}}", clock(h))
     .replace("{{ROOMS}}", rooms(h))
     .replace("{{RESIDENTS}}", residents(h));

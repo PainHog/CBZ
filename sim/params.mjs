@@ -25,6 +25,13 @@ export const PARAMS = {
   resetTo: { def: "calm", alt: ["half"], title: "Mood after a trigger", ref: "CORE-RULES Shoo!/Scooped!", pkg: true,
     doc: "calm: back to 0. half (v0.7): half the new Patience, rounded down." },
   shutOnShoo: { def: true, alt: [false], title: "Shoo! shuts the entrance", ref: "CORE-RULES Shoo!", pkg: true, doc: "" },
+  shooKeepLast: { def: true, alt: [false], title: "Shoo!: the nearest entrance the cat fits through (opened if shut); the last open one stays open", ref: "Ch 5 v0.9 (review B1)", pkg: true, doc: "" },
+  meterCap: { def: true, alt: [false], title: "After a catch the other meter drops to one below the new Patience", ref: "Ch 5 v0.9 (review B3)", pkg: true, doc: "" },
+  heldBroomDen: { def: false, alt: [true], title: "A held cat whose own roll fills Broom is shut in the Den (not put out)", ref: "Ch 5 v0.9", pkg: true, doc: "" },
+  giveInNoFill: { def: true, alt: [false], title: "A give-in's Mood steps never fill a meter", ref: "Ch 7 v0.9 (review D5)", pkg: true, doc: "" },
+  knockerOneBroom: { def: true, alt: [false], title: "A Knocker give-in seen by a human leaves no mess to find (one Broom per event)", ref: "Ch 7 v0.9 (review D7)", pkg: true, doc: "" },
+  hunterNoFight: { def: true, alt: [false], title: "Hunter's Knack is pounce and chase, not fighting animals", ref: "Ch 2 v0.9 (review D7)", pkg: true, doc: "" },
+  lapCountsDistract: { def: true, alt: [false], title: "A Lap Cat's fuss counts as a Distraction of that human (for the next one's cost)", ref: "Ch 7 v0.9", pkg: true, doc: "" },
   // ---- noise and humans ----
   noiseRange: { def: 2, alt: [1, 3], title: "How far noise carries (rooms)", ref: "CORE-RULES A round",
     doc: "The closest awake human within this many rooms walks in." },
@@ -65,7 +72,7 @@ export const PARAMS = {
   // ---- resources ----
   cattitudeStart: { def: 2, alt: [1, 3], title: "Starting Cattitude", ref: "CORE-RULES Your cat", pkg: true, doc: "" },
   cattitudeMax: { def: 5, alt: [3], title: "Most Cattitude", ref: "CORE-RULES Your cat", pkg: true, doc: "" },
-  cattitudeDie: { def: true, alt: [false], title: "Cattitude can also buy +1 die before a roll", ref: "CORE-RULES Push", pkg: true,
+  cattitudeDie: { def: false, alt: [true], title: "Cattitude can also buy +1 die before a roll", ref: "CORE-RULES Push", pkg: true,
     doc: "Within the 5-dice cap; policy spends it on important rolls when it has 2+." },
   pushWithMood: { def: true, alt: [false], title: "A Push can be paid with the Mood", ref: "CORE-RULES Push", pkg: true, doc: "" },
   // ---- temptation ----
@@ -82,6 +89,10 @@ export const PARAMS = {
   scale3Cat: { def: 1, alt: [0, 2], title: "3 cats: extra starting Cattitude each", ref: "CORE-RULES v0.6 Ending", pkg: true, doc: "" },
   scale5: { def: [-1, 0], alt: [[-1, -1], [0, -1]], title: "5 cats: [Patience, Prize Clock] shift", ref: "CORE-RULES v0.8 Ending", pkg: true, doc: "v0.8: Patience −1 only (the Clock shift put five cats 7 points behind at Hard)." },
   gangSize: { def: 4, alt: [3, 5], title: "Cats in the gang", ref: "CORE-RULES table (3–5 players)", doc: "" },
+  repRaises: { def: 0, alt: [1, 2, 3], title: "Campaign: Rep raises each cat has had", ref: "Ch 13 Rep", doc: "Each raise lifts the cat's best approach still under 4 by 1." },
+  wary: { def: 0, alt: [1, 2, 3], title: "Campaign: house Patience lower by", ref: "Ch 13 Houses", doc: "" },
+  waryClock: { def: 0, alt: [1, 2], title: "Campaign: Prize Clock shorter by", ref: "Ch 13", doc: "" },
+  gang: { def: "random", alt: ["ready"], title: "Which cats", ref: "Ch 2 tables / Ch 3 ready-made gang", doc: "random: legal cats rolled on the Ch 2 tables. ready: the book's ready-made gang (Ch 3)." },
   foodPolicy: { def: "eat", alt: ["smart", "carry"], title: "Eat food on the spot or carry it out", ref: "policy",
     doc: "eat: always eat where it is. carry: carry it out whenever the cats there can. smart: carry while more than 2 portions are left and a way out fits it." },
   pushPolicy: { def: "sensible", alt: ["never", "always"], title: "When players Push", ref: "policy",
@@ -113,7 +124,7 @@ export const PRESETS = {
  * The defaults above equal the ADOPTED package.
  */
 const OFF = { distractEscalation: false, attentionVs: "sneaky", lureMess: false, discovery: false, gangScaling: false,
-  livesPerRobbery: 1, cattitudeDie: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
+  livesPerRobbery: 1, cattitudeDie: false, shooKeepLast: false, meterCap: false, heldBroomDen: false, giveInNoFill: false, knockerOneBroom: false, hunterNoFight: false, lapCountsDistract: false, searching: false, ownerFetch: false, dogOnEntry: false, reopenEntrance: false, carrierRules: false, tableRules: false, holdRules: false, resetTo: "calm",
   scale3: [1, 1], scale3Cat: 0, scale5: [0, -1] }; // the v0.5 gang scaling (used once gangScaling is on)
 export const PACKAGES = {
   P1: { ...OFF },
@@ -130,8 +141,11 @@ export const PACKAGES = {
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, -1] },
   P10: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: true,
     searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0] },
+  P11: { ...OFF, distractEscalation: true, attentionVs: "sneaky+sweet", lureMess: true, discovery: true, gangScaling: true, livesPerRobbery: 0, cattitudeDie: false,
+    searching: true, ownerFetch: true, dogOnEntry: true, reopenEntrance: true, carrierRules: true, tableRules: true, holdRules: true, resetTo: "calm", scale3: [1, 2], scale3Cat: 1, scale5: [-1, 0],
+    shooKeepLast: true, meterCap: true, heldBroomDen: false, giveInNoFill: true, knockerOneBroom: true, hunterNoFight: true, lapCountsDistract: true },
 };
-export const ADOPTED = "P10";
+export const ADOPTED = "P11";
 
 export function makeParams(overrides = {}) {
   return { ...defaults(), ...overrides };
