@@ -260,7 +260,7 @@ export const map_marchetti_salmon = () => houseMap(HOUSES.find(h => h.key === "m
  * Returns { svg, geometry } (map units; one square is U). The geometry says where every room, entrance
  * marker, place to wait outside and getaway space is, and what is drawn in each (to keep tokens off it).
  * ------------------------------------------------------------------------------------------------ */
-const STRIP = { van: 2, space: 1.5, gap: 2, lead: 0.5 };  // the getaway row, in squares
+const STRIP = { van: 2, space: 1.5, rowH: 2, gap: 2, lead: 0.5 }; // the getaway row, in squares (a space holds six tokens)
 const STRIP_W = STRIP.van + STRIP.lead + 5 * STRIP.space + 4 * STRIP.gap; // 18 squares
 const STRIP_H = 4;                                         // the heading, the warden's row, the spaces, the labels
 const OUT_PAD = 6;                                         // units kept clear of a wall by the places to wait outside
@@ -305,7 +305,7 @@ export function canvasMap(h) {
   // the getaway row
   const route = h.getaway;
   const sx = Math.floor((Wsq - STRIP_W) / 2) * U, sy = (houseH + keyRows) * U;
-  const rowY = sy + 1.5 * U, rowH = STRIP.space * U, mid = rowY + rowH / 2;
+  const rowY = sy + 1.5 * U, rowH = STRIP.rowH * U, mid = rowY + rowH / 2;
   const vanBox = { x: sx, y: rowY, w: STRIP.van * U, h: rowH };
   const spaceX = k => sx + (STRIP.van + STRIP.lead) * U + k * (STRIP.space + STRIP.gap) * U;
   const spaces = [0, 1, 2, 3, 4].map(k => ({ x: spaceX(k), y: rowY, w: STRIP.space * U, h: rowH }));
