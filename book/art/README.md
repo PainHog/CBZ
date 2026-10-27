@@ -159,6 +159,11 @@ gear, on the right side for the way the cat faces).
   opening with a dashed swing (the legend says so). Swings never cross a label.
 - Entrances are numbered markers on the walls, listed under ENTRANCES; the star marks where the prize is
   put down, and in which round; THE DEN is in Cuddle pink.
+- The same code draws the **tabletop plans** for the Foundry system's ready-to-play scenes (`canvasMap` in
+  `scenes/maps.mjs`; not book art): the floors on whole squares with two squares clear outside every wall
+  with an entrance, a one-line entrance key instead of the list, and the getaway row (the van, five spaces,
+  the obstacles' names) under the house. `tools/build-assets.mjs` renders them, with the gang's portraits
+  and the residents' cameos, to `assets/`; their audit is at the end of `AUDIT.md`.
 
 ## Catalogue
 

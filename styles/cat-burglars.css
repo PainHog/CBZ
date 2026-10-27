@@ -55,6 +55,11 @@
 .cat-burglars.catb-roll-dialog .catb-preview th, .cat-burglars.catb-roll-dialog .catb-preview td { text-align: left; padding: 1px 4px; }
 .cat-burglars.catb-roll-dialog .catb-helpers label { display: block; }
 .cat-burglars .catb-warn { color: var(--catb-warn); }
+.cat-burglars.catb-quick-start .catb-qs-intro { display: flex; gap: 8px; align-items: center; margin: 0 0 6px; }
+.cat-burglars.catb-quick-start .catb-tag { width: 42px; height: auto; border: none; flex: none; }
+.cat-burglars.catb-quick-start .catb-qs-cat { display: inline-flex; align-items: center; gap: 4px; margin: 2px 10px 2px 0; }
+.cat-burglars.catb-quick-start .catb-qs-cat img { width: 28px; height: 28px; border: none; border-radius: 50%; }
+.cat-burglars.catb-quick-start .catb-note { color: var(--catb-ink-soft); font-size: 0.9em; margin: 4px 0; }
 
 /* ---- sheets ---- */
 .cat-burglars.catb-sheet .catb-sheet-body { padding: 8px; }

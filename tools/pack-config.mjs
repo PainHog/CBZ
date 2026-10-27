@@ -25,7 +25,8 @@ export const OUT = join(ROOT, "packs");
 export const PACKS = [
   { file: "houses", out: "houses", collection: "journal", type: "JournalEntry", subtype: null, label: "Houses" },
   { file: "gang", out: "gang", collection: "actors", type: "Actor", subtype: "cat", label: "Meet the Gang" },
-  { file: "residents", out: "residents", collection: "actors", type: "Actor", subtype: null, label: "Residents" }
+  { file: "residents", out: "residents", collection: "actors", type: "Actor", subtype: null, label: "Residents" },
+  { file: "scenes", out: "ready-to-play", collection: "scenes", type: "Scene", subtype: null, label: "Ready to Play" }
 ];
 
 /** Deterministic 16-char alphanumeric id from a namespace + key (sha256 hex prefix). */
@@ -100,6 +101,37 @@ export function toCliDoc(def, raw, index) {
     };
   }
 
+  if (def.type === "Scene") {
+    // A ready-to-play scene (tools/pack-content.mjs sceneDocs): the house's tabletop plan as the
+    // background, the grid, the first view, the house journal, and the layout flags the token
+    // placement reads. No tokens: the quick start puts the world's own actors on it.
+    return {
+      _id: id,
+      _key: `!scenes!${id}`,
+      name: raw.name,
+      active: false,
+      navigation: false,
+      background: { src: raw.background },
+      thumb: raw.thumb ?? null,
+      width: raw.width,
+      height: raw.height,
+      padding: 0,
+      initial: raw.initial ?? null,
+      backgroundColor: raw.backgroundColor ?? "#f7f0e1",
+      grid: raw.grid,
+      tokenVision: false,
+      fog: { exploration: false },
+      environment: { darknessLevel: 0 },
+      journal: raw.journal ?? null,
+      drawings: [], tokens: [], levels: [], lights: [], notes: [], regions: [], sounds: [], templates: [], tiles: [], walls: [],
+      folder: null,
+      sort,
+      ownership: { default: 0 },
+      flags: raw.flags ?? {},
+      _stats: STATS
+    };
+  }
+
   const doc = {
     _id: id,
     _key: `!${def.collection}!${id}`,
@@ -119,7 +151,7 @@ export function toCliDoc(def, raw, index) {
     // Cats show Cattitude on bar 1; residents have no bars. null (not "")
     // disables a bar; "" would be cleaned back to the primaryTokenAttribute.
     doc.prototypeToken = {
-      name: raw.name, actorLink: !!raw.actorLink, texture: { src: raw.img },
+      name: raw.name, actorLink: !!raw.actorLink, texture: { src: raw.token ?? raw.img },
       bar1: { attribute: doc.type === "cat" ? "cattitude" : null }, bar2: { attribute: null }
     };
   }

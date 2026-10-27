@@ -2,7 +2,8 @@
   "key": "velvet",
   "name": "Velvet",
   "type": "cat",
-  "img": "icons/svg/cat.svg",
+  "img": "systems/cat-burglars/assets/gang/velvet.webp",
+  "token": "systems/cat-burglars/assets/gang/velvet-token.webp",
   "actorLink": true,
   "system": {
     "approaches": {

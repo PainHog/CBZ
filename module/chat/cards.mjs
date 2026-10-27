@@ -11,7 +11,8 @@ export const TEMPLATES = {
   event: `systems/${SYSTEM_ID}/templates/chat/event-card.hbs`,
   roll: `systems/${SYSTEM_ID}/templates/chat/roll-card.hbs`,
   rollDialog: `systems/${SYSTEM_ID}/templates/dialogs/roll-dialog.hbs`,
-  startDialog: `systems/${SYSTEM_ID}/templates/dialogs/start-robbery.hbs`
+  startDialog: `systems/${SYSTEM_ID}/templates/dialogs/start-robbery.hbs`,
+  quickStart: `systems/${SYSTEM_ID}/templates/dialogs/quick-start.hbs`
 };
 
 export const render = (path, data) => foundry.applications.handlebars.renderTemplate(path, data);

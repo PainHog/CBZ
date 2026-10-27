@@ -1,0 +1,22 @@
+<div class="cat-burglars catb-start-dialog catb-quick-start">
+  <p class="catb-qs-intro"><img class="catb-tag" src="systems/cat-burglars/assets/ui/tag-small.webp" alt=""> Pick a house and the gang. One click brings in the house's map, the cats and the residents, puts everyone on the scene and starts the robbery.</p>
+  <div class="form-group">
+    <label>House</label>
+    <select name="house">
+      {{#each houses}}<option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.name}} ({{this.label}})</option>{{/each}}
+    </select>
+  </div>
+  <fieldset>
+    <legend>The ready-made gang</legend>
+    {{#each gang}}<label class="checkbox catb-qs-cat">{{#if this.img}}<img src="{{this.img}}" alt="">{{/if}}<input type="checkbox" name="gang-{{this.key}}" {{#if this.checked}}checked{{/if}}> {{this.name}}</label>{{/each}}
+    <p class="catb-note">Ticked for a gang of {{size}}, a cat for each player (Chapter 3): with three, leave out Pip and one of Tilly, Biscuit and Mags, and keep Velvet (every gang needs a charmer); with four, leave out Pip.</p>
+  </fieldset>
+  {{#if hasOwn}}
+  <fieldset>
+    <legend>Bringing their own cats?</legend>
+    {{#each own}}<label class="checkbox"><input type="checkbox" name="own-{{this.id}}"> {{this.name}}</label>{{/each}}
+    <p class="catb-note">Tick them, and untick a ready-made cat for each.</p>
+  </fieldset>
+  {{/if}}
+  <p class="catb-note">{{hint}}</p>
+</div>

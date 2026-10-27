@@ -10,7 +10,7 @@ A tabletop roleplaying game by **Richard Moore**. The players are a gang of stre
 | `docs/` | Design document (pitch, decisions), core rules summary, Foundry automation design, lessons from *Heisty Spideys* |
 | `book/` | The rulebook: HTML chapters built into a typeset PDF (digital and print-on-demand) |
 | `sim/` | Rules simulator for balance testing |
-| `module/`, `templates/`, `styles/`, `lang/`, `packs/` | The Foundry VTT game system |
+| `module/`, `templates/`, `styles/`, `lang/`, `packs/`, `assets/` | The Foundry VTT game system (`assets/`: its pictures, rendered from the book's art) |
 | `tools/`, `test/` | Build, validation and test tooling (including a fake Foundry for integration tests) |
 
 ## The Foundry system
@@ -19,7 +19,8 @@ Automation-first (`docs/AUTOMATION.md`): nobody tracks rules by hand.
 - **The roll dialog** builds the pool from the robbery: Knack, help, Difficulty, the pet in the way, the watching human's Attention, Seen and kids — all changeable.
 - **Roll cards** with **Push** (1 Cattitude or +1 Mood), **Accept**, and the Storyteller's **Seen / Not seen**. The Storyteller's client applies each final roll to the robbery: the step, the door, the entrance, the dog, the distraction, the noise, and the two-meter **Mood** (a ledger: one roll, one change), with **Shoo!** and **Scooped!**.
 - **The Robbery Tracker**: the house room by room, the Prize Clock, Broom and Cuddle with Patience, each cat's Moves and Actions as buttons, **Begin round** (the Prize Clock, a one-click temptation prompt) and **End round** (the house's turn rolled in the open: dogs chase cats that didn't deal with them, pets, noise, routines and Searching, holders, Finding it), the Storyteller's pick when a meter fills with no roll, the getaway (the route, the loot in pieces, the warden and the pound), Cred (tags, the catnip and the zoomies, the rivals, the Cat's Whiskers), the outcome counted in loot, and the Storyteller's overrides.
-- **Compendia**: the five houses (journals), the ready-made gang, and every house's residents.
+- **Ready-to-play games** for all five houses: the tracker's **Play a ready-made game** brings in the house's map as a scene, the ready-made gang and the residents (with pictures from the book), puts everyone's token on the map and starts the robbery; the tokens then follow the robbery round the house and on the getaway, the warden too.
+- **Compendia**: Ready to Play (a scene per house), the five houses (journals), the ready-made gang, and every house's residents.
 - Every automation can be switched off in the settings. Players write only their own cats and chat messages; everything else goes to the Storyteller's client (`User#query`, with a socket fallback).
 - `TESTING.md` is the two-client script for checking it in real Foundry v13.
 
@@ -30,10 +31,11 @@ Code layout: pure rules in `module/logic/` (no Foundry globals; `node --test`), 
 npm install
 npm run check               # validate the Foundry system + run every test
 npm run build:packs         # regenerate the compendium sources from the houses, the book and Chapter 3, then compile them
+npm run build:assets        # render the system's pictures (scenes, gang, residents, the warden) from the book's art to assets/
 npm run build:book          # rulebook PDF → book/dist/
 node book/build.mjs --print # print-on-demand interior + covers
 node sim/run.mjs --runs 2000  # the simulator
 ```
-After changing a house (`sim/houses.mjs`, then its copy in `module/logic/house-catalog.mjs`) or a house's text in the book, run `npm run build:packs`; `npm run check` fails until the packs match.
+After changing a house (`sim/houses.mjs`, then its copy in `module/logic/house-catalog.mjs`) or a house's text in the book, run `npm run build:packs`; `npm run check` fails until the packs match. If the house's map changes, run `npm run build:assets` first (the scene's plan is drawn from the same data, and the check fails if a scene's picture is the wrong size).
 
 © 2026 Richard Moore. All rights reserved.

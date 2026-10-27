@@ -1,6 +1,6 @@
 # Testing the Foundry system by hand (two clients)
 
-There is no live Foundry in the cloud, so the automated tests run on a fake Foundry (`tools/fake-foundry.mjs`). This script checks the same things in **real Foundry v13** with two browser windows: you as the **Storyteller (GM)** and one **player**. It takes about 30 minutes. Each step says what you should see; if you see something else, note the step number, what happened, and any red error in the browser console (F12).
+There is no live Foundry in the cloud, so the automated tests run on a fake Foundry (`tools/fake-foundry.mjs`). This script checks the same things in **real Foundry v13** with two browser windows: you as the **Storyteller (GM)** and one **player**. It takes about 30 minutes, and section 12 (the ready-to-play games) about 15 more. Each step says what you should see; if you see something else, note the step number, what happened, and any red error in the browser console (F12).
 
 ## 0. Set up (once)
 
@@ -140,6 +140,30 @@ In **Configure Settings**, try each and check the "Off" behaviour:
 | Run the getaway | off | The getaway's rolls move nobody and the warden stays put; move everyone with the tracker's **Put:** / **Loot:** / **Warden:** and **Count the loot** |
 | Score Cred | off | Tags and the catnip are noted but score nothing ("Cred is kept by hand"); the zoomies add no die or noise and don't stop a resist; use the tracker's **Cred +1 / −1** and **Zoomies** |
 | Players can open the tracker | off | Lena's tracker button warns that the Storyteller keeps it |
+| Tokens follow the robbery | off | On a ready-to-play scene (section 12) nothing moves the tokens: they stay wherever you put them; switch it back on and the next change puts everyone where the robbery says |
+
+## 12. Ready-to-play games (the quick start, and tokens that follow)
+
+Use a **fresh world** for this section (nothing imported yet), with Lena logged in as before. It takes about 15 minutes; the five houses are the same steps.
+
+1. GM: open the Robbery Tracker. *See:* "No robbery yet" with **Play a ready-made game** beside **Start a robbery**.
+2. GM: **Play a ready-made game**. *See:* a dialog with the gang's tag, the five houses, the ready-made gang with pictures (with one player, Tilly, Biscuit and Velvet are ticked: Chapter 3's gang of three), the line about Configure Ownership. Pick **The Chicken at Number 12**, tick **Marmalade Mags** as well → **Let's go!**
+3. *See, both windows:* the scene **The Chicken at Number 12** opens on its own: the floor plan on a cream page, the three entrance markers, a key "ENTRANCES 1 Front door …", and under the house **THE GETAWAY**: the van, the garden, three spaces, the hideout, the obstacles' names between them. Mr Pell's token stands in the hall and Pudding's in the kitchen; the four cats wait outside, spread over the front door, the cat flap and the kitchen window. The cats have their portraits as round tokens, half a grid square each; Mr Pell has the plain figure. No grid lines are drawn (the plan has its own squares). Lena sees no warden.
+4. GM: check the sidebar. *See:* **Actors → Nine Lives Gang → The ready-made gang** (the four cats) and **→ The Chicken at Number 12** (Mr Pell, Pudding); **Scenes → Nine Lives Gang**; **Journal → Nine Lives Gang → The Chicken at Number 12**. The scene's journal (right-click the scene → Configure → Journal) is that entry. The chat has the robbery's start card, ending "Storyteller: hand each player a cat — right-click a cat → Configure Ownership."
+5. GM: right-click Velvet → **Configure Ownership** → Lena: Owner. Lena: Velvet's token is now hers to select.
+6. GM: **Begin round**. Lena: from the tracker, Velvet **In through the Front door**, roll and **Accept**. *See:* when the roll is applied, Velvet's token hops from outside the front door into the hall; no other token moves.
+7. GM: Big Biscuit **In through the Cat flap in the back door**. *See:* his token hops into the utility room.
+8. GM: drag Mr Pell's token into the living room. *See:* it stays there, and the tracker still has him in the hall. Now press the tracker's Broom **+1**. *See:* his token goes back to the hall.
+9. GM: under Big Biscuit (in the utility room), **Roll: Hide**. *See:* when it works, his token goes see-through; when he does something else, solid again.
+10. GM: **End round** and run the house's turn. *See:* wherever the house's turn moves Mr Pell and Pudding (the card says), their tokens go there, all at once; anyone Shooed or Scooped goes outside by the right entrance or stays in the human's room beside them (Held). A driven-off Pudding fades for you (hidden) and vanishes for Lena until he comes back.
+11. GM: **End the robbery**. *See:* the getaway: the cats outside line up in **THE GARDEN**; any cat still inside sits **IN THE VAN**. Roll a cat **Over** the first obstacle: its token moves to the next space. **End the getaway round** until the van pulls up: the warden appears above the space he lands on and moves along with the gang. A cat home goes in **THE HIDEOUT**.
+12. GM: **Clear**, then **Play a ready-made game** again at Number 12 with only Tilly, Biscuit and Velvet. *See:* no second scene, no second copies of anyone; Mags's token is gone from the scene; everyone is back at the start.
+13. The other houses, each with **Play a ready-made game** (then **Begin round**, one cat in through a way with no roll, **End round**). *See* for each: its scene opens, the residents start where its journal says, the cats wait by its entrances, and the tokens follow:
+   - **The Okafors' Big Box**: two floors side by side; Mrs Okafor in the hall, Tayo in the living room, Noodle asleep in the kitchen; a cat can wait by the garage side door (right of the garage) and the bathroom window (left of the upstairs).
+   - **Grandpa Wendell's Catnip Mouse**: three floors (the cellar on the right); Grandpa in the hall, June in the kitchen, Pom-Pom and the robot vacuum in the living room. Big Biscuit never waits at the Tight cellar window.
+   - **The Birthday Cake**: Dad in the kitchen, Aunt Rosalind and Captain in the dining room, Mia and Leo in the living room; the cats outside the front door, the patio door and the utility window.
+   - **Chef Marchetti's Salmon**: Chef in the kitchen, Sam in the hall, Brutus in the utility room, the vacuum in the living room; a cat can wait on the roof above the skylight (the dashed square on the landing).
+14. Players' own cats: GM, make a cat (or have Lena make one), then **Play a ready-made game** at any house: it is listed under **Bringing their own cats?** Tick it and untick a ready-made cat. *See:* it gets a token outside with the others and is in the robbery.
 
 ## What to report
 

@@ -4,8 +4,8 @@
  * Foundry VTT game system — entry point.
  *
  * This file only wires things up: data models, sheets, settings, GM
- * operations, chat-card buttons and the robbery automation in "init"; the GM's
- * reconcile in "ready". Rules logic lives in module/logic/ (Foundry-free,
+ * operations, chat-card buttons, the robbery automation and the tokens that
+ * follow it in "init"; the GM's reconcile in "ready". Rules logic lives in module/logic/ (Foundry-free,
  * tested with node --test); shared names in module/contracts.mjs.
  */
 
@@ -21,6 +21,8 @@ import { registerDice, rollFor, push, accept, toggleSeen } from "./dice/roll.mjs
 import { registerSheets } from "./sheets/actor-sheets.mjs";
 import { openTracker, currentTracker } from "./apps/robbery-tracker.mjs";
 import { getState, flush } from "./robbery/store.mjs";
+import { registerTokenFollow, syncTokens } from "./robbery/tokens.mjs";
+import { quickStart, quickStartChoices } from "./robbery/quick-start.mjs";
 import * as logic from "./logic/round.mjs";
 import * as actions from "./logic/actions.mjs";
 import * as rules from "./logic/rules.mjs";
@@ -44,6 +46,7 @@ Hooks.once("init", function () {
   registerRobberyButtons();
   registerSheets();
   registerAutomation();
+  registerTokenFollow();
   Hooks.on("renderChatMessageHTML", onRenderChatMessage);
 
   // Public API namespace for macros and other modules.
@@ -53,13 +56,14 @@ Hooks.once("init", function () {
     dice: { rollFor, push, accept, toggleSeen },
     logic: { ...logic, ...actions, rules },
     openTracker,
+    quickStart, quickStartChoices, syncTokens,
     state: getState, flush, finalizePending
   });
   // a live getter (Object.assign would copy its value once): the setting's onChange refreshes the open tracker
   Object.defineProperty(game.catBurglars, "tracker", { get: currentTracker, configurable: true, enumerable: true });
 
   foundry.applications.handlebars?.loadTemplates?.([
-    "templates/chat/event-card.hbs", "templates/chat/roll-card.hbs", "templates/dialogs/roll-dialog.hbs", "templates/dialogs/start-robbery.hbs",
+    "templates/chat/event-card.hbs", "templates/chat/roll-card.hbs", "templates/dialogs/roll-dialog.hbs", "templates/dialogs/start-robbery.hbs", "templates/dialogs/quick-start.hbs",
     "templates/apps/tracker-header.hbs", "templates/apps/tracker-house.hbs", "templates/apps/tracker-footer.hbs",
     "templates/actor/cat-sheet.hbs", "templates/actor/human-sheet.hbs", "templates/actor/pet-sheet.hbs"
   ].map(p => `systems/${SYSTEM_ID}/${p}`));

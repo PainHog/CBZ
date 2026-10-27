@@ -2,7 +2,8 @@
   "key": "birthday-cake-captain",
   "name": "Captain the parrot",
   "type": "pet",
-  "img": "icons/svg/wing.svg",
+  "img": "systems/cat-burglars/assets/residents/captain.webp",
+  "token": "systems/cat-burglars/assets/residents/captain-token.webp",
   "system": {
     "kind": "parrot",
     "rating": 0,

@@ -6,7 +6,8 @@
  * Patience. The house: every room with who is in it. Each cat shows what it can
  * do now (Moves and simple things as buttons, rolls open the roll dialog). The
  * Storyteller also gets Begin round / Tempt / End round, the overrides (move
- * anyone, open or shut a way, ± a meter, undo) and the routines.
+ * anyone, open or shut a way, ± a meter, undo) and the routines; with no
+ * robbery running, Play a ready-made game (quick-start.mjs) or Start a robbery.
  */
 import { SYSTEM_ID, SETTINGS } from "../contracts.mjs";
 import { HOUSES, findHouse } from "../logic/house-catalog.mjs";
@@ -16,6 +17,7 @@ import * as R from "../robbery/robbery.mjs";
 import { trackerView } from "./tracker-view.mjs";
 import { setting } from "../settings.mjs";
 import { render, TEMPLATES } from "../chat/cards.mjs";
+import * as QS from "../robbery/quick-start.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const T = part => `systems/${SYSTEM_ID}/templates/apps/tracker-${part}.hbs`;
@@ -34,6 +36,7 @@ export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {
     position: { width: 960, height: 780 },
     actions: {
       start: guard(RobberyTracker.#start),
+      quickStart: guard(RobberyTracker.#quickStart),
       beginRound: guard(() => R.beginRound()),
       endRound: guard(() => R.endRound()),
       endRobbery: guard(() => R.endRobbery("manual")),
@@ -119,6 +122,26 @@ export class RobberyTracker extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     if (!answer || typeof answer !== "object") return null;
     return R.startRobbery(findHouse(answer.house) ?? answer.house, { actorIds: answer.actorIds });
+  }
+
+  /** Play a ready-made game (GM): pick a house and the cats; quick-start.mjs sets the table and starts the robbery. */
+  static async #quickStart() {
+    if (!isActiveGM()) throw new Error("Only the active Storyteller sets up a ready-made game.");
+    const choices = await QS.quickStartChoices();
+    const content = await render(TEMPLATES.quickStart, choices);
+    const answer = await foundry.applications.api.DialogV2.wait({
+      window: { title: "Play a ready-made game" }, content, rejectClose: false,
+      buttons: [{ action: "play", label: "Let's go!", default: true, callback: (event, btn) => {
+        const el = n => btn?.form?.elements?.[n] ?? btn?.form?.elements?.namedItem?.(n);
+        return {
+          house: el("house")?.value,
+          readyMade: choices.gang.filter(g => el(`gang-${g.key}`)?.checked).map(g => g.key),
+          own: choices.own.filter(o => el(`own-${o.id}`)?.checked).map(o => o.id)
+        };
+      } }, { action: "cancel", label: "Not now" }]
+    });
+    if (!answer || typeof answer !== "object") return null;
+    return QS.quickStart(answer);
   }
 
   static async #clear() {

@@ -2,7 +2,8 @@
   "key": "okafor-box-noodle",
   "name": "Noodle",
   "type": "pet",
-  "img": "icons/svg/pawprint.svg",
+  "img": "systems/cat-burglars/assets/residents/noodle.webp",
+  "token": "systems/cat-burglars/assets/residents/noodle-token.webp",
   "system": {
     "kind": "dog",
     "rating": 2,

@@ -1,5 +1,5 @@
-Now: Version 0.9 of the rulebook is finished: thug cats, shiny loot, the getaway from animal control and Cred for showing off
-Next: Richard reads version 0.9 and tries the Chicken at Number 12 at a real table
+Now: Ready-to-play games in the online version: one click sets up any of the five houses, with a map, pictures and tokens that follow the action
+Next: Richard tries a ready-made game of the Chicken at Number 12 online with a friend
 Number: Design decisions made = 47
 Number: Open design questions = 0
 Number: Ready-to-play houses = 5
@@ -60,4 +60,5 @@ This version is an experiment: Richard chose what makes the game its own, then a
 - [x] The online version learns the getaway and Cred
 - [x] Playtests of the new rules with real dice, and their fixes
 - [x] Rulebook version 0.9
+- [x] Ready-to-play games in the online version: a map for every house, pictures of the gang and the pets, one click to start, and tokens that follow the robbery
 - [ ] Richard tries the online version at a real table

@@ -2,7 +2,8 @@
   "key": "marchetti-salmon-brutus",
   "name": "Brutus",
   "type": "pet",
-  "img": "icons/svg/pawprint.svg",
+  "img": "systems/cat-burglars/assets/residents/brutus.webp",
+  "token": "systems/cat-burglars/assets/residents/brutus-token.webp",
   "system": {
     "kind": "dog",
     "rating": 3,

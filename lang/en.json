@@ -46,6 +46,9 @@
   "CATB.Settings.autoCred.Name": "Score Cred",
   "CATB.Settings.autoCred.Hint": "Showing off scores by itself (Chapter 9): tagging a room, getting into the catnip, leading the gang past the rivals and a getaway Purrfect; a cat with the zoomies gets +1 die, every roll it makes is a noise, it can't resist a temptation and its Cred counts double; the outcome names the Cat's Whiskers. Off: tags and the catnip are still noted, but the Storyteller keeps Cred and the zoomies by hand on the tracker.",
 
+  "CATB.Settings.tokensFollow.Name": "Tokens follow the robbery",
+  "CATB.Settings.tokensFollow.Hint": "On a ready-to-play scene, whenever the robbery moves someone (routines, noise, Shoo!, Scooped and Held, the Den, going in or out, the getaway), their token scampers to a free spot in the right room, outside by an entrance, or on the getaway row, and the warden follows the gang. A hiding cat goes see-through; a driven-off pet hides from the players. The robbery is what counts: dragging a token changes nothing, and the next change puts it back if it's in the wrong place. Off: tokens stay wherever you put them.",
+
   "CATB.Settings.trackerForPlayers.Name": "Players can open the tracker",
   "CATB.Settings.trackerForPlayers.Hint": "Players see the Robbery Tracker (the house, the meters, the clock) with buttons for their own cats. Off: only the Storyteller opens it."
 }

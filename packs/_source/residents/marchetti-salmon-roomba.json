@@ -2,7 +2,8 @@
   "key": "marchetti-salmon-roomba",
   "name": "The robot vacuum (Chef Marchetti's)",
   "type": "pet",
-  "img": "icons/svg/clockwork.svg",
+  "img": "systems/cat-burglars/assets/residents/robot-vacuum.webp",
+  "token": "systems/cat-burglars/assets/residents/robot-vacuum-token.webp",
   "system": {
     "kind": "vacuum",
     "rating": 0,

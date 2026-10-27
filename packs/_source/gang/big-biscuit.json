@@ -2,7 +2,8 @@
   "key": "big-biscuit",
   "name": "Big Biscuit",
   "type": "cat",
-  "img": "icons/svg/cat.svg",
+  "img": "systems/cat-burglars/assets/gang/big-biscuit.webp",
+  "token": "systems/cat-burglars/assets/gang/big-biscuit-token.webp",
   "actorLink": true,
   "system": {
     "approaches": {
