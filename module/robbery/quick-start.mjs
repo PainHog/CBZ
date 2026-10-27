@@ -56,7 +56,7 @@ export async function quickStartChoices() {
   try { docs = (await packDocs(QUICK_PACKS.gang)).docs; } catch { /* no pack: names from the world, or the keys */ }
   const gang = READY_MADE.map(key => {
     const d = game.actors.find(a => a.type === "cat" && flagOf(a).gang === key) ?? docs.find(x => flagOf(x).gang === key);
-    return { key, name: d?.name ?? key, img: d?.img ?? "", checked: ticked.has(key) };
+    return { key, name: d?.name ?? key, img: d?.prototypeToken?.texture?.src ?? d?.img ?? "", checked: ticked.has(key) };
   });
   const own = game.actors.filter(a => a.type === "cat" && !flagOf(a).gang).map(a => ({ id: a.id, name: a.name }));
   return {

@@ -242,3 +242,18 @@ test("with Tokens follow the robbery off, the tokens stay where they are", async
   tokensMatchState(sc, "back on: ");
   assert.deepEqual(log.errors, []);
 });
+
+test("Start a robbery on a ready-to-play scene: the tokens follow, and the macro puts any missing ones on it", async () => {
+  const [sc] = sceneOf("okafor-box");
+  await asUser(gmU, () => sc.activate());
+  const ids = ["two-bin-tilly", "velvet", "pip"].map(k => gangActor(k).id);
+  await asUser(gmU, () => api().robbery.startRobbery("okafor-box", { actorIds: ids }));
+  await settle();
+  const pip = gangActor("pip").id;
+  await asUser(gmU, () => sc.deleteEmbeddedDocuments("Token", tokenOf(sc, pip).map(t => t.id)));
+  assert.equal(tokenOf(sc, pip).length, 0);
+  await asUser(gmU, () => api().syncTokens({ create: true }));
+  await settle();
+  tokensMatchState(sc, "Start a robbery: ");
+  assert.deepEqual(log.errors, []);
+});
