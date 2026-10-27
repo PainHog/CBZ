@@ -2,7 +2,7 @@
   "id": "cat-burglars",
   "type": "system",
   "title": "Nine Lives Gang",
-  "description": "The Foundry VTT game system for Nine Lives Gang, a tabletop roleplaying game by Richard Moore: a gang of street cats robs a house. Automation-first: cat sheets, a roll dialog that knows who is watching, roll cards with Push, the two-meter Mood with Shoo! and Scooped!, and a Robbery Tracker that runs the house's turn (pets, noise, routines, Searching, the Prize Clock) and the outcome. Includes the five ready-to-run houses, their residents and the ready-made gang.",
+  "description": "The Foundry VTT game system for Nine Lives Gang, a tabletop roleplaying game by Richard Moore: a gang of street cats robs a house. Automation-first: cat sheets, a roll dialog that knows who is watching, roll cards with Push, the two-meter Mood with Shoo! and Scooped!, and a Robbery Tracker that runs the house's turn (pets, noise, routines, Searching, the Prize Clock) and the outcome. Includes five ready-to-play games, one for each ready-to-run house: its map as a scene, its residents and the ready-made gang with their pictures, and a one-click quick start in the Robbery Tracker that sets the table and starts the robbery, with tokens that follow it round the house and on the getaway.",
   "version": "0.9.0",
   "compatibility": {
     "minimum": "13",
@@ -58,13 +58,21 @@
       "type": "Actor",
       "system": "cat-burglars",
       "ownership": { "PLAYER": "NONE", "ASSISTANT": "OWNER" }
+    },
+    {
+      "name": "ready-to-play",
+      "label": "Ready to Play",
+      "path": "packs/ready-to-play",
+      "type": "Scene",
+      "system": "cat-burglars",
+      "ownership": { "PLAYER": "OBSERVER", "ASSISTANT": "OWNER" }
     }
   ],
   "packFolders": [
     {
       "name": "Nine Lives Gang",
       "sorting": "m",
-      "packs": ["houses", "gang", "residents"]
+      "packs": ["ready-to-play", "houses", "gang", "residents"]
     }
   ],
   "socket": true,

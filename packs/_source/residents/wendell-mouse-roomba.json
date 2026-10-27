@@ -2,7 +2,8 @@
   "key": "wendell-mouse-roomba",
   "name": "The robot vacuum (Grandpa Wendell's)",
   "type": "pet",
-  "img": "icons/svg/clockwork.svg",
+  "img": "systems/cat-burglars/assets/residents/robot-vacuum.webp",
+  "token": "systems/cat-burglars/assets/residents/robot-vacuum-token.webp",
   "system": {
     "kind": "vacuum",
     "rating": 0,

@@ -9,6 +9,7 @@
 // is 15 units = 7.5pt (the rule: every label at least 7pt in print). All text is set in the book's
 // faces (Alegreya Sans, Fraunces for room names). If the figure's printed width changes, recheck this.
 import { C, svg } from "./lib.mjs";
+import { van } from "../residents.mjs";
 import { HOUSES } from "../../../../sim/houses.mjs";
 
 const W = 1028;        // every map's width in units (= 514pt in print)
@@ -57,12 +58,27 @@ function sharedWall(a, b) {
   }
   return null;
 }
+/** An entrance named after its room's short name takes the room's full name ("Bedroom window" into the Spare bedroom). */
+function entranceName(h, e) {
+  const roomName = h.rooms[e.room].name, first = e.name.split(" ")[0];
+  return roomName.toLowerCase() !== first.toLowerCase() && roomName.toLowerCase().endsWith(" " + first.toLowerCase()) ? roomName + e.name.slice(first.length) : e.name;
+}
 /** Rough width of a run of text in units (good enough to keep labels inside rooms and apart). */
 const textW = (t, size, bold = false) => t.length * size * (bold ? 0.56 : 0.5);
 const overlap = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
 
-function houseMap(h) {
-  const L = LAYOUT[h.key];
+/**
+ * One house's plan. opts (all optional; the book's maps use none of them):
+ *   layout    where the floors go, instead of LAYOUT (the tabletop plan's grid-aligned places)
+ *   legend    false: no ENTRANCES list and no notes under it
+ *   extra     more drawing, laid over the plan (the tabletop plan's getaway row and entrance key)
+ *   width, height, title   the drawing's size and title
+ *   geometry  an object to fill in with where everything was drawn (map units): the floors, the rooms,
+ *             what is drawn in each room, the entrance markers and the floor names
+ */
+function houseMap(h, opts = {}) {
+  const L = opts.layout ?? LAYOUT[h.key];
+  const geo = opts.geometry ?? null;
   const floors = h.map.floors;
   const floorOf = {};
   floors.forEach((f, i) => { for (const k of Object.keys(f.rooms)) floorOf[k] = i; });
@@ -82,6 +98,7 @@ function houseMap(h) {
   for (const p of panels) {
     const topMarker = Object.entries(h.map.entrances).some(([key, side]) => side === "top" && floorOf[h.entrances.find(e => e.key === key)?.room] === panels.indexOf(p));
     b += `<text x="${p.x}" y="${p.y - (topMarker ? 50 : 16)}" ${SANS} font-weight="800" font-size="18" letter-spacing="2" fill="${C.accentDeep}">${tx(p.f.name.toUpperCase())}</text>`;
+    if (geo) (geo.floorLabels ??= []).push([p.x, p.y - (topMarker ? 50 : 16) - 18, p.x + textW(p.f.name, 18, true) + 2 * p.f.name.length, p.y - (topMarker ? 50 : 16) + 5]);
     for (const [k, r] of Object.entries(p.f.rooms)) {
       const x = p.x + r[0] * U, y = p.y + r[1] * U, w = r[2] * U, hh = r[3] * U;
       b += `<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="${k === h.den ? C.paper2 : C.light}"/>`;
@@ -180,11 +197,10 @@ function houseMap(h) {
     if (side === "roof") { b += `<rect x="${mx - 22}" y="${my - 22}" width="44" height="44" fill="none" stroke="${C.accentDeep}" stroke-width="2.4" stroke-dasharray="6 4"/>`; used(e.room, [mx - 24, my - 24, mx + 24, my + 24]); }
     else b += `<path d="M${wx0} ${wy0}L${wx1} ${wy1}" stroke="${C.accent}" stroke-width="9"/>`;
     b += `<circle cx="${mx}" cy="${my}" r="15" fill="${C.accent}" stroke="${C.ink}" stroke-width="2.4"/>`;
+    if (geo) (geo.markers ??= {})[e.key] = { room: e.room, side, n: i + 1, x: mx, y: my, r: 15 };
     b += `<text x="${mx}" y="${my + 6}" text-anchor="middle" ${SANS} font-weight="800" font-size="17" fill="${C.ink}">${i + 1}</text>`;
     grow(my + 16);
-    // an entrance named after its room's short name takes the room's full name ("Bedroom window" into the Spare bedroom)
-    const roomName = h.rooms[e.room].name, first = e.name.split(" ")[0];
-    const name = roomName.toLowerCase() !== first.toLowerCase() && roomName.toLowerCase().endsWith(" " + first.toLowerCase()) ? roomName + e.name.slice(first.length) : e.name;
+    const name = entranceName(h, e);
     const when = e.rounds ? ` (round${e.rounds.length > 1 ? "s" : ""} ${e.rounds.join("–")} only${e.one ? ", one cat" : ""})` : "";
     const extras = [e.climb ? "a climb: Small things only" : null, e.noisy ? "makes noise" : null, e.jam ? "stays open once jammed" : null].filter(Boolean).join(", ");
     marks.push(`${i + 1}. ${name} — ${SIZE_WORD[e.size]}; ${optText(e.opts)}${extras ? "; " + extras : ""}${when}`);
@@ -194,8 +210,17 @@ function houseMap(h) {
     let { cx, cy, size, box } = nameBox[k];
     for (let tries = 0; tries < 6 && (boxes[k] ?? []).some(u => overlap(u, box)); tries++) { cy += 18; box = [box[0], box[1] + 18, box[2], box[3] + 18]; }
     b += `<text x="${cx}" y="${cy}" text-anchor="middle" ${SERIF} font-weight="700" font-size="${size}" fill="${C.ink}">${tx(room.name)}</text>`;
+    if (geo) (geo.labels ??= {})[k] = box;
     if (k === h.den) b += `<text x="${cx}" y="${cy + 22}" text-anchor="middle" ${SANS} font-weight="800" font-size="15" letter-spacing="2" fill="${C.cuddle}">THE DEN</text>`;
   }
+  if (geo) {
+    geo.U = U;
+    geo.floors = panels.map(p => ({ name: p.f.name, x: p.x, y: p.y, w: p.w, h: p.h }));
+    geo.rooms = Object.fromEntries(Object.keys(h.rooms).map(k => { const r = R(k); return [k, { x: r.x, y: r.y, w: r.w, h: r.h, floor: floorOf[k] }]; }));
+    geo.drawn = Object.fromEntries(Object.keys(h.rooms).map(k => [k, [...(boxes[k] ?? [])]]));
+  }
+  if (opts.extra) b += opts.extra;
+  if (opts.legend === false) return svg(`0 0 ${opts.width} ${opts.height}`, opts.title, `<rect width="${opts.width}" height="${opts.height}" fill="${C.paper}"/>` + b);
   // the legend: the entrances, then how doors and the prize star are drawn, and the scale
   const [LX, LY, LW] = L.legend;
   const wrap = (t, size) => {
@@ -220,3 +245,119 @@ export const map_okafor_box = () => houseMap(HOUSES.find(h => h.key === "okafor-
 export const map_wendell_mouse = () => houseMap(HOUSES.find(h => h.key === "wendell-mouse"));
 export const map_birthday_cake = () => houseMap(HOUSES.find(h => h.key === "birthday-cake"));
 export const map_marchetti_salmon = () => houseMap(HOUSES.find(h => h.key === "marchetti-salmon"));
+
+/* ------------------------------------------------------------------------------------------------
+ * The plan for a virtual tabletop (the Foundry system's ready-to-play scenes: tools/build-assets.mjs
+ * renders it, tools/pack-content.mjs reads its geometry). The same rooms, doors, stairs, entrance
+ * markers, prize stars and names as the book's map, drawn by houseMap() from the same data, but:
+ *  - every floor sits on whole grid squares, so a tabletop's square grid lines up with the rooms;
+ *  - every side of a floor with an entrance keeps two squares clear outside it, where the cats wait
+ *    (one square on the other sides);
+ *  - no ENTRANCES list: a one-line key of the numbered markers instead;
+ *  - the getaway under the house: the van, the garden, the far side of each of the route's first three
+ *    obstacles and the hideout as a row of spaces, each obstacle's name between two spaces, and a row
+ *    above them where the warden stands.
+ * Returns { svg, geometry } (map units; one square is U). The geometry says where every room, entrance
+ * marker, place to wait outside and getaway space is, and what is drawn in each (to keep tokens off it).
+ * ------------------------------------------------------------------------------------------------ */
+const STRIP = { van: 2, space: 1.5, gap: 2, lead: 0.5 };  // the getaway row, in squares
+const STRIP_W = STRIP.van + STRIP.lead + 5 * STRIP.space + 4 * STRIP.gap; // 18 squares
+const STRIP_H = 4;                                         // the heading, the warden's row, the spaces, the labels
+const OUT_PAD = 6;                                         // units kept clear of a wall by the places to wait outside
+
+/** Lines of text no wider than `width` units at `size` (the same rough measure as the labels). */
+function wrapText(t, width, size) {
+  const max = Math.max(4, Math.floor(width / (size * 0.5))), out = []; let cur = "";
+  for (const w of String(t).split(" ")) { if (cur && (cur + " " + w).length > max) { out.push(cur); cur = w; } else cur = cur ? `${cur} ${w}` : w; }
+  return cur ? [...out, cur] : out;
+}
+
+export function canvasMap(h) {
+  const floors = h.map.floors;
+  const floorOf = {};
+  floors.forEach((f, i) => { for (const k of Object.keys(f.rooms)) floorOf[k] = i; });
+  // which sides of each floor have an entrance (a roof light counts as the top: the cats wait on the roof above it)
+  const sides = floors.map(() => ({ top: false, bottom: false, left: false, right: false }));
+  for (const e of h.entrances) { const side = h.map.entrances[e.key]; sides[floorOf[e.room]][side === "roof" ? "top" : side] = true; }
+  const M = (i, side) => (sides[i][side] ? 2 : 1);
+  const size = floors.map(f => [Math.max(...Object.values(f.rooms).map(r => r[0] + r[2])), Math.max(...Object.values(f.rooms).map(r => r[1] + r[3]))]);
+  // the floors side by side, their tops level
+  const top = Math.max(...floors.map((f, i) => M(i, "top")));
+  const houseH = Math.max(...floors.map((f, i) => top + size[i][1] + M(i, "bottom")));
+  let x = 0;
+  const at = floors.map((f, i) => { x += M(i, "left"); const p = x; x += size[i][0] + M(i, "right"); return p; });
+  const houseW = x;
+  const Wsq = Math.max(houseW, STRIP_W + 2), dx = Math.floor((Wsq - houseW) / 2);
+  const keyRows = 1, Hsq = houseH + keyRows + STRIP_H;
+  const width = Wsq * U, height = Hsq * U;
+  const layout = { floors: at.map(fx => [(fx + dx) * U, top * U]) };
+
+  // the entrance key, under the house: "1 Front door (behind Mr Pell) · 2 …"
+  let extra = "";
+  const keyY = houseH * U + 26;
+  const key = h.entrances.map((e, i) => `${i + 1} ${entranceName(h, e)}`);
+  const keyLines = []; let cur = "";
+  for (const k of key) { const next = cur ? `${cur}  ·  ${k}` : k; if (cur && textW(next, 16) > width - 2 * U - 130) { keyLines.push(cur); cur = k; } else cur = next; }
+  if (cur) keyLines.push(cur);
+  extra += `<text x="${U}" y="${keyY}" ${SANS} font-weight="800" font-size="15" letter-spacing="2" fill="${C.accentDeep}">ENTRANCES</text>`;
+  keyLines.forEach((ln, i) => { extra += `<text x="${U + 124}" y="${keyY + i * 20}" ${SANS} font-size="16" fill="${C.ink}" xml:space="preserve">${tx(ln)}</text>`; });
+
+  // the getaway row
+  const route = h.getaway;
+  const sx = Math.floor((Wsq - STRIP_W) / 2) * U, sy = (houseH + keyRows) * U;
+  const rowY = sy + 1.5 * U, rowH = STRIP.space * U, mid = rowY + rowH / 2;
+  const vanBox = { x: sx, y: rowY, w: STRIP.van * U, h: rowH };
+  const spaceX = k => sx + (STRIP.van + STRIP.lead) * U + k * (STRIP.space + STRIP.gap) * U;
+  const spaces = [0, 1, 2, 3, 4].map(k => ({ x: spaceX(k), y: rowY, w: STRIP.space * U, h: rowH }));
+  const wardenAt = r => ({ x: r.x + r.w / 2 - U / 2, y: sy + 0.5 * U, w: U, h: U });
+  extra += `<text x="${sx}" y="${sy + 26}" ${SANS} font-weight="800" font-size="18" letter-spacing="2" fill="${C.accentDeep}">THE GETAWAY</text>`;
+  extra += `<text x="${sx + 172}" y="${sy + 26}" ${SANS} font-size="15" fill="${C.inkSoft}">${tx("the warden stands above the space he’s on")}</text>`;
+  // the van (where pinched cats go), drawn as the book draws it
+  extra += `<rect x="${vanBox.x}" y="${vanBox.y}" width="${vanBox.w}" height="${vanBox.h}" rx="10" fill="none" stroke="${C.edge}" stroke-width="3" stroke-dasharray="8 6"/>`;
+  extra += van(vanBox.x + vanBox.w / 2 - 4, vanBox.y + vanBox.h - 14, 0.4);
+  const label = (r, t) => `<text x="${r.x + r.w / 2}" y="${r.y + r.h + 22}" text-anchor="middle" ${SANS} font-weight="800" font-size="15" letter-spacing="1.5" fill="${C.accentDeep}">${tx(t)}</text>`;
+  extra += label(vanBox, "IN THE VAN");
+  spaces.forEach((r, k) => {
+    extra += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="10" fill="${k === 4 ? C.accentB : C.light}" stroke="${C.ink}" stroke-width="3"/>`;
+    if (k === 0) extra += label(r, "THE GARDEN");
+    if (k === 4) extra += label(r, "THE HIDEOUT");
+  });
+  // each obstacle between two spaces: an arrow, its name under it (and the rivals, where they hang about)
+  route.forEach((o, k) => {
+    const x0 = spaces[k].x + spaces[k].w + 10, x1 = spaces[k + 1].x - 10, cx = (x0 + x1) / 2;
+    extra += `<path d="M${x0} ${mid}H${x1 - 4}" stroke="${C.ink}" stroke-width="3"/><path d="M${x1 - 14} ${mid - 9}L${x1} ${mid}L${x1 - 14} ${mid + 9}" fill="none" stroke="${C.ink}" stroke-width="3" stroke-linejoin="round"/>`;
+    const name = wrapText(o.name, STRIP.gap * U - 4, 15);
+    const rivals = h.cred?.patch === k && h.cred?.rivals ? wrapText(`${h.cred.rivals} hang about here`, STRIP.gap * U - 4, 15) : [];
+    name.forEach((ln, i) => { extra += `<text x="${cx}" y="${mid + 24 + i * 18}" text-anchor="middle" ${SANS} font-size="15" font-weight="700" fill="${C.ink}">${tx(ln)}</text>`; });
+    rivals.forEach((ln, i) => { extra += `<text x="${cx}" y="${mid + 24 + (name.length + i) * 18}" text-anchor="middle" ${SANS} font-size="15" font-style="italic" fill="${C.inkSoft}">${tx(ln)}</text>`; });
+  });
+
+  const geo = {};
+  const svgText = houseMap(h, { layout, legend: false, extra, width, height, geometry: geo, title: tx(`Floor plan for the table: ${h.name}`) });
+
+  // the places to wait outside each entrance: a band two squares deep along the wall its marker is on
+  // (above the room for a roof light), as long as the room's wall, keeping clear of the marker and the floor names
+  const entrances = {};
+  for (const e of h.entrances) {
+    const m = geo.markers[e.key], r = geo.rooms[e.room], fl = geo.floors[floorOf[e.room]];
+    const deep = 2 * U - 2 * OUT_PAD;
+    let band;
+    if (m.side === "top" || m.side === "roof") band = { x: r.x, y: (m.side === "roof" ? fl.y : r.y) - OUT_PAD - deep, w: r.w, h: deep };
+    if (m.side === "bottom") band = { x: r.x, y: r.y + r.h + OUT_PAD, w: r.w, h: deep };
+    if (m.side === "left") band = { x: r.x - OUT_PAD - deep, y: r.y, w: deep, h: r.h };
+    if (m.side === "right") band = { x: r.x + r.w + OUT_PAD, y: r.y, w: deep, h: r.h };
+    const avoid = [[m.x - m.r - 8, m.y - m.r - 8, m.x + m.r + 8, m.y + m.r + 8], ...geo.floorLabels];
+    entrances[e.key] = { room: e.room, side: m.side, n: m.n, marker: { x: m.x, y: m.y }, outside: { ...band, avoid } };
+  }
+  const rooms = Object.fromEntries(Object.entries(geo.rooms).map(([k, r]) => [k, { ...r, avoid: [geo.labels[k], ...geo.drawn[k]] }]));
+  return {
+    svg: svgText,
+    geometry: {
+      key: h.key, U, width, height, floors: geo.floors, rooms, entrances,
+      getaway: { van: vanBox, spaces, warden: spaces.map(wardenAt), wardenVan: wardenAt(vanBox) }
+    }
+  };
+}
+
+/** The tabletop plans by house key (for tools that need them all). */
+export const canvasMaps = () => Object.fromEntries(HOUSES.map(h => [h.key, canvasMap(h)]));
