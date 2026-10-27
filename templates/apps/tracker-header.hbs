@@ -41,6 +41,7 @@
     <button type="button" data-action="undo">Undo last Mood change</button>
     <button type="button" data-action="endRobbery">End the robbery</button>
     {{else}}
+    <button type="button" data-action="quickStart">Play a ready-made game</button>
     <button type="button" data-action="start">Start a new robbery</button>
     <button type="button" data-action="clear">Clear</button>
     {{/if}}
@@ -57,6 +58,8 @@
     <h2>No robbery yet</h2>
     {{#if isGM}}
     <p>Pick a house and the gang, then begin round 1. The cats start outside.</p>
+    <p class="catb-note">In a hurry? <strong>Play a ready-made game</strong> sets the whole table: the house's map, the gang, the residents, the tokens — then off you go.</p>
+    <button type="button" data-action="quickStart">Play a ready-made game</button>
     <button type="button" data-action="start">Start a robbery</button>
     {{else}}
     <p>The Storyteller hasn't started a robbery.</p>

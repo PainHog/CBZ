@@ -1,12 +1,16 @@
 /**
  * NINE LIVES GANG — compendium content, generated (not hand-edited).
  * --------------------------------------------------------------------
- * Writes packs/_source/{houses,gang,residents}/*.json from:
+ * Writes packs/_source/{houses,gang,residents,scenes}/*.json from:
  *  - the house catalog (module/logic/house-catalog.mjs, a copy of sim/houses.mjs),
  *  - each house's hand-written text in the rulebook (book/src/houses/<key>.html:
  *    "Read this aloud", the description, "How it plays"), with the catalog's
  *    numbers filled in where the book's generator puts its tables,
- *  - the ready-made gang of Chapter 3 (book/src/chapters/13-ch03-ready-made-gang.html).
+ *  - the ready-made gang of Chapter 3 (book/src/chapters/13-ch03-ready-made-gang.html),
+ *  - the ready-to-play scenes: each house's tabletop plan and its geometry
+ *    (book/tools/art-gen/scenes/maps.mjs canvasMap, drawn from sim/houses.mjs),
+ *    in scene pixels, for the quick start and the tokens that follow the robbery,
+ *  - the pictures in assets/ (tools/asset-art.mjs names them; tools/build-assets.mjs renders them).
  * The book is the source of truth: change the book (or sim/houses.mjs and the
  * catalog copy), then run `npm run build:packs`, which regenerates these
  * sources and compiles them. test/packs.test.mjs fails if the committed
@@ -21,6 +25,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { HOUSES, humanTraits, optionsText } from "../module/logic/house-catalog.mjs";
 import { CATB } from "../module/config.mjs";
 import { gangScaling } from "../module/logic/prize.mjs";
+import { canvasMaps } from "../book/tools/art-gen/scenes/maps.mjs";
+import { assetPaths, SCENE_SCALE } from "./asset-art.mjs";
+import { makeId } from "./pack-config.mjs";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(ROOT, "packs", "_source");
@@ -150,6 +157,9 @@ function housePage(h) {
 }
 
 const RUNNING = h => `<h2>Running ${esc(h.name)} in Foundry</h2>
+<p><strong>The quick way:</strong> open the <strong>Robbery Tracker</strong> (the cat button on the token controls) and press <strong>Play a ready-made game</strong>. Pick this house and the cats (the ready-made gang, your players' own cats, or both): one click brings in this house's map from the <em>Ready to Play</em> compendium, the gang and the residents, puts everyone on the map and starts the robbery.</p>
+<p>Give each player a cat (right-click a cat → Configure Ownership) and press <strong>Begin round</strong>. The tokens follow the robbery by themselves; drag one if you like, and the next change puts it back where the robbery says.</p>
+<p><strong>Or by hand:</strong></p>
 <ol>
 <li>Open the <strong>Robbery Tracker</strong> (the cat button on the token controls) and choose <strong>Start a robbery</strong>: pick this house and the gang. Every cat starts outside, with its starting Cattitude.</li>
 <li><strong>Begin round</strong> runs the Prize Clock and, if anyone can be tempted, whispers you one-click <strong>Tempt</strong> buttons.</li>
@@ -175,7 +185,7 @@ export function houseDocs() {
 
 export function gangDocs() {
   return GANG.map(c => ({
-    key: c.key, name: c.name, type: "cat", img: "icons/svg/cat.svg", actorLink: true,
+    key: c.key, name: c.name, type: "cat", img: assetPaths.gang(c.key) ?? "icons/svg/cat.svg", token: assetPaths.gangToken(c.key) ?? "icons/svg/cat.svg", actorLink: true,
     system: {
       approaches: { sneaky: c.approaches.sneaky, sweet: c.approaches.sweet, savage: c.approaches.savage, streetwise: c.approaches.streetwise },
       instinct1: c.instincts[0], instinct2: c.instincts[1], body: c.body,
@@ -206,7 +216,8 @@ export function residentDocs() {
     }
     for (const p of h.pets) {
       docs.push({
-        key: `${h.key}-${p.key}`, name: names.get(p.name) > 1 ? `${p.name} (${SHORT[h.key]})` : p.name, type: "pet", img: PET_IMG[p.kind] ?? "icons/svg/pawprint.svg",
+        key: `${h.key}-${p.key}`, name: names.get(p.name) > 1 ? `${p.name} (${SHORT[h.key]})` : p.name, type: "pet",
+        img: assetPaths.resident(p.key) ?? PET_IMG[p.kind] ?? "icons/svg/pawprint.svg", token: assetPaths.residentToken(p.key) ?? PET_IMG[p.kind] ?? "icons/svg/pawprint.svg",
         system: { kind: p.kind, rating: p.rating ?? 0, soft: !!p.soft, asleep: !!p.asleep, routine: routineObject(p.routine), roam: (p.roam ?? []).join(", "),
           house: h.key, key: p.key, start: p.start, notes: `Lives at ${h.name}.` },
         flags: { [FLAG]: { house: h.key, resident: p.key } }
@@ -216,9 +227,48 @@ export function residentDocs() {
   return docs;
 }
 
+/* ------------------------------------------------------------- scenes -- */
+
+/**
+ * The ready-to-play scenes, one per house: the tabletop plan as the background (assets/scenes/), one
+ * map square per grid square, the first view on the whole plan, the house's journal, and the layout
+ * the quick start and the following tokens read (flags["cat-burglars"].layout, in scene pixels from the
+ * background's top left; the scene has no padding): every room and what is drawn in it, every
+ * entrance with its marker and the place to wait outside it, the getaway row's spaces, the van and
+ * where the warden's tile stands.
+ */
+export function sceneDocs() {
+  const maps = canvasMaps();
+  const k = SCENE_SCALE, px = v => Math.round(v * k);
+  const rect = r => ({ x: px(r.x), y: px(r.y), w: px(r.w), h: px(r.h) });
+  const box = b => b.map(px);
+  return HOUSES.map(h => {
+    const g = maps[h.key].geometry;
+    const width = px(g.width), height = px(g.height), grid = px(g.U);
+    const layout = {
+      v: 1, grid, token: grid / 2,
+      rooms: Object.fromEntries(Object.entries(g.rooms).map(([key, r]) => [key, { ...rect(r), floor: r.floor, avoid: r.avoid.map(box) }])),
+      entrances: Object.fromEntries(Object.entries(g.entrances).map(([key, e]) => [key, {
+        room: e.room, side: e.side, n: e.n, marker: { x: px(e.marker.x), y: px(e.marker.y) }, outside: { ...rect(e.outside), avoid: e.outside.avoid.map(box) }
+      }])),
+      getaway: { van: rect(g.getaway.van), spaces: g.getaway.spaces.map(rect), warden: g.getaway.warden.map(rect), wardenVan: rect(g.getaway.wardenVan), img: assetPaths.warden() }
+    };
+    // the first view: the whole plan in a 1600 × 900 window (the canvas beside Foundry's sidebar)
+    const scale = Math.floor(Math.min(1600 / width, 900 / height) * 100) / 100;
+    return {
+      key: h.key, name: h.name,
+      background: assetPaths.scene(h.key), thumb: assetPaths.sceneThumb(h.key), width, height,
+      grid: { type: 1, size: grid, style: "solidLines", thickness: 1, color: "#1b1a24", alpha: 0, distance: 2, units: "cat lengths" },
+      initial: { x: Math.round(width / 2), y: Math.round(height / 2), scale },
+      journal: makeId("houses", h.key),
+      flags: { [FLAG]: { house: h.key, readyToPlay: true, layout } }
+    };
+  });
+}
+
 /** Every pack's source documents: { packFolder: [doc] }. */
 export function packSources() {
-  return { houses: houseDocs(), gang: gangDocs(), residents: residentDocs() };
+  return { houses: houseDocs(), gang: gangDocs(), residents: residentDocs(), scenes: sceneDocs() };
 }
 
 /** Write packs/_source/<pack>/<key>.json (old files in those folders are removed). */

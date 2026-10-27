@@ -30,6 +30,7 @@ export const SETTINGS = Object.freeze({
   autoOutcome: "autoOutcome",         // the robbery ends by itself and posts the outcome
   autoGetaway: "autoGetaway",         // the getaway: rolls move the gang, the warden comes on and corners cats (Ch 9)
   autoCred: "autoCred",               // Cred (Ch 9): tags, the catnip and the rivals score by themselves; the zoomies change rolls
+  tokensFollow: "tokensFollow",       // on a ready-to-play scene, tokens move when the robbery moves someone
   trackerForPlayers: "trackerForPlayers", // players may open the Robbery Tracker (read-only for the house)
   trackerPosition: "trackerPosition"  // client: where the tracker window was
 });

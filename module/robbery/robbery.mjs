@@ -40,8 +40,11 @@ export function defaultGang() {
   return owned.length ? owned : cats;
 }
 
-/** Start a robbery at a house (a catalog key or name, or a house journal) with these cat actors. */
-export async function startRobbery(houseRef, { actorIds = null } = {}) {
+/**
+ * Start a robbery at a house (a catalog key or name, or a house journal) with these cat actors.
+ * `notes`: more lines for the start card (the quick start's word on giving players their cats).
+ */
+export async function startRobbery(houseRef, { actorIds = null, notes = [] } = {}) {
   requireGM();
   const house = findHouse(houseRef);
   if (!house) throw new Error(`There's no house called "${houseRef?.name ?? houseRef}".`);
@@ -71,7 +74,8 @@ export async function startRobbery(houseRef, { actorIds = null } = {}) {
       `Who lives here: ${who}.`,
       `Ways in: ${house.entrances.map(e => e.name).join("; ")}.`,
       `The gang: ${actors.map(a => a.name).join(", ")} — all outside.`,
-      credLine
+      credLine,
+      ...notes
     ]
   });
   return state;

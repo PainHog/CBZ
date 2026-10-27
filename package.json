@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:assets": "node tools/build-assets.mjs",
     "build:packs": "node tools/build-packs.mjs",
     "clean:packs": "node tools/build-packs.mjs --clean",
     "validate": "node tools/validate.mjs",

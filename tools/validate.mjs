@@ -13,6 +13,8 @@
  *     deep-equals what the build derives from SOURCE (extracted from a temp
  *     copy with the official foundryvtt-cli — LevelDB bytes are
  *     non-deterministic, and opening the repo packs would dirty them).
+ *     Every picture a pack source or a template points at under
+ *     systems/<id>/ (the assets/ the system ships) exists.
  *  3. Templates — every .hbs compiles, and every helper used is registered
  *     (renders each template so an unknown helper throws "Missing helper").
  *     The system's own helpers are discovered by scanning module/ for
@@ -125,6 +127,24 @@ else {
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+// The system's own files the packs and templates point at (the pictures in assets/) must ship with it.
+{
+  const before = errors.length;
+  const prefix = `systems/${manifest.id}/`;
+  const texts = [
+    ...PACKS.flatMap(def => { try { return readSource(def.file).map(d => [`packs/_source/${def.file}/${d.key}.json`, JSON.stringify(d)]); } catch { return []; } }),
+    ...walk(join(ROOT, "templates"), ".hbs").map(f => [f.slice(ROOT.length + 1), readFileSync(f, "utf8")])
+  ];
+  let n = 0;
+  for (const [where, text] of texts) {
+    for (const m of text.matchAll(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^\"'\\s)]+)", "g"))) {
+      n++;
+      if (!existsSync(join(ROOT, m[1]))) err(`${where}: points at ${m[0]}, which doesn't exist — run: npm run build:assets`);
+    }
+  }
+  if (errors.length === before) pass(`${n} links to the system's own pictures all resolve`);
 }
 
 /* -------------------------------------------- 3. Templates -- */
