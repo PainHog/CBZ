@@ -28,6 +28,7 @@ export const SETTING_DEFS = {
   [SETTINGS.autoOutcome]: { ...L("autoOutcome"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.autoGetaway]: { ...L("autoGetaway"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.autoCred]: { ...L("autoCred"), scope: "world", config: true, type: Boolean, default: true },
+  [SETTINGS.tokensFollow]: { ...L("tokensFollow"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.trackerForPlayers]: { ...L("trackerForPlayers"), scope: "world", config: true, type: Boolean, default: true },
   [SETTINGS.trackerPosition]: { scope: "client", config: false, type: Object, default: {} }
 };
