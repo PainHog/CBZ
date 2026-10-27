@@ -9,7 +9,7 @@ Number: Pictures in the rulebook = 48
 Screenshot: docs/portal/cover.png = The Nine Lives Gang rulebook cover, the gang leaping a fence with the warden and his net close behind
 Download: book/dist/Nine_Lives_Gang_v0.9.pdf = The rulebook, version 0.9, a draft (PDF)
 Download: book/dist/Nine_Lives_Gang_v0.9_printer-friendly.pdf = The rulebook, version 0.9, printer-friendly with white pages (PDF)
-Download: downloads/Nine_Lives_Gang_Foundry_v0.8.0-test.zip = The online version for Foundry VTT, version 0.8 test build, not yet released (unzip into Data/systems)
+Download: downloads/Nine_Lives_Gang_Foundry_v0.9.0-test.zip = Online version for Foundry VTT: 0.9 test build with five ready-to-play games, not released (unzip into Data/systems)
 
 # Nine Lives Gang plan
 
