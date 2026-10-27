@@ -43,12 +43,12 @@ export const GANG_ART = Object.freeze({
  * Both robot vacuums are the book's one vacuum.
  */
 const RESIDENTS = {
-  pudding: { file: "pudding", title: "Pudding, Mr Pell’s old spaniel", draw: () => dogSide({ dog: "pudding", x: 186, y: 300, s: 0.88 }) },
-  noodle: { file: "noodle", title: "Noodle, the Okafors’ sausage dog", draw: () => dogSide({ dog: "noodle", x: 192, y: 300, s: 0.6 }) },
-  brutus: { file: "brutus", title: "Brutus, Chef Marchetti’s enormous mastiff", draw: () => dogSide({ dog: "brutus", x: 172, y: 304, s: 0.64 }) },
-  pompom: { file: "pom-pom", title: "Pom-Pom, Grandpa Wendell’s large fluffy house cat", draw: () => catSit({ look: "pompom", x: 200, y: 318, s: 0.92, id: "fvpp" }) },
-  captain: { file: "captain", title: "Captain the parrot in his cage on its stand", draw: () => parrotStand({ x: 140, floorY: 318, s: 1.02 }) },
-  roomba: { file: "robot-vacuum", title: "The robot vacuum", draw: () => vacuum(200, 292, 2.6) }
+  pudding: { file: "pudding", title: "Pudding, Mr Pell’s old spaniel", draw: () => dogSide({ dog: "pudding", x: 186, y: 322, s: 0.86 }) },
+  noodle: { file: "noodle", title: "Noodle, the Okafors’ sausage dog", draw: () => dogSide({ dog: "noodle", x: 192, y: 326, s: 0.6 }) },
+  brutus: { file: "brutus", title: "Brutus, Chef Marchetti’s enormous mastiff", draw: () => dogSide({ dog: "brutus", x: 172, y: 326, s: 0.62 }) },
+  pompom: { file: "pom-pom", title: "Pom-Pom, Grandpa Wendell’s large fluffy house cat", draw: () => catSit({ look: "pompom", x: 196, y: 330, s: 0.84, id: "fvpp" }) },
+  captain: { file: "captain", title: "Captain the parrot in his cage on its stand", draw: () => parrotStand({ x: 140, floorY: 330, s: 1.0 }) },
+  roomba: { file: "robot-vacuum", title: "The robot vacuum", draw: () => vacuum(200, 336, 2.4) }
 };
 export const RESIDENT_ART = Object.freeze(Object.fromEntries(Object.entries(RESIDENTS).map(([k, v]) => [k, v.file])));
 
@@ -67,7 +67,10 @@ export const assetPaths = {
 /** A book SVG as it is (book/art/<name>.svg). */
 export const bookArt = name => readFileSync(join(ART, `${name}.svg`), "utf8");
 
-/** A resident in a lamplit cameo (400×400): a wall, the lamp's glow and the floorboards, the resident on the floor. */
+/**
+ * A resident in a lamplit cameo (400×400): a wall, the lamp's glow and the floorboards (the floor begins
+ * at y 300), the resident standing or sitting on the floor in front of the wall, with its own contact shadow.
+ */
 export function residentCameo(key) {
   const r = RESIDENTS[key];
   if (!r) throw new Error(`no drawing for the resident "${key}"`);
@@ -84,8 +87,11 @@ export function residentCameo(key) {
 }
 export const residentKeys = () => Object.keys(RESIDENTS);
 
-/** The warden for the getaway row's tile: the book's figure, running toward the hideout, on nothing (square). */
+/**
+ * The warden for the getaway row's tile: the book's figure (as on his reference sheet), running toward the
+ * hideout, his boot and shadow at the foot of the square, so he stands on the top edge of the space below him.
+ */
 export function wardenTile() {
   setPrefix("fv-warden");
-  return svg("-110 -330 440 440", "The animal control warden with his catch net", warden({ x: 0, groundY: 0, s: 1, swing: 30 }));
+  return svg("-110 -420 440 440", "The animal control warden with his catch net", warden({ x: 0, groundY: 0, s: 1, swing: 30 }));
 }

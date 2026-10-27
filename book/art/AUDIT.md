@@ -540,3 +540,29 @@ Re-audit any piece whose generator changes.
 ## Not in the book yet
 - `ch-getaway`, `spot-rivals`, `tag-small`, `ref-residents`, `ref-warden` are built and audited above;
   the author places them in the text.
+
+## The Foundry system's pictures (assets/, audited 2026-10-27)
+Made from the book's art by `tools/asset-art.mjs` and `maps.mjs` `canvasMap`, rendered by `tools/build-assets.mjs`
+and looked at at full size (and the scenes with the token positions drawn over them).
+- **The tabletop plans** (`assets/scenes/<house>.webp`, 2 px a unit): the book map's rooms, walls,
+  doorways, closed doors with their swings, stairs, numbered entrance markers, prize stars and THE DEN, drawn
+  by the same code as the book's map, on whole grid squares. Checked against each book map: the same rooms
+  the same size in the same places on each floor, every entrance on the same wall, the same stars. The
+  ENTRANCES list is a one-line key of the marker numbers and names (whole words, the book's faces). The
+  getaway row: five spaces, four arrows, each obstacle's name whole under its arrow, the rivals' note in
+  italics under theirs, the van (the book's `van()`) with both wheels on the road and ANIMAL CONTROL whole.
+- **The gang** (`assets/gang/`): the book's portraits as they are; the tokens are the same picture with the
+  paper corners transparent, nothing cut by the edge.
+- **The residents** (`assets/residents/`, a cameo each: the wall, the lamp's glow, the floorboards):
+  | Picture | Object table | Character row |
+  |---|---|---|
+  | pudding | four paws on the floorboards in front of the wall, contact shadow | one eye (profile), two long ears, four legs, one feathered tail, cream with brown patches ✓ ref-residents |
+  | noodle | four paws on the floor, shadow | one eye, floppy ears, four short legs, one thin tail, ginger ✓ |
+  | brutus | four paws on the floor, shadow | one eye, folded black ears, black mask, four legs, a stub tail, fawn ✓ |
+  | pom-pom | haunches, paws and tail on the floor, shadow; the whole cat inside the ring | two eyes under level lids, two small ears in the fluff, whiskers both sides, two front legs, one tail round the paws, silver longhair with a cream ruff, no collar ✓ |
+  | captain | the stand's three feet on the floor, shadow; the cage's ring on the arm's hook; every bar from the base ring to the dome | the grey parrot on the perch, two feet on it, the brick-red tail ✓ spot-parrot |
+  | robot-vacuum | the disc flat on the floor, its shadow under it. **Fixed**: it first sat above the floor line, floating | — |
+- **The warden's tile** (`assets/getaway/warden.webp`): the book's `warden()` as on ref-warden — one boot
+  on the ground with its shadow at the foot of the square, two hands closed round the pole, the net on its
+  hoop, nothing cut by the edge.
+- **The tag** (`assets/ui/tag-small.webp`): `tag-small` in dusk blue.
